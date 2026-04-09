@@ -5,11 +5,11 @@
 
 ## Overview
 
-Build a single-user personal asset management web app in five phases. Phase 1 establishes the authenticated scaffold and correct data model — all money storage decisions must be right before anything else is built. Phase 2 adds complete asset and transaction CRUD so data can be entered. Phase 3 layers live price APIs onto the holdings math and delivers the working dashboard. Phase 4 adds the snapshot infrastructure and history charts — the year-end review feature. Phase 5 completes the v1 experience with goal tracking and per-asset performance comparison.
+Build a single-user personal asset management web app in five phases. Phase 1 establishes the authenticated scaffold and correct data model — all money storage decisions must be right before anything else is built. Authentication and database are both handled by Supabase (PostgreSQL + Supabase Auth), eliminating the need for a separate auth library or local SQLite. Phase 2 adds complete asset and transaction CRUD so data can be entered. Phase 3 layers live price APIs onto the holdings math and delivers the working dashboard. Phase 4 adds the snapshot infrastructure and history charts — the year-end review feature. Phase 5 completes the v1 experience with goal tracking and per-asset performance comparison.
 
 ## Phases
 
-- [ ] **Phase 1: Foundation** - Scaffold Next.js app with authentication and correct data schema
+- [ ] **Phase 1: Foundation** - Scaffold Next.js app with Supabase Auth and correct data schema on PostgreSQL
 - [ ] **Phase 2: Asset & Transaction Management** - Full CRUD for assets, transactions, and manual valuations
 - [ ] **Phase 3: Price Integration & Dashboard** - Live prices wired into holdings math; working portfolio dashboard
 - [ ] **Phase 4: History & Charts** - Snapshot cron job and year-over-year / monthly return charts
@@ -24,15 +24,15 @@ Build a single-user personal asset management web app in five phases. Phase 1 es
 **Success Criteria** (what must be TRUE):
   1. User can log in with email and password and remain logged in across multiple browser sessions and devices
   2. User can log out from any page and their session is immediately invalidated
-  3. All database tables exist with integer money types, exchange rate fields, and `is_voided` flag on transactions
+  3. All database tables exist in Supabase (PostgreSQL) with integer money types, exchange rate fields, and `is_voided` flag on transactions
   4. Unauthenticated requests to any app route are redirected to the login page
 **Plans**: TBD
 **UI hint**: yes
 
 Plans:
 - [ ] 01-01: Project scaffold — Next.js 16 + TypeScript + Tailwind v4 + shadcn/ui setup with CI lint check
-- [ ] 01-02: Database schema — Drizzle ORM schema for all tables (Asset, Transaction, ManualValuation, Holdings, PriceCache, PortfolioSnapshot, Goal) with integer money types and migration
-- [ ] 01-03: Authentication — better-auth setup with email/password, session middleware protecting all routes, login/logout UI
+- [ ] 01-02: Database schema — Supabase PostgreSQL schema for all tables (Asset, Transaction, ManualValuation, Holdings, PriceCache, PortfolioSnapshot, Goal) with BIGINT money types and Supabase SQL migrations; `@supabase/supabase-js` client configured
+- [ ] 01-03: Authentication — Supabase Auth with email/password, server-side session middleware protecting all routes, login/logout UI using `@supabase/ssr`
 
 ---
 
@@ -70,7 +70,7 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 03-01: Price API layer — Finnhub adapter (stocks/ETF), CoinGecko adapter (crypto), Bank of Korea FX rate, SQLite price cache with TTL and stale fallback
+- [ ] 03-01: Price API layer — Finnhub adapter (stocks/ETF), CoinGecko adapter (crypto), Bank of Korea FX rate, Supabase PostgreSQL price cache table with TTL and stale fallback
 - [ ] 03-02: Portfolio computation — Wire prices into holdings math to produce current value, gain/loss KRW, and return % per asset; handle LIVE vs MANUAL asset types
 - [ ] 03-03: Dashboard UI — Total asset value, overall return %, asset-type allocation pie chart, dual KRW/USD display
 - [ ] 03-04: Per-asset performance list — Sortable table showing each holding with current value, avg cost, gain/loss KRW, return %
@@ -90,7 +90,7 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 04-01: Snapshot infrastructure — PortfolioSnapshot write logic, nightly cron job (node-cron), monthly retention policy, daily prune after 12 months
+- [ ] 04-01: Snapshot infrastructure — PortfolioSnapshot write logic targeting Supabase PostgreSQL; nightly cron via node-cron calling a Next.js API route (or Supabase Edge Function with pg_cron if self-contained scheduling is preferred); monthly retention policy, daily prune after 12 months
 - [ ] 04-02: History API — Query endpoint with date range and granularity parameters; backfill path from manual valuations for RE/savings assets
 - [ ] 04-03: Charts UI — Annual return chart (year-over-year) and monthly portfolio value chart using Recharts; "data starts from [date]" message for new installs
 

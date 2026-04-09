@@ -57,6 +57,7 @@
 | 거래별 기록 방식 채택 | 정확한 평단가 계산을 위해 단순 평단가 입력 대신 거래 내역 누적 | — Pending |
 | 부동산/예적금 수동 업데이트 | 신뢰할 만한 공개 API 없음, 직접 입력으로 충분 | — Pending |
 | 웹 브라우저 전용 | PC에서 주로 사용, 반응형 웹으로 멀티 디바이스 대응 가능 | — Pending |
+| Supabase for auth + database | 인증과 DB를 Supabase(PostgreSQL)로 통합 — 별도 auth 라이브러리 불필요, 호스팅 DB | — Pending |
 
 ## Evolution
 
@@ -76,4 +77,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-08 after initialization*
+*Last updated: 2026-04-09 after Supabase auth + database decision*
