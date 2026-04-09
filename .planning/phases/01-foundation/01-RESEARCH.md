@@ -578,22 +578,25 @@ export async function signIn(email: string, password: string, redirectPath: stri
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **`SUPABASE_URL` vs `NEXT_PUBLIC_SUPABASE_URL` naming in D-10**
    - What we know: D-10 lists `SUPABASE_URL` and `SUPABASE_ANON_KEY` without `NEXT_PUBLIC_` prefix.
    - What's unclear: Whether the planner should use the prefix (required for browser clients) or if D-10 is intentionally using non-public names (would require server-only clients everywhere).
    - Recommendation: Use `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` per official Supabase Next.js docs. Document in plan that `SUPABASE_SERVICE_ROLE_KEY` and `DATABASE_URL` correctly have no prefix.
+   - **RESOLVED (01-01-PLAN.md, 01-03-PLAN.md):** Plans use `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` throughout all client/server factories. `SUPABASE_SERVICE_ROLE_KEY` and `DATABASE_URL` correctly carry no `NEXT_PUBLIC_` prefix. `.env.local.example` and `user_setup` frontmatter document all four variables with the correct names.
 
 2. **Supabase project creation — pre-existing or in-plan?**
    - What we know: D-09 says to use cloud Supabase directly; no local CLI.
    - What's unclear: Does the Supabase project already exist, or does Plan 01-02 include creating it?
    - Recommendation: Plan 01-02 should include a step to create the Supabase project and obtain keys if not already done. This is a human-action step (requires Supabase dashboard UI).
+   - **RESOLVED (01-01-PLAN.md Task 0):** Plan 01-01 contains a `checkpoint:human-action` Task 0 that walks the user through creating the Supabase project at supabase.com, collecting all four credential values, and creating the Vercel project. This is a blocking gate before any code runs.
 
 3. **Drizzle `generate` + `migrate` vs `push` for initial schema**
    - What we know: `push` is faster for initial setup; `generate+migrate` is safer for cloud.
    - What's unclear: For greenfield initial schema creation, is `push` acceptable or should migration files always be generated?
    - Recommendation: Use `generate` + `migrate` from the start. It's only marginally more steps and establishes the versioned migration pattern that Phase 2+ will follow.
+   - **RESOLVED (01-02-PLAN.md Task 2):** Plans use `npx drizzle-kit generate` followed by `npx drizzle-kit migrate`. Migration files are committed to git. `push` is not used anywhere in the plans.
 
 ---
 
