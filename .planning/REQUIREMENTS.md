@@ -7,8 +7,8 @@
 
 ### Authentication
 
-- [ ] **AUTH-01**: 사용자가 이메일/비밀번호로 로그인하고 세션이 다른 기기에서도 유지된다
-- [ ] **AUTH-02**: 사용자가 어느 페이지에서든 로그아웃할 수 있다
+- [x] **AUTH-01**: 사용자가 이메일/비밀번호로 로그인하고 세션이 다른 기기에서도 유지된다
+- [x] **AUTH-02**: 사용자가 어느 페이지에서든 로그아웃할 수 있다
 
 ### Asset Management
 
@@ -76,8 +76,8 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
 | ASSET-01 | Phase 2 | Pending |
 | ASSET-02 | Phase 2 | Pending |
 | ASSET-03 | Phase 2 | Pending |

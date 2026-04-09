@@ -30,7 +30,7 @@ Build a single-user personal asset management web app in five phases. Phase 1 es
 **UI hint**: yes
 
 Plans:
-- [ ] 01-01-PLAN.md — Next.js 16 scaffold: all Phase 1 dependencies installed, shadcn/ui initialized, Wave 0 test infrastructure (vitest + middleware/schema tests)
+- [x] 01-01-PLAN.md — Next.js 16 scaffold: all Phase 1 dependencies installed, shadcn/ui initialized, Wave 0 test infrastructure (vitest + middleware/schema tests)
 - [ ] 01-02-PLAN.md — Drizzle schema for all 7 tables (BIGINT money, is_voided, append-only ManualValuation) + migration applied to Supabase
 - [ ] 01-03-PLAN.md — Supabase Auth: SSR client factories, middleware route protection (getUser), login page (Korean UI spec), signIn/signOut Server Actions
 
@@ -122,7 +122,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Planning complete | - |
+| 1. Foundation | 1/3 | In Progress|  |
 | 2. Asset & Transaction Management | 0/4 | Not started | - |
 | 3. Price Integration & Dashboard | 0/4 | Not started | - |
 | 4. History & Charts | 0/3 | Not started | - |
