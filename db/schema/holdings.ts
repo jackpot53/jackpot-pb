@@ -1,0 +1,16 @@
+import { pgTable, uuid, bigint, timestamp } from 'drizzle-orm/pg-core'
+import { assets } from './assets'
+
+// Holdings aggregate table — maintained by application layer (Phase 2).
+// Stores the current aggregate position per asset to avoid recomputing from full transaction log.
+export const holdings = pgTable('holdings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  assetId: uuid('asset_id').notNull().unique().references(() => assets.id),
+  // totalQuantity: units × 10^8 (matches transactions.quantity scale)
+  totalQuantity: bigint('total_quantity', { mode: 'number' }).notNull().default(0),
+  // avgCostPerUnit: weighted average cost in KRW × 10^8 (per-unit, KRW)
+  avgCostPerUnit: bigint('avg_cost_per_unit', { mode: 'number' }).notNull().default(0),
+  // totalCostKrw: total amount invested in KRW (sum of buy transactions)
+  totalCostKrw: bigint('total_cost_krw', { mode: 'number' }).notNull().default(0),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
