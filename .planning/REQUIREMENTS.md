@@ -1,0 +1,106 @@
+# Requirements: jackpot-pb
+
+**Defined:** 2026-04-09
+**Core Value:** 연말 결산 — 전체 자산의 연간 수익률과 상품별 성과를 한눈에 볼 수 있어야 한다.
+
+## v1 Requirements
+
+### Authentication
+
+- [x] **AUTH-01**: 사용자가 이메일/비밀번호로 로그인하고 세션이 다른 기기에서도 유지된다
+- [x] **AUTH-02**: 사용자가 어느 페이지에서든 로그아웃할 수 있다
+
+### Asset Management
+
+- [ ] **ASSET-01**: 사용자가 자산 종목(주식/ETF/코인/부동산/예적금)을 등록·수정·삭제할 수 있다
+- [ ] **ASSET-02**: 사용자가 매수/매도 거래를 날짜·수량·가격·수수료와 함께 기록할 수 있다
+- [ ] **ASSET-03**: 사용자가 부동산·예적금의 현재 가치를 수동으로 업데이트할 수 있다 (이력 보존)
+- [ ] **ASSET-04**: 사용자가 잘못 입력한 거래 내역을 수정하거나 삭제할 수 있다
+
+### Price Integration
+
+- [ ] **PRICE-01**: 주식/ETF 종목의 현재 시세가 외부 API(Finnhub)를 통해 자동으로 갱신된다
+- [ ] **PRICE-02**: API 장애 시 최근 저장된 시세와 타임스탬프가 표시된다 (폴백)
+
+### Dashboard
+
+- [ ] **DASH-01**: 사용자가 전체 자산 합계와 전체 수익률(%)을 한 화면에서 볼 수 있다
+- [ ] **DASH-02**: 자산 유형별(주식/코인/부동산/예적금) 배분 비중이 차트로 표시된다
+- [ ] **DASH-03**: 종목별 현재 평가금액과 수익률이 한 눈에 요약된다
+- [ ] **DASH-04**: KRW/USD 이중 통화가 동시에 표시된다
+
+### Charts & History
+
+- [ ] **CHART-01**: 연도별 전체 자산 수익률이 차트로 표시된다
+- [ ] **CHART-02**: 월별 자산 총액 변동이 차트로 표시된다
+- [ ] **CHART-03**: 야간 크론 잡이 매일 포트폴리오 스냅숏을 기록한다 (차트 데이터 원본)
+
+### Goals
+
+- [ ] **GOAL-01**: 사용자가 목표 자산 금액을 설정하고 현재 달성률(%)을 볼 수 있다
+- [ ] **GOAL-02**: 목표별 시간 경과에 따른 진행 차트가 표시된다
+
+### Performance Comparison
+
+- [ ] **PERF-01**: 종목별 수익률을 한 화면에서 비교할 수 있다 (무엇이 잘 됐고 무엇이 별로였는지)
+- [ ] **PERF-02**: 자산 유형별(주식/코인/부동산/예적금)로 분리된 성과가 표시된다
+
+## v2 Requirements
+
+### Authentication
+
+- **AUTH-V2-01**: 비밀번호 재설정 (이메일 링크)
+- **AUTH-V2-02**: OAuth 로그인 (Google 등)
+
+### Price Integration
+
+- **PRICE-V2-01**: 암호화폐 실시간 시세 (CoinGecko API 연동)
+
+### Advanced Features
+
+- **ADV-V2-01**: CSV 가져오기 (거래 내역 일괄 업로드)
+- **ADV-V2-02**: 세금 요약 (양도소득세 참고용)
+- **ADV-V2-03**: 모바일 최적화 UI
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| 소셜/공유 기능 | 개인 전용 앱 — PROJECT.md 명시적 제외 |
+| 모바일 네이티브 앱 | 웹 브라우저로 충분, 반응형으로 멀티 디바이스 대응 |
+| 자동 증권사/은행 API 연동 | 거래 자동 동기화 불필요 — 수동 입력 + 시세 API로 충분 |
+| AI 투자 추천 | 범위 외, 개인 추적 앱 |
+| 실시간 WebSocket 시세 | 단일 유저에게 과도한 복잡성, 주기적 폴링으로 충분 |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
+| ASSET-01 | Phase 2 | Pending |
+| ASSET-02 | Phase 2 | Pending |
+| ASSET-03 | Phase 2 | Pending |
+| ASSET-04 | Phase 2 | Pending |
+| PRICE-01 | Phase 3 | Pending |
+| PRICE-02 | Phase 3 | Pending |
+| DASH-01 | Phase 3 | Pending |
+| DASH-02 | Phase 3 | Pending |
+| DASH-03 | Phase 3 | Pending |
+| DASH-04 | Phase 3 | Pending |
+| CHART-01 | Phase 4 | Pending |
+| CHART-02 | Phase 4 | Pending |
+| CHART-03 | Phase 4 | Pending |
+| GOAL-01 | Phase 5 | Pending |
+| GOAL-02 | Phase 5 | Pending |
+| PERF-01 | Phase 5 | Pending |
+| PERF-02 | Phase 5 | Pending |
+
+**Coverage:**
+- v1 requirements: 19 total
+- Mapped to phases: 19
+- Unmapped: 0 ✓
+
+---
+*Requirements defined: 2026-04-09*
+*Last updated: 2026-04-09 after roadmap creation — phase assignments confirmed*
