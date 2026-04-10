@@ -26,9 +26,11 @@ function formatKrw(value: number): string {
 }
 
 function decodeQuantity(stored: number): string {
-  const val = stored / 1e8
-  // Show up to 8 decimal places, trim trailing zeros
-  return parseFloat(val.toFixed(8)).toString()
+  // Use integer arithmetic to avoid float rounding for large quantities (relevant for crypto)
+  const intPart = Math.floor(stored / 1e8)
+  const fracPart = stored % 1e8
+  if (fracPart === 0) return intPart.toString()
+  return `${intPart}.${fracPart.toString().padStart(8, '0').replace(/0+$/, '')}`
 }
 
 export function TransactionsTab({ asset, transactions }: TransactionsTabProps) {
