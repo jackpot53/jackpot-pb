@@ -45,14 +45,14 @@ Plans:
   2. User can record buy and sell transactions with date, quantity, price, and fee — and edit or void incorrect entries
   3. User can update the current value of a manual asset (real estate/savings) and the history of past valuations is preserved
   4. Weighted average cost basis is computed correctly for all transaction patterns (multiple buys, partial sells, buy after sell), verified by unit tests
-**Plans**: TBD
+**Plans**: 4 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 02-01: Asset CRUD — API routes and UI for creating, listing, editing, and deleting assets with all type/currency fields
-- [ ] 02-02: Transaction ledger — API routes and UI for buy/sell entry (with exchange rate capture), void/edit, and per-asset transaction list
-- [ ] 02-03: Manual valuations — API routes and UI for updating real estate/savings values with append-only history
-- [ ] 02-04: Holdings computation — Weighted average cost basis pure function with unit tests; holdings aggregate computed from transaction log
+- [ ] 02-01-PLAN.md — App shell (sidebar + header + layout) + shadcn component install + Asset CRUD (list, create, edit, delete with confirmation)
+- [ ] 02-02-PLAN.md — WAVG pure function TDD: computeHoldings + upsertHoldings with 8 unit tests covering all edge cases
+- [ ] 02-03-PLAN.md — Transaction ledger: create/void/edit Server Actions with holdings upsert; 거래내역 tab wired with inline form, void dialog, voided row styling
+- [ ] 02-04-PLAN.md — Manual valuations: append-only INSERT Server Action; 개요 tab wired with metadata + conditional valuation history for manual assets
 
 ---
 
