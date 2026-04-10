@@ -38,10 +38,10 @@ created: 2026-04-10
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 02-04-01 | 04 | 0 | ASSET-02, ASSET-04 | — | N/A | unit | `npm test -- tests/holdings.test.ts` | ❌ W0 | ⬜ pending |
+| 02-02-01 | 02 | 0 | ASSET-02, ASSET-04 | — | N/A | unit | `npm test -- tests/holdings.test.ts` | ❌ W0 | ⬜ pending |
 | 02-01-xx | 01 | 1 | ASSET-01 | T-02-01 | auth check first, zod parse | integration | manual-only | N/A | ⬜ pending |
 | 02-02-xx | 02 | 1 | ASSET-02 | T-02-01 | auth check first, zod parse | integration | manual-only | N/A | ⬜ pending |
-| 02-03-xx | 03 | 2 | ASSET-03 | T-02-01 | auth check first, zod parse | integration | manual-only | N/A | ⬜ pending |
+| 02-04-xx | 04 | 2 | ASSET-03 | T-02-01 | auth check first, zod parse | integration | manual-only | N/A | ⬜ pending |
 | 02-04-xx | 04 | 1 | ASSET-04 | — | WAVG unit tested | unit | `npm test -- tests/holdings.test.ts` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*

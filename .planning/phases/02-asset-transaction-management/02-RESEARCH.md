@@ -552,17 +552,15 @@ export function formatReturnPercent(returnBps: number): { text: string; classNam
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **WAVG avgCostPerUnit precision: per-unit or per sub-unit?**
+1. **WAVG avgCostPerUnit precision: per-unit or per sub-unit?** (RESOLVED)
    - What we know: `holdings.avgCostPerUnit` is `bigint`. Quantity is stored as ×10^8. Price is in KRW.
-   - What's unclear: Does avgCostPerUnit represent "KRW per 1 share" (e.g., 75000) or "KRW per ×10^8 sub-unit" (e.g., 0.00075)?
-   - Recommendation: The schema comment says "weighted average cost in KRW × 10^8 (per-unit, KRW)" which is ambiguous. Plan 02-04 should define this explicitly in code comments and verify via unit test: for 1 buy of 100 shares at ₩75,000, `avgCostPerUnit` should equal `75000` (KRW per share).
+   - **Resolution:** `avgCostPerUnit` represents KRW per 1 full share (e.g., 75000 for a share bought at ₩75,000). The ×10^8 encoding applies to quantity, not to the price. Plan 02-04 `computeHoldings` defines this explicitly in code comments and the unit test verifies: 1 buy of 100 shares at ₩75,000 → `avgCostPerUnit === 75000n`.
 
-2. **Asset deletion cascade behavior**
-   - What we know: `transactions.asset_id` references `assets.id`. The schema does not define `ON DELETE CASCADE`.
-   - What's unclear: Does deleting an asset cascade to transactions and holdings, or does it fail with a FK violation?
-   - Recommendation: Plan 02-01 delete asset Server Action must explicitly delete or void transactions first, then delete holdings, then delete the asset — or the schema needs an `ON DELETE CASCADE` migration.
+2. **Asset deletion cascade behavior** (RESOLVED)
+   - What we know: `transactions.asset_id` references `assets.id`. The schema does not define `ON DELETE CASCADE`. A schema migration to add CASCADE is not appropriate here (Phase 1 migration has already been applied).
+   - **Resolution:** `deleteAsset` Server Action in Plan 02-01 performs explicit pre-delete child-row cleanup in order: (1) delete all transactions for the asset, (2) delete the holdings row for the asset, (3) delete the asset itself. This avoids FK violations without requiring a schema migration. Implementation is already updated in Plan 02-01 Task 2.
 
 ---
 
