@@ -1,11 +1,16 @@
 import { notFound } from 'next/navigation'
 import { getAssetById } from '@/db/queries/assets'
+import { getTransactionsByAsset } from '@/db/queries/transactions'
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TransactionsTab } from '@/components/app/transactions-tab'
 
 export default async function AssetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const asset = await getAssetById(id)
+  const [asset, txns] = await Promise.all([
+    getAssetById(id),
+    getTransactionsByAsset(id),
+  ])
   if (!asset) notFound()
 
   return (
@@ -21,12 +26,11 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
           <TabsTrigger value="transactions">거래내역</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
-          {/* Wired in Plan 02-03 and 02-04 */}
+          {/* Wired in Plan 02-04 (manual valuations) */}
           <p className="text-sm text-muted-foreground py-8">개요 준비 중...</p>
         </TabsContent>
         <TabsContent value="transactions">
-          {/* Wired in Plan 02-03 */}
-          <p className="text-sm text-muted-foreground py-8">거래내역 준비 중...</p>
+          <TransactionsTab asset={asset} transactions={txns} />
         </TabsContent>
       </Tabs>
     </div>
