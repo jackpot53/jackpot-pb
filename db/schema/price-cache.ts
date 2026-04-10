@@ -1,4 +1,5 @@
 import { pgTable, uuid, varchar, bigint, timestamp } from 'drizzle-orm/pg-core'
+import { currencyEnum } from './assets'
 
 // Price cache table — used by Phase 3 API adapters (Finnhub, CoinGecko).
 // cachedAt is used for TTL checks and stale fallback display.
@@ -9,6 +10,6 @@ export const priceCache = pgTable('price_cache', {
   priceKrw: bigint('price_krw', { mode: 'number' }).notNull(),
   // priceOriginal: price in original currency (USD cents for US stocks, KRW for KR stocks)
   priceOriginal: bigint('price_original', { mode: 'number' }).notNull(),
-  currency: varchar('currency', { length: 3 }).notNull(),
+  currency: currencyEnum('currency').notNull(),
   cachedAt: timestamp('cached_at', { withTimezone: true }).notNull().defaultNow(),
 })

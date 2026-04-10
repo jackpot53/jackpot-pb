@@ -1,5 +1,5 @@
 import { pgTable, uuid, bigint, boolean, varchar, date, timestamp, pgEnum } from 'drizzle-orm/pg-core'
-import { assets } from './assets'
+import { assets, currencyEnum } from './assets'
 
 export const transactionTypeEnum = pgEnum('transaction_type', ['buy', 'sell'])
 
@@ -12,7 +12,7 @@ export const transactions = pgTable('transactions', {
   // pricePerUnit: stored in KRW. For USD assets, convert using exchangeRateAtTime.
   pricePerUnit: bigint('price_per_unit', { mode: 'number' }).notNull(),
   fee: bigint('fee', { mode: 'number' }).notNull().default(0),
-  currency: varchar('currency', { length: 3 }).notNull(), // 'KRW' or 'USD'
+  currency: currencyEnum('currency').notNull(),
   // exchangeRateAtTime: KRW per 1 USD × 10000 (e.g. 1300.5678 KRW/USD stored as 13005678)
   exchangeRateAtTime: bigint('exchange_rate_at_time', { mode: 'number' }),
   transactionDate: date('transaction_date').notNull(),
