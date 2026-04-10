@@ -75,16 +75,17 @@ Source: Default 8-point scale; `p-6` / `gap-4` patterns confirmed from Phase 1 l
 | Role | Size | Weight | Line Height |
 |------|------|--------|-------------|
 | Body | 14px (text-sm) | 400 (regular) | 1.5 |
-| Label | 14px (text-sm) | 500 (medium) | 1.4 |
+| Label | 14px (text-sm) | 400 (regular) | 1.4 |
 | Heading | 20px (text-xl) | 600 (semibold) | 1.2 |
 | Display | 28px (text-2xl) | 600 (semibold) | 1.2 |
 
 Notes:
 - Body (14px/400) applies to table cells, form helper text, transaction list rows, valuation history entries.
-- Label (14px/500) applies to form field labels (matching Phase 1 `<FormLabel>` usage), table column headers, tab labels.
+- Label (14px/400) applies to form field labels (matching Phase 1 `<FormLabel>` usage), table column headers, tab labels. Distinguish from body text using `text-muted-foreground` color — not a separate font weight.
 - Heading (20px/600) applies to page-level section titles, asset name on detail page (matching Phase 1 `text-xl font-semibold` on CardTitle).
 - Display (28px/600) is reserved for the asset detail page's primary value figure (current value KRW amount) and the top-level page heading if used.
 - No additional font sizes. Do not introduce 12px or 18px.
+- Exactly 2 font weights in use: 400 (regular) and 600 (semibold). Do not introduce 500 (medium).
 
 Source: Phase 1 login page uses `text-xl font-semibold` for CardTitle. shadcn base-nova provides Geist Sans at these sizes.
 
@@ -103,7 +104,7 @@ All colors expressed as CSS custom properties from `app/globals.css`. No hardcod
 
 Accent (`primary`) reserved for:
 1. The active/selected sidebar nav item background
-2. The primary CTA button label (자산 추가, 거래 추가, 가치 업데이트, 저장) — uses shadcn `<Button variant="default">`
+2. The primary CTA button label (자산 추가, 거래 추가, 가치 업데이트, 자산 저장, 거래 저장, 가치 저장) — uses shadcn `<Button variant="default">`
 3. Focus ring (`ring`) on focused form inputs
 
 Secondary interactions (edit, cancel, back) use `<Button variant="outline">` or `<Button variant="ghost">` — never accent color.
@@ -170,13 +171,15 @@ Source: CONTEXT.md D-10, D-11, D-12, D-13 — quantity decimal input, KRW storag
 ### Table Row Actions
 
 Each row in the asset list shows action icons on hover (not always visible):
-- 수정 icon (`Pencil`, 16px) — opens edit form/modal
-- 삭제 icon (`Trash2`, 16px) — triggers delete confirmation Dialog
+- 수정 icon (`Pencil`, 16px) — opens edit form/modal — `aria-label="자산 수정"`
+- 삭제 icon (`Trash2`, 16px) — triggers delete confirmation Dialog — `aria-label="자산 삭제"`
 
 Each row in the transaction list shows:
-- 수정 icon (`Pencil`, 16px) — opens edit form/modal (only for non-voided)
-- 취소 icon (`Ban`, 16px) — triggers void confirmation Dialog (only for non-voided)
+- 수정 icon (`Pencil`, 16px) — opens edit form/modal (only for non-voided) — `aria-label="거래 수정"`
+- 취소 icon (`Ban`, 16px) — triggers void confirmation Dialog (only for non-voided) — `aria-label="거래 취소 처리"`
 - Voided rows display `is_voided` with strikethrough text and `opacity-50`
+
+All icon-only action buttons must include an explicit `aria-label` attribute matching the values above. Do not rely on title attributes or tooltips as the sole accessible label.
 
 ### Loading States
 
@@ -201,7 +204,7 @@ All copy in Korean. Match the tone established in Phase 1 (polite, direct, no em
 | Element | Copy |
 |---------|------|
 | Primary CTA — add asset | 자산 추가 |
-| Primary CTA — save asset form | 저장 |
+| Primary CTA — save asset form | 자산 저장 |
 | Primary CTA — add transaction | 거래 추가 |
 | Primary CTA — save transaction form | 거래 저장 |
 | Primary CTA — update manual valuation | 현재 가치 업데이트 |
