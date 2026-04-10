@@ -50,7 +50,11 @@ export function TransactionsTab({ asset, transactions }: TransactionsTabProps) {
             assetId={asset.id}
             assetType={asset.assetType}
             currency={asset.currency}
-            onSubmit={(data) => createTransaction(asset.id, data)}
+            onSubmit={async (data) => {
+              const result = await createTransaction(asset.id, data)
+              if (!result?.error) setShowAddForm(false)
+              return result
+            }}
             submitLabel="거래 저장"
             onCancel={() => setShowAddForm(false)}
           />
