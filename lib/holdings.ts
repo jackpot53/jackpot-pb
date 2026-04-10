@@ -44,6 +44,11 @@ export function computeHoldings(txns: TransactionInput[]): HoldingsResult {
       totalCostKrw += txCost
     } else if (tx.type === 'sell') {
       // avgCostPerUnit does NOT change on sell (Korean brokerage WAVG convention)
+      // Guard: cannot sell more than currently held — skip to prevent negative holdings
+      if (tx.quantity > totalQuantity) {
+        console.warn(`computeHoldings: sell quantity (${tx.quantity}) exceeds held quantity (${totalQuantity}); skipping transaction`)
+        continue
+      }
       const soldCostBasis = Math.round((tx.quantity / 1e8) * avgCostPerUnit)
       totalQuantity -= tx.quantity
       totalCostKrw -= soldCostBasis
