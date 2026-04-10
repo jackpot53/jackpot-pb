@@ -5,6 +5,7 @@ import { db } from '@/db'
 import { assets } from '@/db/schema/assets'
 import { transactions } from '@/db/schema/transactions'
 import { holdings } from '@/db/schema/holdings'
+import { manualValuations } from '@/db/schema/manual-valuations'
 import { eq } from 'drizzle-orm'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
@@ -63,13 +64,13 @@ export async function updateAsset(
 export async function deleteAsset(id: string): Promise<AssetActionError | void> {
   await requireUser()
   if (!id) return { error: '자산 ID가 없습니다.' }
-  // Pre-delete child rows in order to avoid FK violations (no ON DELETE CASCADE in schema)
-  // 1. Delete all transactions referencing this asset
-  await db.delete(transactions).where(eq(transactions.assetId, id))
-  // 2. Delete the holdings row for this asset
-  await db.delete(holdings).where(eq(holdings.assetId, id))
-  // 3. Now safe to delete the asset itself
-  await db.delete(assets).where(eq(assets.id, id))
+  // Pre-delete child rows inside a transaction to prevent partial deletes on failure
+  await db.transaction(async (tx) => {
+    await tx.delete(transactions).where(eq(transactions.assetId, id))
+    await tx.delete(manualValuations).where(eq(manualValuations.assetId, id))
+    await tx.delete(holdings).where(eq(holdings.assetId, id))
+    await tx.delete(assets).where(eq(assets.id, id))
+  })
   revalidatePath('/assets')
   redirect('/assets')
 }
