@@ -8,5 +8,5 @@ export const goals = pgTable('goals', {
   targetDate: date('target_date'), // nullable — open-ended goals have no deadline
   notes: varchar('notes', { length: 1000 }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 })
