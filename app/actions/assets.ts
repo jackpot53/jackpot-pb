@@ -6,7 +6,7 @@ import { assets } from '@/db/schema/assets'
 import { transactions } from '@/db/schema/transactions'
 import { holdings } from '@/db/schema/holdings'
 import { manualValuations } from '@/db/schema/manual-valuations'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
@@ -50,6 +50,17 @@ export async function updateAsset(
   await requireUser()
   const parsed = assetSchema.safeParse(data)
   if (!parsed.success) return { error: '입력 값을 확인해주세요.' }
+
+  // WR-02: prevent changing currency when existing transactions would have wrong encoding
+  const existingAsset = await db.select({ currency: assets.currency }).from(assets).where(eq(assets.id, id)).limit(1)
+  if (existingAsset[0] && existingAsset[0].currency !== parsed.data.currency) {
+    const txCountRows = await db.select({ count: sql<number>`count(*)` }).from(transactions).where(eq(transactions.assetId, id))
+    const txCount = Number(txCountRows[0]?.count ?? 0)
+    if (txCount > 0) {
+      return { error: '거래 내역이 있는 자산의 통화는 변경할 수 없습니다.' }
+    }
+  }
+
   const { ticker, notes, ...rest } = parsed.data
   await db.update(assets).set({
     ...rest,
