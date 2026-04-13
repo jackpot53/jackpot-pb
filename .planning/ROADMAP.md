@@ -66,14 +66,14 @@ Plans:
   3. User can see total portfolio value, overall return %, and asset-type allocation pie chart on the dashboard
   4. User can see each holding's current value, average cost, and return % in a sortable list
   5. KRW and USD values are both shown simultaneously on the dashboard with live exchange rate conversion
-**Plans**: TBD
+**Plans**: 4 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 03-01: Price API layer — Finnhub adapter (stocks/ETF), CoinGecko adapter (crypto), Bank of Korea FX rate, Supabase PostgreSQL price cache table with TTL and stale fallback
-- [ ] 03-02: Portfolio computation — Wire prices into holdings math to produce current value, gain/loss KRW, and return % per asset; handle LIVE vs MANUAL asset types
-- [ ] 03-03: Dashboard UI — Total asset value, overall return %, asset-type allocation pie chart, dual KRW/USD display
-- [ ] 03-04: Per-asset performance list — Sortable table showing each holding with current value, avg cost, gain/loss KRW, return %
+- [ ] 03-01-PLAN.md — Price API layer: Finnhub adapter (stocks/ETF), BOK ECOS FX rate adapter, Drizzle price-cache query helpers, refreshAllPrices Server Action with 5-min TTL and stale fallback
+- [ ] 03-02-PLAN.md — Portfolio computation (TDD): computeAssetPerformance + computePortfolio + aggregateByType + number formatters; getAssetsWithHoldings Drizzle query
+- [ ] 03-03-PLAN.md — Dashboard UI: 4 stat cards (KRW/USD/return/gain-loss), recharts donut pie chart, asset-type breakdown list; wired into app/(app)/page.tsx Server Component
+- [ ] 03-04-PLAN.md — Per-asset performance table: sortable 7-column table, stale price badge, empty state CTA; wired into dashboard
 
 ---
 
