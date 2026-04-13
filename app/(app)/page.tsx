@@ -38,7 +38,8 @@ export default async function DashboardPage() {
     .map((a) => a.ticker!)
   const priceMap = await getPriceCacheByTickers([...liveTickers, 'USD_KRW'])
   const fxCache = priceMap.get('USD_KRW')
-  const fxRateInt = fxCache?.priceKrw ?? 0
+  // null signals FX rate unavailable (BOK key not configured or first fetch failed)
+  const fxRateInt: number | null = fxCache?.priceKrw ?? null
 
   // Step 4: Compute per-asset performance
   const performances: AssetPerformance[] = []
@@ -66,7 +67,8 @@ export default async function DashboardPage() {
   }
 
   // Step 5: Portfolio summary + type allocation
-  const summary = computePortfolio(performances, fxRateInt)
+  // Pass 0 when FX rate unavailable — computePortfolio guards against divide-by-zero
+  const summary = computePortfolio(performances, fxRateInt ?? 0)
   const byType: AllocationSlice[] = aggregateByType(performances)
 
   // Step 6: Determine color sign for stat cards
@@ -85,7 +87,7 @@ export default async function DashboardPage() {
         />
         <DashboardStatCard
           label="총 자산 (USD)"
-          primaryValue={formatUsd(summary.totalValueUsd)}
+          primaryValue={fxRateInt !== null ? formatUsd(summary.totalValueUsd) : 'N/A'}
         />
         <DashboardStatCard
           label="전체 수익률"
