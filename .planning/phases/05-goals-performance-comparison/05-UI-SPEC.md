@@ -103,7 +103,7 @@ Components to reuse (no new installs required):
 | `Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogFooter` | `components/ui/dialog.tsx` | Goal create/edit dialog, goal delete confirm dialog |
 | `Form`, `FormField`, `FormItem`, `FormLabel`, `FormMessage` | `components/ui/form.tsx` | Goal form inside dialog (name, targetAmount, targetDate, notes) |
 | `Input` | `components/ui/input.tsx` | Goal form fields |
-| `Button` | `components/ui/button.tsx` | "목표 추가", "변경 저장", "취소", "삭제" |
+| `Button` | `components/ui/button.tsx` | "목표 추가", "변경 저장", "입력 취소", "수정 취소", "목표 삭제" |
 | `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` | `components/ui/tabs.tsx` | Asset-type filter on /performance page |
 | `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` | `components/ui/table.tsx` | Extended PerformanceTable |
 | `Progress` | `components/ui/progress` (needs install if not present) | Goal achievement progress bar in dashboard section |
@@ -125,7 +125,7 @@ Note: `progress` shadcn component — verify presence with `ls /Users/john/dev/j
 | Goal form submit (valid) | Server Action `createGoal` → `revalidatePath('/goals')` → dialog closes |
 | Goal form submit (invalid) | Inline `FormMessage` errors shown; dialog stays open |
 | Goal row edit icon click | Opens same Dialog pre-populated with goal data (`updateGoal` Server Action) |
-| Goal delete: trigger | "삭제" button opens confirm Dialog (separate component) |
+| Goal delete: trigger | "목표 삭제" button opens confirm Dialog (separate component) |
 | Goal delete: confirm | `deleteGoal` Server Action → `revalidatePath('/goals')` → dialog closes |
 | Goal delete: cancel | Dialog closes, no action |
 
@@ -177,13 +177,14 @@ All copy in Korean per established project convention.
 |---------|------|
 | Primary CTA — create goal | 목표 추가 |
 | Primary CTA — save goal (edit) | 변경 저장 |
-| Primary CTA — cancel | 취소 |
-| Primary CTA — delete goal | 삭제 |
+| Cancel CTA — create dialog | 입력 취소 |
+| Cancel CTA — edit dialog | 수정 취소 |
+| Primary CTA — delete goal trigger | 목표 삭제 |
 | Goal dialog title — create | 새 목표 추가 |
 | Goal dialog title — edit | 목표 수정 |
 | Goal delete confirm title | 목표 삭제 |
 | Goal delete confirm body | 이 목표를 삭제하면 되돌릴 수 없습니다. 삭제하시겠습니까? |
-| Goal delete confirm action | 삭제 |
+| Goal delete confirm action | 목표 삭제 |
 | Dashboard goals section heading | 목표 |
 | Goals page heading | 목표 |
 | Goals page chart section heading | 목표 진행 현황 |
@@ -201,10 +202,15 @@ All copy in Korean per established project convention.
 | Form validation — amount required | 목표 금액을 입력하세요 |
 | Form validation — amount invalid | 올바른 금액을 입력하세요 (1원 이상의 숫자) |
 | Form validation — date invalid | 올바른 날짜 형식으로 입력하세요 (YYYY-MM-DD) |
+| Server error — goal create failed | 목표를 저장하지 못했습니다. 다시 시도하세요. |
+| Server error — goal update failed | 목표를 수정하지 못했습니다. 다시 시도하세요. |
+| Server error — goal delete failed | 목표를 삭제하지 못했습니다. 다시 시도하세요. |
 | Goal achievement label | {N}% 달성 |
 | Goal achievement ≥ 100% label | {N}% 달성 (목표 초과) |
 | GoalRow edit icon aria-label | 목표 수정 |
 | GoalRow delete icon aria-label | 목표 삭제 |
+
+Server error copy displayed as a toast notification (non-blocking) positioned bottom-right, auto-dismisses after 5 seconds. Uses `--destructive` token background for error toasts.
 
 Source: Established Korean-only UI convention (Phase 1 decision: login page Korean UI spec), existing copy patterns in `performance-table.tsx`, `annual-return-chart.tsx`
 
@@ -214,6 +220,8 @@ Source: Established Korean-only UI convention (Phase 1 decision: login page Kore
 
 ### /goals Page
 
+Focal point: `GoalProgressChart` is the primary visual anchor on the `/goals` screen. It appears immediately below the page header, above the goal list, and spans full width (col-span-12 / w-full). The chart provides the at-a-glance progress view; the goal list below it serves as detail/management.
+
 ```
 <app-shell>
   <page-header>
@@ -221,7 +229,7 @@ Source: Established Korean-only UI convention (Phase 1 decision: login page Kore
     <Button "목표 추가" variant="default" />
   </page-header>
 
-  <GoalProgressChart />   ← Card, AreaChart + ReferenceLine per goal
+  <GoalProgressChart />   ← PRIMARY VISUAL ANCHOR: Card, full width, AreaChart + ReferenceLine per goal
                            (or no-snapshot message)
 
   <GoalList>              ← Card containing goal rows
