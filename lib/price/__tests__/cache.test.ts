@@ -25,10 +25,16 @@ describe('refreshPriceIfStale', () => {
   it('calls API and upserts when cache is stale (> 5 minutes)', async () => {
     const { getPriceCacheByTicker, upsertPriceCache } = await import('@/db/queries/price-cache')
     const { fetchFinnhubQuote } = await import('@/lib/price/finnhub')
-    vi.mocked(getPriceCacheByTicker).mockResolvedValueOnce({
-      ticker: 'AAPL', priceKrw: 240000, priceOriginal: 18000,
-      currency: 'USD', cachedAt: new Date(Date.now() - 10 * 60_000), // 10 min ago
-    })
+    // First call: stale AAPL cache; second call: USD_KRW FX cache for conversion
+    vi.mocked(getPriceCacheByTicker)
+      .mockResolvedValueOnce({
+        ticker: 'AAPL', priceKrw: 240000, priceOriginal: 18000,
+        currency: 'USD', cachedAt: new Date(Date.now() - 10 * 60_000), // 10 min ago
+      })
+      .mockResolvedValueOnce({
+        ticker: 'USD_KRW', priceKrw: 13565000, priceOriginal: 13565000,
+        currency: 'KRW', cachedAt: new Date(Date.now() - 30 * 60_000),
+      })
     vi.mocked(fetchFinnhubQuote).mockResolvedValueOnce(18543)
     const { refreshPriceIfStale } = await import('../cache')
     await refreshPriceIfStale('AAPL', 'stock_us')

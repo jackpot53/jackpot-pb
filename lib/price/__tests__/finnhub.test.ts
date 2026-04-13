@@ -7,6 +7,9 @@ const fetchModule = vi.hoisted(() => ({
 }))
 vi.stubGlobal('fetch', fetchModule.fetch)
 
+// Set API key so tests reach the fetch logic (key is server-side only in production)
+process.env.FINNHUB_API_KEY = 'test-key'
+
 describe('fetchFinnhubQuote', () => {
   beforeEach(() => vi.clearAllMocks())
 

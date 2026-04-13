@@ -3,6 +3,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 const fetchModule = vi.hoisted(() => ({ fetch: vi.fn() }))
 vi.stubGlobal('fetch', fetchModule.fetch)
 
+// Set API key so tests reach the fetch logic (key is server-side only in production)
+process.env.BOK_API_KEY = 'test-key'
+
 describe('fetchBokFxRate', () => {
   beforeEach(() => vi.clearAllMocks())
 
