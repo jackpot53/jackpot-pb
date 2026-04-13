@@ -535,17 +535,17 @@ Step 2.6: SKIPPED — Phase 4 has no new external dependencies. All required too
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Data retention policy (daily prune after 12 months)**
    - What we know: ROADMAP mentions "daily prune after 12 months"; CONTEXT.md marks it as Claude's discretion, low MVP priority
    - What's unclear: Whether to implement a pruning job in Phase 4 or skip entirely
-   - Recommendation: Skip for MVP. With one row per day, 365 rows per year is negligible for Supabase. Add a comment in the cron route for future implementation.
+   - RESOLVED: Skip for MVP. With one row per day, 365 rows per year is negligible for Supabase. Add a comment in the cron route for future implementation.
 
 2. **First-year annual chart behavior (only one year of data)**
    - What we know: Annual chart needs two consecutive year-end values to show YoY return. If the user has only 2026 data, there's no 2025 to compare against.
    - What's unclear: Should we show overall return (vs. cost basis) for the first year, or show a single dot with no Y-axis comparison, or show `InsufficientDataMessage`?
-   - Recommendation: Show overall return for the first year (using `returnBps`). This is explicitly more useful than hiding data. Add a note in the tooltip ("연간 수익률 데이터 수집 중").
+   - RESOLVED: Show overall return for the first year using `(snap.totalValueKrw - snap.totalCostKrw) / snap.totalCostKrw * 100`. This is explicitly more useful than hiding data. Add a note in the tooltip ("연간 수익률 데이터 수집 중").
 
 ---
 
