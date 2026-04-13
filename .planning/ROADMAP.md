@@ -12,7 +12,7 @@ Build a single-user personal asset management web app in five phases. Phase 1 es
 - [ ] **Phase 1: Foundation** - Scaffold Next.js app with Supabase Auth and correct data schema on PostgreSQL
 - [ ] **Phase 2: Asset & Transaction Management** - Full CRUD for assets, transactions, and manual valuations
 - [ ] **Phase 3: Price Integration & Dashboard** - Live prices wired into holdings math; working portfolio dashboard
-- [ ] **Phase 4: History & Charts** - Snapshot cron job and year-over-year / monthly return charts
+- [x] **Phase 4: History & Charts** - Snapshot cron job and year-over-year / monthly return charts
 - [ ] **Phase 5: Goals & Performance** - Investment goal tracking and per-asset performance comparison
 
 ## Phase Details
@@ -90,9 +90,9 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 04-01-PLAN.md — Cron infrastructure: test scaffold, writePortfolioSnapshot writer, /api/cron/snapshot Route Handler with CRON_SECRET auth, vercel.json schedule, middleware exclusion
-- [ ] 04-02-PLAN.md — Aggregation data layer (TDD): getAllSnapshots query, toAnnualData/toMonthlyData pure functions, formatKrwCompact/formatMonthLabel formatters
-- [ ] 04-03-PLAN.md — Charts UI: AnnualReturnChart, MonthlyPortfolioChart AreaChart components, /charts Server Component page with tab navigation and InsufficientDataMessage
+- [x] 04-01-PLAN.md — Cron infrastructure: test scaffold, writePortfolioSnapshot writer, /api/cron/snapshot Route Handler with CRON_SECRET auth, vercel.json schedule, middleware exclusion
+- [x] 04-02-PLAN.md — Aggregation data layer (TDD): getAllSnapshots query, toAnnualData/toMonthlyData pure functions, formatKrwCompact/formatMonthLabel formatters
+- [x] 04-03-PLAN.md — Charts UI: AnnualReturnChart, MonthlyPortfolioChart AreaChart components, /charts Server Component page with tab navigation and InsufficientDataMessage
 
 ---
 
@@ -125,5 +125,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Foundation | 1/3 | In Progress|  |
 | 2. Asset & Transaction Management | 0/4 | Not started | - |
 | 3. Price Integration & Dashboard | 0/4 | Not started | - |
-| 4. History & Charts | 0/3 | Not started | - |
+| 4. History & Charts | 3/3 | Complete | 2026-04-13 |
 | 5. Goals & Performance | 0/3 | Not started | - |
