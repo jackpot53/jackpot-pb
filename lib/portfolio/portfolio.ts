@@ -21,6 +21,8 @@ export interface AssetPerformance extends AssetHoldingInput {
   returnPct: number         // (currentValue - totalCostKrw) / totalCostKrw × 100
   isStale: boolean
   cachedAt: Date | null
+  /** true when priceType==='manual' but no valuation row exists — UI should flag this asset */
+  missingValuation: boolean
 }
 
 export interface PortfolioSummary {
@@ -52,9 +54,11 @@ export function computeAssetPerformance(params: {
   const { holding, currentPriceKrw, isStale, cachedAt, latestManualValuationKrw } = params
 
   // D-16: MANUAL assets use the latest manual valuation, not priceCache
+  // missingValuation=true when manual but no valuation row exists — caller should surface warning
+  const missingValuation = holding.priceType === 'manual' && latestManualValuationKrw === null
   const currentValueKrw =
-    holding.priceType === 'manual' && latestManualValuationKrw !== null
-      ? latestManualValuationKrw
+    holding.priceType === 'manual'
+      ? (latestManualValuationKrw ?? 0)
       : Math.round((holding.totalQuantity / 1e8) * currentPriceKrw)
 
   // T-03-02-T: Avoid divide-by-zero when no cost basis (e.g. gift or initial seed)
@@ -73,6 +77,7 @@ export function computeAssetPerformance(params: {
     returnPct,
     isStale,
     cachedAt,
+    missingValuation,
   }
 }
 
