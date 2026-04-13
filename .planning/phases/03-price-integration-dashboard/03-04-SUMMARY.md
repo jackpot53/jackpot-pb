@@ -37,7 +37,7 @@ decisions:
 metrics:
   duration_minutes: 8
   completed_date: "2026-04-13"
-  tasks_completed: 2
+  tasks_completed: 3
   tasks_total: 3
   files_created: 1
   files_modified: 1
@@ -72,9 +72,9 @@ Sortable per-asset PerformanceTable client component wired into dashboard, repla
 
 `performances: AssetPerformance[]` is already computed in the async Server Component body from Plan 03-03. No additional data fetching needed.
 
-### Task 3: Human Verification Checkpoint (PENDING)
+### Task 3: Human Verification Checkpoint (APPROVED)
 
-Awaiting human verification of sort behavior and visual correctness at http://localhost:3000/.
+User verified at http://localhost:3000/: table sorts correctly, stale badge renders, no console errors. Approval received: "approved".
 
 ## Deviations from Plan
 
@@ -89,7 +89,7 @@ Awaiting human verification of sort behavior and visual correctness at http://lo
 
 ## Known Stubs
 
-None — all functionality is implemented. Human checkpoint (Task 3) is pending user approval.
+None — all functionality is implemented and human-verified.
 
 ## Threat Flags
 
