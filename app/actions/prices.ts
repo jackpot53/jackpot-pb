@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { db } from '@/db'
 import { assets } from '@/db/schema/assets'
-import { eq } from 'drizzle-orm'
+import { and, eq, isNotNull } from 'drizzle-orm'
 import { refreshPriceIfStale, refreshFxIfStale } from '@/lib/price/cache'
 
 async function requireUser() {
@@ -32,7 +32,7 @@ export async function refreshAllPrices(): Promise<void> {
   const liveAssets = await db
     .select({ id: assets.id, ticker: assets.ticker, assetType: assets.assetType })
     .from(assets)
-    .where(eq(assets.priceType, 'live'))
+    .where(and(eq(assets.priceType, 'live'), isNotNull(assets.ticker)))
 
   // Step 3: Refresh each live asset price sequentially (free-tier API rate limit caution)
   for (const asset of liveAssets) {
