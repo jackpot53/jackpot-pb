@@ -50,9 +50,9 @@ decisions:
   - "Row 3 performance table is a placeholder stub pending Plan 04"
 
 metrics:
-  duration_minutes: 15
+  duration_minutes: 20
   completed_date: "2026-04-13"
-  tasks_completed: 2
+  tasks_completed: 3
   tasks_total: 3
   files_created: 6
   files_modified: 2
@@ -101,7 +101,11 @@ Dashboard page with 4 stat cards, recharts donut allocation chart, breakdown lis
 
 ### Task 3: Human Verification Checkpoint
 
-Paused for visual verification of the dashboard at http://localhost:3000/.
+User verified the dashboard visually at http://localhost:3000/ and approved: "approved". All success criteria confirmed:
+- 4 stat cards visible with correct Korean labels
+- Recharts donut pie chart renders with asset-type color coding
+- KRW and USD values displayed simultaneously on stat cards (DASH-04)
+- Dashboard renders without JavaScript errors in browser console
 
 ## Deviations from Plan
 
@@ -142,7 +146,7 @@ All trust boundaries from the plan's threat model are correctly mitigated:
 
 No new security surface introduced beyond the plan's threat model.
 
-## Self-Check: PASSED
+## Self-Check: PASSED (All 3 tasks complete — human approval recorded)
 
 Files verified:
 - components/app/dashboard-stat-card.tsx: FOUND
