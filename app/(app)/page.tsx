@@ -15,6 +15,7 @@ import { Separator } from '@/components/ui/separator'
 import { DashboardStatCard } from '@/components/app/dashboard-stat-card'
 import { AllocationPieChart, type AllocationSlice } from '@/components/app/allocation-pie-chart'
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
+import { PerformanceTable } from '@/components/app/performance-table'
 
 // Stale threshold: prices older than 5 minutes show a stale badge in the performance table
 const PRICE_TTL_MS = 5 * 60 * 1000
@@ -135,14 +136,13 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* Row 3: Performance Table — wired in Plan 04 */}
+      {/* Row 3: Performance Table */}
       <Card>
         <CardHeader>
           <CardTitle className="text-xl font-semibold">종목별 성과</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* PerformanceTable component added in Plan 04 */}
-          <p className="text-sm text-muted-foreground">로딩 중...</p>
+          <PerformanceTable rows={performances} />
         </CardContent>
       </Card>
     </div>
