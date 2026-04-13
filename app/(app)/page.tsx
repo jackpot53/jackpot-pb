@@ -1,6 +1,6 @@
 import { refreshAllPrices } from '@/app/actions/prices'
 import { getAssetsWithHoldings } from '@/db/queries/assets-with-holdings'
-import { getPriceCacheByTicker } from '@/db/queries/price-cache'
+import { getPriceCacheByTickers } from '@/db/queries/price-cache'
 import {
   computeAssetPerformance,
   computePortfolio,
@@ -32,8 +32,12 @@ export default async function DashboardPage() {
   // Step 2: Load all asset positions
   const assetsWithHoldings = await getAssetsWithHoldings()
 
-  // Step 3: Get FX rate from cache (USD/KRW)
-  const fxCache = await getPriceCacheByTicker('USD_KRW')
+  // Step 3: Get FX rate + all live asset prices in one bulk query
+  const liveTickers = assetsWithHoldings
+    .filter((a) => a.priceType === 'live' && a.ticker)
+    .map((a) => a.ticker!)
+  const priceMap = await getPriceCacheByTickers([...liveTickers, 'USD_KRW'])
+  const fxCache = priceMap.get('USD_KRW')
   const fxRateInt = fxCache?.priceKrw ?? 0
 
   // Step 4: Compute per-asset performance
@@ -44,7 +48,7 @@ export default async function DashboardPage() {
     let stale = false
 
     if (asset.priceType === 'live' && asset.ticker) {
-      const priceRow = await getPriceCacheByTicker(asset.ticker)
+      const priceRow = priceMap.get(asset.ticker)
       currentPriceKrw = priceRow?.priceKrw ?? 0
       cachedAt = priceRow?.cachedAt ?? null
       stale = isStalePrice(cachedAt)
