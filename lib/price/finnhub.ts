@@ -11,7 +11,7 @@ export async function fetchFinnhubQuote(ticker: string): Promise<number | null> 
 
   try {
     const res = await fetch(
-      `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(ticker)}&token=${apiKey}`,
+      `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(ticker)}&token=${encodeURIComponent(apiKey)}`,
       { cache: 'no-store' }
     )
     if (!res.ok) return null
