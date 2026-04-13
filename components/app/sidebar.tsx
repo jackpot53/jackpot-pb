@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { label: '거래내역', href: '/transactions' },
   { label: '차트', href: '/charts' },
   { label: '목표', href: '/goals' },
+  { label: '성과', href: '/performance' },
 ]
 
 export function Sidebar() {
