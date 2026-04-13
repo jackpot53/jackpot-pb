@@ -495,22 +495,25 @@ export function formatRelativeTime(date: Date): string {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **BOK ECOS Stat Code Confirmation**
    - What we know: ECOS URL format is `StatisticSearch/{key}/json/kr/1/1/{stat_code}/D/{date}/{date}/{item_code}`
    - What's unclear: Exact stat code and item code for USD/KRW daily reference rate (기준환율)
    - Recommendation: Wave 0 task — register for ECOS API key, query `StatisticList` to find correct codes. Fallback: use `fawazahmed0/exchange-api` (CDN, no key, daily updated) if BOK key is delayed.
+   - **RESOLVED:** Plan 03-01 `bok-fx.ts` commits to stat code `036Y001` and item code `0000001` per ECOS documentation. Stale fallback (D-02) covers the failure case if codes are incorrect. Verification deferred to Wave 0 smoke test during execution.
 
 2. **Finnhub KRX Coverage Verification**
    - What we know: Finnhub free tier reliably covers US stocks. International exchanges likely require paid plan.
    - What's unclear: Whether `stock_kr` / `etf_kr` tickers with `.KS` suffix return real data or `c: 0`.
    - Recommendation: Wave 0 task — make a single test call to `GET /api/v1/quote?symbol=005930.KS&token={KEY}` with a free API key. If `c: 0`, document that Korean stocks are stale-only until a paid plan is added or alternative API is sourced.
+   - **RESOLVED:** Per D-04/D-05, stale fallback handles both covered and uncovered tickers identically — if Finnhub returns `c: 0` or null, the last cached price is shown with a stale badge. KRX coverage verification is deferred to a post-implementation smoke test during Wave 0 execution.
 
 3. **CoinGecko in Phase 3 Scope**
    - What we know: PRICE-V2-01 is a v2 requirement; the deferred section in CONTEXT.md explicitly excludes it from Phase 3.
    - What's unclear: The phase description mentions CoinGecko in success criteria (criterion 1). This creates an inconsistency.
    - Recommendation: CONTEXT.md deferred section takes precedence. Build a `coingecko.ts` stub that returns `null` so the adapter interface is consistent. Crypto assets will show stale indicator (no data until Phase 4+).
+   - **RESOLVED:** CONTEXT.md deferred section takes precedence over ROADMAP success criteria. CoinGecko is v2 scope (PRICE-V2-01). Phase 3 builds no CoinGecko integration — crypto assets show the stale price indicator throughout Phase 3.
 
 ---
 
