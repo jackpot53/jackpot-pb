@@ -20,7 +20,11 @@ export async function fetchBokFxRate(): Promise<number | null> {
   try {
     // BOK ECOS API format: /StatisticSearch/{apiKey}/json/kr/{startCount}/{endCount}/{statCode}/{cycle}/{startDate}/{endDate}/{itemCode}
     // Using 'D' (daily) cycle. Start/end date = today's YYYYMMDD.
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+    // Use Korea Standard Time (UTC+9) to avoid wrong date on UTC servers during KST trading hours
+    const today = new Date()
+      .toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' })
+      .slice(0, 10)
+      .replace(/-/g, '')
     const url = `https://ecos.bok.or.kr/api/StatisticSearch/${encodeURIComponent(apiKey)}/json/kr/1/1/${BOK_STAT_CODE}/D/${today}/${today}/${BOK_ITEM_CODE}`
 
     const res = await fetch(url, { cache: 'no-store' })
