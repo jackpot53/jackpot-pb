@@ -2,7 +2,7 @@
 phase: 04-history-charts
 plan: "03"
 subsystem: charts-ui
-tags: [recharts, area-chart, server-component, tabs, checkpoint]
+tags: [recharts, area-chart, server-component, tabs]
 dependency_graph:
   requires:
     - db/queries/portfolio-snapshots.ts (getAllSnapshots — Plan 02)
@@ -34,18 +34,28 @@ key_files:
 decisions:
   - "Used TooltipContentProps render function pattern (content={(props) => <Tooltip {...props} />}) instead of JSX element to avoid TypeScript payload missing-properties error"
   - "InsufficientDataMessage exported from annual-return-chart.tsx and imported into monthly-portfolio-chart.tsx (single definition, two consumers)"
+requirements-completed: [CHART-01, CHART-02]
 metrics:
   duration_minutes: 8
   completed_date: "2026-04-13"
-  tasks_completed: 2
-  tasks_at_checkpoint: 1
+  tasks_completed: 3
   files_created: 3
   files_modified: 0
 ---
 
 # Phase 04 Plan 03: /charts Page Summary
 
-**One-liner:** recharts AreaChart UI layer with Server Component data fetch, tab navigation (연간/월간), custom Korean tooltips, and InsufficientDataMessage fallback for <2 snapshots.
+**recharts AreaChart UI layer with Server Component data fetch, tab navigation (연간/월간), custom Korean tooltips, and InsufficientDataMessage fallback for <2 snapshots.**
+
+---
+
+## Performance
+
+- **Duration:** 8 min
+- **Completed:** 2026-04-13
+- **Tasks:** 3 (2 auto + 1 human-verify)
+- **Files created:** 3
+- **Files modified:** 0
 
 ---
 
@@ -77,6 +87,18 @@ metrics:
 - Error state: catch block renders Korean error card per UI-SPEC copywriting contract
 - Zero live price API calls — reads pre-computed snapshots only
 
+### Task 3 — Visual Verification (approved)
+
+User visually verified the /charts page and confirmed charts render correctly. All plan success criteria met.
+
+---
+
+## Task Commits
+
+1. **Task 1: Build AnnualReturnChart and MonthlyPortfolioChart** - `cfb7646` (feat)
+2. **Task 2: Build /charts Server Component page** - `671797e` (feat)
+3. **Task 3: Visual verification** - approved by user (no code commit)
+
 ---
 
 ## Verification
@@ -91,14 +113,7 @@ metrics:
 | InsufficientDataMessage in both chart files | PASS |
 | Korean copy: 연간/월간 tabs | PASS |
 | Error state copy: 차트 데이터를 불러오지 못했습니다 | PASS |
-
----
-
-## Checkpoint Status
-
-**Task 3 (checkpoint:human-verify) reached — awaiting user verification.**
-
-The dev server must be started and the /charts page verified visually per the plan's `how-to-verify` steps before this plan can be marked complete.
+| Human visual verification | APPROVED |
 
 ---
 
@@ -115,6 +130,11 @@ The dev server must be started and the /charts page verified visually per the pl
 
 ---
 
+**Total deviations:** 1 auto-fixed (Rule 1 - bug)
+**Impact on plan:** Fix required for TypeScript compilation to pass. No scope creep.
+
+---
+
 ## Known Stubs
 
 None — both chart components render actual data from `AnnualDataPoint[]` / `MonthlyDataPoint[]`. The `InsufficientDataMessage` fallback is not a stub — it is the correct production state when insufficient snapshots exist.
@@ -127,6 +147,24 @@ No new network endpoints introduced. The `/charts` route is read-only and falls 
 
 ---
 
+## User Setup Required
+
+**CRON_SECRET must be set in Vercel project** (inherited from Plan 01 requirement, applies to the full phase):
+- Generate: `openssl rand -hex 32`
+- Set in Vercel Dashboard → Project → Settings → Environment Variables
+- Also add to `.env.local` for local testing
+- After setting, redeploy so the cron schedule in `vercel.json` is registered
+
+---
+
+## Next Phase Readiness
+
+- `/charts` route fully functional: two tabs, area charts, insufficient-data fallbacks, no price API calls
+- Requires live snapshot data (from Plan 01 cron) to show actual charts; InsufficientDataMessage displays until first two snapshots exist
+- Phase 04 all plans complete — year-end review feature (CHART-01, CHART-02) delivered
+
+---
+
 ## Self-Check: PASSED
 
 | Check | Result |
@@ -136,3 +174,8 @@ No new network endpoints introduced. The `/charts` route is read-only and falls 
 | app/(app)/charts/page.tsx | FOUND |
 | commit cfb7646 (Task 1) | FOUND |
 | commit 671797e (Task 2) | FOUND |
+| Task 3 human-verify | APPROVED |
+
+---
+*Phase: 04-history-charts*
+*Completed: 2026-04-13*
