@@ -70,9 +70,9 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 03-01-PLAN.md — Price API layer: Finnhub adapter (stocks/ETF), BOK ECOS FX rate adapter, Drizzle price-cache query helpers, refreshAllPrices Server Action with 5-min TTL and stale fallback
-- [ ] 03-02-PLAN.md — Portfolio computation (TDD): computeAssetPerformance + computePortfolio + aggregateByType + number formatters; getAssetsWithHoldings Drizzle query
-- [ ] 03-03-PLAN.md — Dashboard UI: 4 stat cards (KRW/USD/return/gain-loss), recharts donut pie chart, asset-type breakdown list; wired into app/(app)/page.tsx Server Component
+- [x] 03-01-PLAN.md — Price API layer: Finnhub adapter (stocks/ETF), BOK ECOS FX rate adapter, Drizzle price-cache query helpers, refreshAllPrices Server Action with 5-min TTL and stale fallback
+- [x] 03-02-PLAN.md — Portfolio computation (TDD): computeAssetPerformance + computePortfolio + aggregateByType + number formatters; getAssetsWithHoldings Drizzle query
+- [x] 03-03-PLAN.md — Dashboard UI: 4 stat cards (KRW/USD/return/gain-loss), recharts donut pie chart, asset-type breakdown list; wired into app/(app)/page.tsx Server Component
 - [ ] 03-04-PLAN.md — Per-asset performance table: sortable 7-column table, stale price badge, empty state CTA; wired into dashboard
 
 ---
@@ -86,13 +86,13 @@ Plans:
   2. User can view an annual return chart showing year-over-year total asset growth
   3. User can view a monthly chart showing total portfolio value across a rolling 12-month window
   4. Charts load from pre-computed snapshots — no live price API calls are made when viewing historical data
-**Plans**: TBD
+**Plans**: 3 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 04-01: Snapshot infrastructure — PortfolioSnapshot write logic targeting Supabase PostgreSQL; nightly cron via node-cron calling a Next.js API route (or Supabase Edge Function with pg_cron if self-contained scheduling is preferred); monthly retention policy, daily prune after 12 months
-- [ ] 04-02: History API — Query endpoint with date range and granularity parameters; backfill path from manual valuations for RE/savings assets
-- [ ] 04-03: Charts UI — Annual return chart (year-over-year) and monthly portfolio value chart using Recharts; "data starts from [date]" message for new installs
+- [ ] 04-01-PLAN.md — Cron infrastructure: test scaffold, writePortfolioSnapshot writer, /api/cron/snapshot Route Handler with CRON_SECRET auth, vercel.json schedule, middleware exclusion
+- [ ] 04-02-PLAN.md — Aggregation data layer (TDD): getAllSnapshots query, toAnnualData/toMonthlyData pure functions, formatKrwCompact/formatMonthLabel formatters
+- [ ] 04-03-PLAN.md — Charts UI: AnnualReturnChart, MonthlyPortfolioChart AreaChart components, /charts Server Component page with tab navigation and InsufficientDataMessage
 
 ---
 
