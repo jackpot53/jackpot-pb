@@ -105,13 +105,13 @@ Plans:
   2. User can view a chart showing their progress toward each goal over time
   3. User can view all holdings on a single screen ranked by return % to see which assets performed best and worst
   4. User can filter the performance view by asset type (stocks/crypto/savings/real estate) to compare within categories
-**Plans**: TBD
+**Plans**: 3 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 05-01: Goal CRUD — API routes and UI for creating/editing/deleting goals; achievement % computed at read time from current portfolio total
-- [ ] 05-02: Goal progress chart — Chart showing portfolio value vs goal target over time, using snapshot data
-- [ ] 05-03: Performance comparison view — Sortable, filterable table of all assets ranked by return %; asset-type filter; uses TanStack Table
+- [ ] 05-01-PLAN.md — Goal CRUD: Server Actions + DB queries + dialog components (GoalDialog, DeleteGoalDialog) + /goals page shell + dashboard goals section with Progress bars
+- [ ] 05-02-PLAN.md — Goal progress chart: GoalProgressChart AreaChart + ReferenceLine per goal + /goals page integration with snapshot data
+- [ ] 05-03-PLAN.md — Performance comparison view: /performance page + PerformanceFilterClient with shadcn Tabs (전체/주식/코인/예적금/부동산) + sidebar 성과 nav item
 
 ---
 
