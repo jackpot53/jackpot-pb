@@ -61,8 +61,8 @@ Established pattern from existing components (`dashboard-stat-card.tsx`, `perfor
 
 Additional established pattern:
 - Return % values: 14px, color-coded (text-emerald-600 positive / text-red-600 negative)
-- Chart axis ticks: 12px (fontSize: 12) — established in recharts components
 - Tooltip body: 14px (text-sm) with card background
+- Chart axis ticks (12px recharts internal) are not a declared typography token — inherited from existing recharts component configuration; new UI elements use the 4-size scale above
 
 Source: `dashboard-stat-card.tsx`, `performance-table.tsx`, `annual-return-chart.tsx`
 
@@ -81,7 +81,7 @@ Tokens from `app/globals.css` (oklch, light mode canonical values shown as role 
 
 Accent reserved for:
 - Active sidebar nav item background (`bg-primary text-primary-foreground`)
-- Primary action buttons ("목표 추가", "저장" in goal dialog)
+- Primary action buttons ("목표 추가", "변경 저장" in goal dialog)
 - Goal progress bar fill (achieved portion)
 
 Semantic color additions (not destructive, not accent):
@@ -103,7 +103,7 @@ Components to reuse (no new installs required):
 | `Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogFooter` | `components/ui/dialog.tsx` | Goal create/edit dialog, goal delete confirm dialog |
 | `Form`, `FormField`, `FormItem`, `FormLabel`, `FormMessage` | `components/ui/form.tsx` | Goal form inside dialog (name, targetAmount, targetDate, notes) |
 | `Input` | `components/ui/input.tsx` | Goal form fields |
-| `Button` | `components/ui/button.tsx` | "목표 추가", "저장", "취소", "삭제" |
+| `Button` | `components/ui/button.tsx` | "목표 추가", "변경 저장", "취소", "삭제" |
 | `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` | `components/ui/tabs.tsx` | Asset-type filter on /performance page |
 | `Table`, `TableHeader`, `TableBody`, `TableRow`, `TableHead`, `TableCell` | `components/ui/table.tsx` | Extended PerformanceTable |
 | `Progress` | `components/ui/progress` (needs install if not present) | Goal achievement progress bar in dashboard section |
@@ -176,7 +176,7 @@ All copy in Korean per established project convention.
 | Element | Copy |
 |---------|------|
 | Primary CTA — create goal | 목표 추가 |
-| Primary CTA — save goal | 저장 |
+| Primary CTA — save goal (edit) | 변경 저장 |
 | Primary CTA — cancel | 취소 |
 | Primary CTA — delete goal | 삭제 |
 | Goal dialog title — create | 새 목표 추가 |
@@ -203,6 +203,8 @@ All copy in Korean per established project convention.
 | Form validation — date invalid | 올바른 날짜 형식으로 입력하세요 (YYYY-MM-DD) |
 | Goal achievement label | {N}% 달성 |
 | Goal achievement ≥ 100% label | {N}% 달성 (목표 초과) |
+| GoalRow edit icon aria-label | 목표 수정 |
+| GoalRow delete icon aria-label | 목표 삭제 |
 
 Source: Established Korean-only UI convention (Phase 1 decision: login page Korean UI spec), existing copy patterns in `performance-table.tsx`, `annual-return-chart.tsx`
 
@@ -224,7 +226,7 @@ Source: Established Korean-only UI convention (Phase 1 decision: login page Kore
 
   <GoalList>              ← Card containing goal rows
     <GoalRow>
-      name | targetAmountKrw (formatKrw) | targetDate (optional) | edit icon | delete icon
+      name | targetAmountKrw (formatKrw) | targetDate (optional) | edit icon (aria-label="목표 수정") | delete icon (aria-label="목표 삭제")
     </GoalRow>
   </GoalList>
 
