@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { db } from '@/db'
 import { transactions } from '@/db/schema/transactions'
 import { assets } from '@/db/schema/assets'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { createClient } from '@/utils/supabase/server'
 import { upsertHoldings } from '@/lib/holdings'
 
@@ -52,15 +52,15 @@ export async function createTransaction(
   assetId: string,
   data: TransactionFormValues
 ): Promise<TransactionActionError | void> {
-  await requireUser()
+  const user = await requireUser()
   const parsed = transactionFormSchema.safeParse(data)
   if (!parsed.success) {
     return { error: '입력 값을 확인해주세요.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> }
   }
   const d = parsed.data
 
-  // Look up asset currency to determine price encoding
-  const assetRows = await db.select({ currency: assets.currency }).from(assets).where(eq(assets.id, assetId)).limit(1)
+  // Look up asset currency to determine price encoding (also verifies ownership)
+  const assetRows = await db.select({ currency: assets.currency }).from(assets).where(and(eq(assets.id, assetId), eq(assets.userId, user.id))).limit(1)
   if (!assetRows[0]) return { error: '자산을 찾을 수 없습니다.' }
   const currency = assetRows[0].currency
 
@@ -84,6 +84,7 @@ export async function createTransaction(
 
   await db.insert(transactions).values({
     assetId,
+    userId: user.id,
     type: d.type,
     quantity: quantityEncoded,
     pricePerUnit: pricePerUnitKrw,
@@ -95,7 +96,7 @@ export async function createTransaction(
     notes: d.notes ?? null,
   })
 
-  await upsertHoldings(assetId)
+  await upsertHoldings(assetId, user.id)
   revalidatePath(`/assets/${assetId}`)
 }
 
@@ -103,10 +104,10 @@ export async function deleteTransaction(
   transactionId: string,
   assetId: string
 ): Promise<TransactionActionError | void> {
-  await requireUser()
+  const user = await requireUser()
   if (!transactionId) return { error: '거래 ID가 없습니다.' }
-  await db.delete(transactions).where(eq(transactions.id, transactionId))
-  await upsertHoldings(assetId)
+  await db.delete(transactions).where(and(eq(transactions.id, transactionId), eq(transactions.userId, user.id)))
+  await upsertHoldings(assetId, user.id)
   revalidatePath(`/assets/${assetId}`)
   revalidatePath('/transactions')
 }
@@ -115,11 +116,11 @@ export async function voidTransaction(
   transactionId: string,
   assetId: string
 ): Promise<TransactionActionError | void> {
-  await requireUser()
+  const user = await requireUser()
   if (!transactionId) return { error: '거래 ID가 없습니다.' }
   // D-08: void = is_voided=true, never DELETE
-  await db.update(transactions).set({ isVoided: true }).where(eq(transactions.id, transactionId))
-  await upsertHoldings(assetId)
+  await db.update(transactions).set({ isVoided: true }).where(and(eq(transactions.id, transactionId), eq(transactions.userId, user.id)))
+  await upsertHoldings(assetId, user.id)
   revalidatePath(`/assets/${assetId}`)
 }
 
@@ -128,14 +129,14 @@ export async function updateTransaction(
   assetId: string,
   data: TransactionFormValues
 ): Promise<TransactionActionError | void> {
-  await requireUser()
+  const user = await requireUser()
   const parsed = transactionFormSchema.safeParse(data)
   if (!parsed.success) {
     return { error: '입력 값을 확인해주세요.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> }
   }
   const d = parsed.data
 
-  const assetRows = await db.select({ currency: assets.currency }).from(assets).where(eq(assets.id, assetId)).limit(1)
+  const assetRows = await db.select({ currency: assets.currency }).from(assets).where(and(eq(assets.id, assetId), eq(assets.userId, user.id))).limit(1)
   if (!assetRows[0]) return { error: '자산을 찾을 수 없습니다.' }
   const currency = assetRows[0].currency
 
@@ -164,9 +165,9 @@ export async function updateTransaction(
     exchangeRateAtTime: exchangeRateEncoded,
     transactionDate: d.transactionDate,
     notes: d.notes ?? null,
-  }).where(eq(transactions.id, transactionId))
+  }).where(and(eq(transactions.id, transactionId), eq(transactions.userId, user.id)))
 
-  await upsertHoldings(assetId)
+  await upsertHoldings(assetId, user.id)
   revalidatePath(`/assets/${assetId}`)
   revalidatePath('/transactions')
 }

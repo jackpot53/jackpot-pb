@@ -24,6 +24,7 @@ export async function getAllTransactionsWithAsset(userId: string): Promise<Trans
     .select({
       id: transactions.id,
       assetId: transactions.assetId,
+      userId: transactions.userId,
       type: transactions.type,
       quantity: transactions.quantity,
       pricePerUnit: transactions.pricePerUnit,

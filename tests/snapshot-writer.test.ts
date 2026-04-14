@@ -19,12 +19,14 @@ describe('writePortfolioSnapshot', () => {
       totalValueKrw: 124500000,
       totalCostKrw: 110000000,
       returnBps: 13182,
+      userId: 'test-user-id',
     })
     expect(mockValues).toHaveBeenCalledWith({
       snapshotDate: '2026-04-13',
       totalValueKrw: 124500000,
       totalCostKrw: 110000000,
       returnBps: 13182,
+      userId: 'test-user-id',
     })
     expect(mockOnConflictDoNothing).toHaveBeenCalled()
   })

@@ -1,4 +1,6 @@
 import { Suspense } from 'react'
+import { redirect } from 'next/navigation'
+import { createClient } from '@/utils/supabase/server'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -19,11 +21,11 @@ function ChartPageSkeleton() {
   )
 }
 
-async function ChartsPageContent() {
+async function ChartsPageContent({ userId }: { userId: string }) {
   // Load current performances and snapshots in parallel
   const [{ performances }, snapshots] = await Promise.all([
-    (async () => { await refreshAllPrices(); return loadPerformances() })(),
-    getAllSnapshots().catch(() => []),
+    (async () => { await refreshAllPrices(); return loadPerformances(userId) })(),
+    getAllSnapshots(userId).catch(() => []),
   ])
 
   const annualData = toAnnualData(snapshots)
@@ -52,12 +54,16 @@ async function ChartsPageContent() {
   )
 }
 
-export default function ChartsPage() {
+export default async function ChartsPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">차트</h1>
       <Suspense fallback={<ChartPageSkeleton />}>
-        <ChartsPageContent />
+        <ChartsPageContent userId={user.id} />
       </Suspense>
     </div>
   )

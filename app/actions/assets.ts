@@ -6,7 +6,7 @@ import { assets } from '@/db/schema/assets'
 import { transactions } from '@/db/schema/transactions'
 import { holdings } from '@/db/schema/holdings'
 import { manualValuations } from '@/db/schema/manual-valuations'
-import { eq, sql } from 'drizzle-orm'
+import { eq, sql, and } from 'drizzle-orm'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { upsertHoldings } from '@/lib/holdings'
@@ -39,7 +39,7 @@ async function requireUser() {
 }
 
 export async function createAsset(data: AssetFormValues): Promise<AssetActionError | void> {
-  await requireUser()
+  const user = await requireUser()
   const parsed = assetSchema.safeParse(data)
   if (!parsed.success) return { error: '입력 값을 확인해주세요.' }
   const {
@@ -50,6 +50,7 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
 
   const [newAsset] = await db.insert(assets).values({
     ...rest,
+    userId: user.id,
     ticker: ticker ?? null,
     accountType: rest.accountType ?? null,
     notes: notes ?? null,
@@ -81,6 +82,7 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
 
     await db.insert(transactions).values({
       assetId: newAsset.id,
+      userId: user.id,
       type: 'buy',
       quantity: quantityEncoded,
       pricePerUnit: pricePerUnitKrw,
@@ -91,7 +93,7 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
       isVoided: false,
       notes: null,
     })
-    await upsertHoldings(newAsset.id)
+    await upsertHoldings(newAsset.id, user.id)
   }
 
   revalidatePath('/assets')
@@ -102,12 +104,12 @@ export async function updateAsset(
   id: string,
   data: AssetFormValues
 ): Promise<AssetActionError | void> {
-  await requireUser()
+  const user = await requireUser()
   const parsed = assetSchema.safeParse(data)
   if (!parsed.success) return { error: '입력 값을 확인해주세요.' }
 
   // WR-02: prevent changing currency when existing transactions would have wrong encoding
-  const existingAsset = await db.select({ currency: assets.currency }).from(assets).where(eq(assets.id, id)).limit(1)
+  const existingAsset = await db.select({ currency: assets.currency }).from(assets).where(and(eq(assets.id, id), eq(assets.userId, user.id))).limit(1)
   if (existingAsset[0] && existingAsset[0].currency !== parsed.data.currency) {
     const txCountRows = await db.select({ count: sql<number>`count(*)` }).from(transactions).where(eq(transactions.assetId, id))
     const txCount = Number(txCountRows[0]?.count ?? 0)
@@ -127,7 +129,7 @@ export async function updateAsset(
     ticker: ticker ?? null,
     accountType: rest.accountType ?? null,
     notes: notes ?? null,
-  }).where(eq(assets.id, id))
+  }).where(and(eq(assets.id, id), eq(assets.userId, user.id)))
 
   // Optionally add a new buy transaction if quantity and price are provided
   const isTradeable = (TRADEABLE_TYPES as readonly string[]).includes(rest.assetType)
@@ -155,6 +157,7 @@ export async function updateAsset(
 
     await db.insert(transactions).values({
       assetId: id,
+      userId: user.id,
       type: 'buy',
       quantity: quantityEncoded,
       pricePerUnit: pricePerUnitKrw,
@@ -165,7 +168,7 @@ export async function updateAsset(
       isVoided: false,
       notes: null,
     })
-    await upsertHoldings(id)
+    await upsertHoldings(id, user.id)
   }
 
   revalidatePath('/assets')
@@ -173,14 +176,14 @@ export async function updateAsset(
 }
 
 export async function deleteAsset(id: string): Promise<AssetActionError | void> {
-  await requireUser()
+  const user = await requireUser()
   if (!id) return { error: '자산 ID가 없습니다.' }
   // Pre-delete child rows inside a transaction to prevent partial deletes on failure
   await db.transaction(async (tx) => {
     await tx.delete(transactions).where(eq(transactions.assetId, id))
     await tx.delete(manualValuations).where(eq(manualValuations.assetId, id))
     await tx.delete(holdings).where(eq(holdings.assetId, id))
-    await tx.delete(assets).where(eq(assets.id, id))
+    await tx.delete(assets).where(and(eq(assets.id, id), eq(assets.userId, user.id)))
   })
   revalidatePath('/assets')
   redirect('/assets')

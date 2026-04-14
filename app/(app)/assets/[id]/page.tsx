@@ -1,4 +1,5 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
+import { createClient } from '@/utils/supabase/server'
 import { getAssetById } from '@/db/queries/assets'
 import { getTransactionsByAsset } from '@/db/queries/transactions'
 import { getValuationsByAsset } from '@/db/queries/manual-valuations'
@@ -10,10 +11,15 @@ import { OverviewTab } from '@/components/app/overview-tab'
 
 export default async function AssetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
   const [asset, txns, valuations, holding] = await Promise.all([
-    getAssetById(id),
+    getAssetById(id, user.id),
     getTransactionsByAsset(id),
-    getValuationsByAsset(id),
+    getValuationsByAsset(id, user.id),
     getHoldingByAssetId(id),
   ])
   if (!asset) notFound()

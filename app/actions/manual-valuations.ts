@@ -32,7 +32,7 @@ export async function createManualValuation(
   assetId: string,
   data: ValuationFormValues
 ): Promise<ValuationActionError | void> {
-  await requireUser()
+  const user = await requireUser()
   const parsed = valuationFormSchema.safeParse(data)
   if (!parsed.success) return { error: '입력 값을 확인해주세요.' }
   const d = parsed.data
@@ -55,7 +55,7 @@ export async function createManualValuation(
   const existing = await db
     .select({ id: manualValuations.id })
     .from(manualValuations)
-    .where(and(eq(manualValuations.assetId, assetId), eq(manualValuations.valuedAt, d.valuedAt)))
+    .where(and(eq(manualValuations.assetId, assetId), eq(manualValuations.userId, user.id), eq(manualValuations.valuedAt, d.valuedAt)))
     .orderBy(desc(manualValuations.createdAt))
     .limit(1)
 
@@ -63,10 +63,11 @@ export async function createManualValuation(
     await db
       .update(manualValuations)
       .set({ valueKrw: valueKrwInt, currency: d.currency, exchangeRateAtTime: exchangeRateEncoded, notes: d.notes ?? null })
-      .where(eq(manualValuations.id, existing[0].id))
+      .where(and(eq(manualValuations.id, existing[0].id), eq(manualValuations.userId, user.id)))
   } else {
     await db.insert(manualValuations).values({
       assetId,
+      userId: user.id,
       valueKrw: valueKrwInt,
       currency: d.currency,
       exchangeRateAtTime: exchangeRateEncoded,

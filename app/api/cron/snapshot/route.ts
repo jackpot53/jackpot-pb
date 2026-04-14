@@ -40,16 +40,23 @@ export async function GET(request: NextRequest) {
     return new Response('Unauthorized', { status: 401 })
   }
 
+  // CRON_TARGET_USER_ID: 스냅샷을 기록할 대상 유저 UUID
+  // .env.local (및 Vercel 환경변수)에 설정 필요
+  const targetUserId = process.env.CRON_TARGET_USER_ID
+  if (!targetUserId) {
+    return Response.json({ ok: false, error: 'CRON_TARGET_USER_ID not configured' }, { status: 500 })
+  }
+
   try {
     // Step 1: Refresh FX rate (stale fallback applies if BOK API fails — D-03, D-09)
     await refreshFxIfStale()
 
-    // Step 2: Refresh prices for all LIVE assets with a ticker
+    // Step 2: Refresh prices for all LIVE assets with a ticker (target user only)
     // Use Promise.allSettled to apply stale fallback per asset (D-03)
     const liveAssets = await db
       .select({ ticker: assets.ticker, assetType: assets.assetType })
       .from(assets)
-      .where(and(eq(assets.priceType, 'live'), isNotNull(assets.ticker)))
+      .where(and(eq(assets.priceType, 'live'), isNotNull(assets.ticker), eq(assets.userId, targetUserId)))
 
     await Promise.allSettled(
       liveAssets.map((a) => refreshPriceIfStale(a.ticker!, a.assetType))
@@ -57,7 +64,7 @@ export async function GET(request: NextRequest) {
 
     // Step 3: Assemble portfolio data (same pattern as app/(app)/page.tsx, without requireUser())
     // The cron route has direct DB access — no Supabase session required.
-    const assetsWithHoldings = await getAssetsWithHoldings()
+    const assetsWithHoldings = await getAssetsWithHoldings(targetUserId)
 
     const liveTickers = assetsWithHoldings
       .filter((a) => a.priceType === 'live' && a.ticker)
@@ -106,6 +113,7 @@ export async function GET(request: NextRequest) {
       totalValueKrw: summary.totalValueKrw,
       totalCostKrw: summary.totalCostKrw,
       returnBps,
+      userId: targetUserId,
     })
 
     return Response.json({ ok: true, snapshotDate })

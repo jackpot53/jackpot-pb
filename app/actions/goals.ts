@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { db } from '@/db'
 import { goals } from '@/db/schema/goals'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 import { createClient } from '@/utils/supabase/server'
 
 const goalSchema = z.object({
@@ -29,12 +29,13 @@ async function requireUser() {
 }
 
 export async function createGoal(data: GoalFormValues): Promise<GoalActionError | void> {
-  await requireUser()
+  const user = await requireUser()
   const parsed = goalSchema.safeParse(data)
   if (!parsed.success) return { error: '입력 값을 확인해주세요.' }
   const { targetDate, notes, ...rest } = parsed.data
   await db.insert(goals).values({
     ...rest,
+    userId: user.id,
     targetDate: targetDate ?? null,
     notes: notes ?? null,
   })
@@ -46,7 +47,7 @@ export async function updateGoal(
   id: string,
   data: GoalFormValues
 ): Promise<GoalActionError | void> {
-  await requireUser()
+  const user = await requireUser()
   const parsed = goalSchema.safeParse(data)
   if (!parsed.success) return { error: '입력 값을 확인해주세요.' }
   const { targetDate, notes, ...rest } = parsed.data
@@ -54,15 +55,15 @@ export async function updateGoal(
     ...rest,
     targetDate: targetDate ?? null,
     notes: notes ?? null,
-  }).where(eq(goals.id, id))
+  }).where(and(eq(goals.id, id), eq(goals.userId, user.id)))
   revalidatePath('/goals')
   revalidatePath('/')   // Dashboard goals section cache
 }
 
 export async function deleteGoal(id: string): Promise<GoalActionError | void> {
-  await requireUser()
+  const user = await requireUser()
   if (!id) return { error: '목표 ID가 없습니다.' }
-  await db.delete(goals).where(eq(goals.id, id))
+  await db.delete(goals).where(and(eq(goals.id, id), eq(goals.userId, user.id)))
   revalidatePath('/goals')
   revalidatePath('/')   // Dashboard goals section cache
 }

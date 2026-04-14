@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation'
+import { createClient } from '@/utils/supabase/server'
 import { refreshAllPrices } from '@/app/actions/prices'
 import { listGoals } from '@/db/queries/goals'
 import { loadPerformances } from '@/lib/server/load-performances'
@@ -16,11 +18,15 @@ import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { DashboardGoalsSection } from '@/components/app/dashboard-goals-section'
 
 export default async function DashboardPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
   // Step 1: Refresh all prices on-demand (D-01, D-03)
   await refreshAllPrices()
 
   // Step 2: Load performances + price map via shared helper
-  const { performances, priceMap } = await loadPerformances()
+  const { performances, priceMap } = await loadPerformances(user.id)
 
   // Step 3: Extract FX rate from price map
   const fxCache = priceMap.get('USD_KRW')
@@ -33,7 +39,7 @@ export default async function DashboardPage() {
   const byType: AllocationSlice[] = aggregateByType(performances)
 
   // Step 5: Load goals for dashboard goals section (D-03, D-04)
-  const goalsList = await listGoals()
+  const goalsList = await listGoals(user.id)
 
   // Step 6: Determine color sign for stat cards
   const returnSign =

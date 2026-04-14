@@ -1,5 +1,7 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { Wallet, PlusCircle } from 'lucide-react'
+import { createClient } from '@/utils/supabase/server'
 import { refreshAllPrices } from '@/app/actions/prices'
 import { loadPerformances } from '@/lib/server/load-performances'
 import { buttonVariants } from '@/components/ui/button'
@@ -7,8 +9,12 @@ import { Separator } from '@/components/ui/separator'
 import { AssetsPageClient } from '@/components/app/assets-page-client'
 
 export default async function AssetsPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
   await refreshAllPrices()
-  const { performances } = await loadPerformances()
+  const { performances } = await loadPerformances(user.id)
 
   return (
     <div className="space-y-4">
