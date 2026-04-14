@@ -238,118 +238,197 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-3">
-        <div className="grid grid-cols-2 gap-x-6 items-start">
 
-          {/* ── 왼쪽 컬럼 ── */}
-          <div className="space-y-3">
-            {/* 종목명 */}
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>종목명</FormLabel>
-                  <div ref={containerRef} className="relative">
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          {...field}
-                          autoComplete="off"
-                          onChange={(e) => handleNameInput(e.target.value, field.onChange)}
-                          onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                        />
-                        {isSearchable && (
-                          <button
-                            type="button"
-                            onClick={searchAndFillTicker}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-accent transition-colors"
-                            tabIndex={-1}
-                          >
-                            <Search className={`h-4 w-4 text-foreground${isSearching ? ' animate-pulse' : ''}`} />
-                          </button>
-                        )}
-                      </div>
-                    </FormControl>
-                    {showSuggestions && (
-                      <ul className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-md overflow-hidden">
-                        {suggestions.map((s) => (
-                          <li key={s.ticker}>
-                            <button
-                              type="button"
-                              className="w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center justify-between gap-2"
-                              onMouseDown={(e) => { e.preventDefault(); selectSuggestion(s) }}
-                            >
-                              <span className="truncate">{s.name}</span>
-                              <span className="text-xs text-muted-foreground font-mono shrink-0">{s.ticker}</span>
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
+        {/* 종목명 */}
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>종목명</FormLabel>
+              <div ref={containerRef} className="relative">
+                <FormControl>
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      autoComplete="off"
+                      onChange={(e) => handleNameInput(e.target.value, field.onChange)}
+                      onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                    />
+                    {isSearchable && (
+                      <button
+                        type="button"
+                        onClick={searchAndFillTicker}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-accent transition-colors"
+                        tabIndex={-1}
+                      >
+                        <Search className={`h-4 w-4 text-foreground${isSearching ? ' animate-pulse' : ''}`} />
+                      </button>
                     )}
                   </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* 자산 유형 */}
-            <FormField
-              control={form.control}
-              name="assetType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>자산 유형</FormLabel>
-                  <FormControl>
-                    <div className="flex flex-wrap gap-1.5">
-                      {Object.entries(ASSET_TYPE_LABELS).map(([val, label]) => (
-                        <button key={val} type="button" onClick={() => field.onChange(val)} className={pillClass(field.value === val)}>
-                          {label}
+                </FormControl>
+                {showSuggestions && (
+                  <ul className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-md overflow-hidden">
+                    {suggestions.map((s) => (
+                      <li key={s.ticker}>
+                        <button
+                          type="button"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center justify-between gap-2"
+                          onMouseDown={(e) => { e.preventDefault(); selectSuggestion(s) }}
+                        >
+                          <span className="truncate">{s.name}</span>
+                          <span className="text-xs text-muted-foreground font-mono shrink-0">{s.ticker}</span>
                         </button>
-                      ))}
-                    </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* 자산 유형 */}
+        <FormField
+          control={form.control}
+          name="assetType"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>자산 유형</FormLabel>
+              <FormControl>
+                <div className="flex flex-wrap gap-1.5">
+                  {Object.entries(ASSET_TYPE_LABELS).map(([val, label]) => (
+                    <button key={val} type="button" onClick={() => field.onChange(val)} className={pillClass(field.value === val)}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* 계좌 유형 (conditional) */}
+        {isAccountTypeable && (
+          <FormField
+            control={form.control}
+            name="accountType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>계좌 유형</FormLabel>
+                <FormControl>
+                  <div className="flex flex-wrap gap-1.5">
+                    {availableAccountTypes.map((val) => (
+                      <button key={val} type="button" onClick={() => field.onChange(field.value === val ? null : val)} className={pillClass(field.value === val)}>
+                        {ACCOUNT_TYPE_LABELS[val]}
+                      </button>
+                    ))}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {/* 통화 | 시세 유형 */}
+        <div className="grid grid-cols-2 gap-3">
+          <FormField
+            control={form.control}
+            name="currency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>통화</FormLabel>
+                <FormControl>
+                  <div className="flex gap-1.5">
+                    {(['KRW', 'USD'] as const).map((val) => (
+                      <button key={val} type="button" onClick={() => field.onChange(val)} className={pillClass(field.value === val)}>{val}</button>
+                    ))}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="priceType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>시세 유형</FormLabel>
+                <FormControl>
+                  <div className="flex gap-1.5">
+                    {(['live', 'manual'] as const).map((val) => (
+                      <button key={val} type="button" onClick={() => field.onChange(val)} className={pillClass(field.value === val)}>
+                        {val === 'live' ? 'Live' : 'Manual'}
+                      </button>
+                    ))}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* 종목코드 (conditional) */}
+        {priceType === 'live' && (
+          <FormField
+            control={form.control}
+            name="ticker"
+            render={({ field }) => {
+              const hint = TICKER_HINTS[assetType]
+              return (
+                <FormItem>
+                  <FormLabel>종목코드</FormLabel>
+                  <FormControl>
+                    <Input {...field} value={field.value ?? ''} placeholder={hint?.placeholder ?? '예: AAPL'} />
                   </FormControl>
+                  {hint && (
+                    <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed mt-0.5">
+                      {hint.hint}
+                    </p>
+                  )}
                   <FormMessage />
                 </FormItem>
-              )}
-            />
+              )
+            }}
+          />
+        )}
 
-            {/* 계좌 유형 (conditional) */}
-            {isAccountTypeable && (
-              <FormField
-                control={form.control}
-                name="accountType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>계좌 유형</FormLabel>
-                    <FormControl>
-                      <div className="flex flex-wrap gap-1.5">
-                        {availableAccountTypes.map((val) => (
-                          <button key={val} type="button" onClick={() => field.onChange(field.value === val ? null : val)} className={pillClass(field.value === val)}>
-                            {ACCOUNT_TYPE_LABELS[val]}
-                          </button>
-                        ))}
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+        {/* 메모 */}
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>메모</FormLabel>
+              <FormControl>
+                <Input {...field} value={field.value ?? ''} placeholder="예: 물타기" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            {/* 통화 + 시세 유형 */}
+        {/* 초기 매수 내역 */}
+        {showInitialTransaction && isTradeable && (
+          <>
+            <div className="border-t pt-2">
+              <p className="text-sm font-medium">{transactionSectionLabel ?? '초기 매수 내역 (선택)'}</p>
+              <p className="text-xs text-muted-foreground">입력하면 거래 내역에 자동 등록됩니다.</p>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <FormField
                 control={form.control}
-                name="currency"
+                name="initialQuantity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>통화</FormLabel>
+                    <FormLabel>수량</FormLabel>
                     <FormControl>
-                      <div className="flex gap-1.5">
-                        {(['KRW', 'USD'] as const).map((val) => (
-                          <button key={val} type="button" onClick={() => field.onChange(val)} className={pillClass(field.value === val)}>{val}</button>
-                        ))}
-                      </div>
+                      <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder={assetType === 'crypto' ? '예: 0.5' : '예: 10'} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -357,135 +436,48 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
               />
               <FormField
                 control={form.control}
-                name="priceType"
+                name="initialPricePerUnit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>시세 유형</FormLabel>
+                    <FormLabel>매수 단가 {isUSD ? '(USD)' : '(₩)'}</FormLabel>
                     <FormControl>
-                      <div className="flex gap-1.5">
-                        {(['live', 'manual'] as const).map((val) => (
-                          <button key={val} type="button" onClick={() => field.onChange(val)} className={pillClass(field.value === val)}>
-                            {val === 'live' ? 'Live' : 'Manual'}
-                          </button>
-                        ))}
-                      </div>
+                      <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 75000" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-          </div>
-
-          {/* ── 오른쪽 컬럼 ── */}
-          <div className="space-y-3">
-            {/* 종목코드 (conditional) */}
-            {priceType === 'live' && (
               <FormField
                 control={form.control}
-                name="ticker"
-                render={({ field }) => {
-                  const hint = TICKER_HINTS[assetType]
-                  return (
+                name="initialTransactionDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>매수일</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {isUSD && (
+                <FormField
+                  control={form.control}
+                  name="initialExchangeRate"
+                  render={({ field }) => (
                     <FormItem>
-                      <FormLabel>종목코드</FormLabel>
+                      <FormLabel>환율 (₩/＄)</FormLabel>
                       <FormControl>
-                        <Input {...field} value={field.value ?? ''} placeholder={hint?.placeholder ?? '예: AAPL'} />
+                        <Input {...field} value={field.value ?? ''} inputMode="numeric" placeholder="예: 1350" />
                       </FormControl>
-                      {hint && (
-                        <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed mt-0.5">
-                          {hint.hint}
-                        </p>
-                      )}
                       <FormMessage />
                     </FormItem>
-                  )
-                }}
-              />
-            )}
-
-            {/* 메모 */}
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>메모</FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ''} placeholder="예: 물타기" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* 초기 매수 내역 */}
-            {showInitialTransaction && isTradeable && (
-              <>
-                <div className="border-t pt-2">
-                  <p className="text-sm font-medium">{transactionSectionLabel ?? '초기 매수 내역 (선택)'}</p>
-                  <p className="text-xs text-muted-foreground">입력하면 거래 내역에 자동 등록됩니다.</p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField
-                    control={form.control}
-                    name="initialQuantity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>수량</FormLabel>
-                        <FormControl>
-                          <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder={assetType === 'crypto' ? '예: 0.5' : '예: 10'} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="initialPricePerUnit"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>매수 단가 {isUSD ? '(USD)' : '(₩)'}</FormLabel>
-                        <FormControl>
-                          <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 75000" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="initialTransactionDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>매수일</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} value={field.value ?? ''} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {isUSD && (
-                    <FormField
-                      control={form.control}
-                      name="initialExchangeRate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>환율 (₩/＄)</FormLabel>
-                          <FormControl>
-                            <Input {...field} value={field.value ?? ''} inputMode="numeric" placeholder="예: 1350" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                   )}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+                />
+              )}
+            </div>
+          </>
+        )}
 
         {form.formState.errors.root && (
           <p className="text-sm text-destructive">{form.formState.errors.root.message}</p>
