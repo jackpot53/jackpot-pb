@@ -138,9 +138,13 @@ function AssetTable({ assets }: { assets: AssetPerformance[] }) {
 function SummaryCards({ grouped, performances }: { grouped: Record<string, AssetPerformance[]>; performances: AssetPerformance[] }) {
   const types = Object.keys(grouped)
 
-  const grandTotalCost = performances.reduce((s, a) => s + a.totalCostKrw, 0)
-  const grandTotalValue = performances.reduce((s, a) => s + a.currentValueKrw, 0)
-  const grandProfit = grandTotalValue - grandTotalCost
+  // Sum ALL assets for cost regardless of whether current value exists
+  const grandTotalCost = performances.reduce((s, a) => s + Number(a.totalCostKrw), 0)
+  // Only sum assets that actually have a current value (price loaded or manual valuation entered)
+  const valuedAssets = performances.filter((a) => a.currentValueKrw > 0)
+  const grandTotalValue = valuedAssets.reduce((s, a) => s + Number(a.currentValueKrw), 0)
+  const valuedCost = valuedAssets.reduce((s, a) => s + Number(a.totalCostKrw), 0)
+  const grandProfit = grandTotalValue - valuedCost
   const grandHasValue = grandTotalValue > 0
 
   return (
@@ -181,12 +185,12 @@ function SummaryCards({ grouped, performances }: { grouped: Record<string, Asset
       <div className="rounded-lg border-2 border-foreground/20 bg-muted/30 p-4 space-y-2">
         <p className="text-xs font-semibold text-foreground">전체 합계</p>
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">총 투자금액</p>
+          <p className="text-xs text-muted-foreground">총 투자금액 (전체)</p>
           <p className="text-sm font-semibold">{grandTotalCost > 0 ? formatKrw(grandTotalCost) : '—'}</p>
         </div>
         <div className="space-y-1">
-          <p className="text-xs text-muted-foreground">평가손익</p>
-          {grandHasValue && grandTotalCost > 0 ? (
+          <p className="text-xs text-muted-foreground">평가손익 (평가 가능 자산)</p>
+          {grandHasValue ? (
             <p className={`text-sm font-semibold ${grandProfit >= 0 ? 'text-red-500' : 'text-blue-600'}`}>
               {grandProfit >= 0 ? '+' : ''}{formatKrw(grandProfit)}
             </p>
