@@ -12,6 +12,7 @@ export const accountTypeEnum = pgEnum('account_type', ['isa', 'irp', 'pension', 
 
 export const assets = pgTable('assets', {
   id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull(),
   name: varchar('name', { length: 255 }).notNull(),
   ticker: varchar('ticker', { length: 20 }),
   assetType: assetTypeEnum('asset_type').notNull(),

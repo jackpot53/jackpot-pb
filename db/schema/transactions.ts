@@ -6,6 +6,7 @@ export const transactionTypeEnum = pgEnum('transaction_type', ['buy', 'sell'])
 export const transactions = pgTable('transactions', {
   id: uuid('id').primaryKey().defaultRandom(),
   assetId: uuid('asset_id').notNull().references(() => assets.id),
+  userId: uuid('user_id').notNull(),
   type: transactionTypeEnum('type').notNull(),
   // quantity: units × 10^8 to support fractional shares and crypto (e.g. 0.5 BTC = 50_000_000)
   quantity: bigint('quantity', { mode: 'number' }).notNull(),

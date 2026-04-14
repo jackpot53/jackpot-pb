@@ -6,6 +6,7 @@ import { assets } from './assets'
 export const holdings = pgTable('holdings', {
   id: uuid('id').primaryKey().defaultRandom(),
   assetId: uuid('asset_id').notNull().unique().references(() => assets.id),
+  userId: uuid('user_id').notNull(),
   // totalQuantity: units × 10^8 (matches transactions.quantity scale)
   totalQuantity: bigint('total_quantity', { mode: 'number' }).notNull().default(0),
   // avgCostPerUnit: weighted average cost in KRW × 10^8 (per-unit, KRW)

@@ -4,7 +4,8 @@ import { pgTable, uuid, bigint, date, timestamp } from 'drizzle-orm/pg-core'
 // One row per day. Used as the data source for annual/monthly return charts.
 export const portfolioSnapshots = pgTable('portfolio_snapshots', {
   id: uuid('id').primaryKey().defaultRandom(),
-  snapshotDate: date('snapshot_date').notNull().unique(),
+  userId: uuid('user_id').notNull(),
+  snapshotDate: date('snapshot_date').notNull(),
   totalValueKrw: bigint('total_value_krw', { mode: 'number' }).notNull(),
   totalCostKrw: bigint('total_cost_krw', { mode: 'number' }).notNull(),
   // returnBps: return in basis points (return% × 10000), e.g. 12.34% = 12340 bps

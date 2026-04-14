@@ -6,6 +6,7 @@ import { assets, currencyEnum } from './assets'
 export const manualValuations = pgTable('manual_valuations', {
   id: uuid('id').primaryKey().defaultRandom(),
   assetId: uuid('asset_id').notNull().references(() => assets.id),
+  userId: uuid('user_id').notNull(),
   valueKrw: bigint('value_krw', { mode: 'number' }).notNull(),
   currency: currencyEnum('currency').notNull(),
   exchangeRateAtTime: bigint('exchange_rate_at_time', { mode: 'number' }),
