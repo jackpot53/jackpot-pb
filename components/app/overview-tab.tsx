@@ -49,6 +49,96 @@ interface OverviewTabProps {
   holding: HoldingRow | null
 }
 
+const fundPriceSchema = z.object({
+  pricePerUnit: z.string()
+    .min(1, '현재 단가를 입력해주세요.')
+    .refine((v) => !isNaN(parseFloat(v)) && parseFloat(v) >= 0, '유효한 금액을 입력해주세요.'),
+  valuedAt: z.string().min(1, '날짜를 입력해주세요.'),
+  notes: z.string().max(1000).optional().nullable(),
+})
+type FundPriceFormValues = z.infer<typeof fundPriceSchema>
+
+function FundValuationForm({ asset, holding, onSuccess }: { asset: Asset; holding: HoldingRow; onSuccess: () => void }) {
+  const [isPending, startTransition] = useTransition()
+  const form = useForm<FundPriceFormValues>({
+    resolver: zodResolver(fundPriceSchema),
+    defaultValues: { pricePerUnit: '', valuedAt: new Date().toISOString().split('T')[0], notes: null },
+    mode: 'onBlur',
+  })
+  const priceStr = form.watch('pricePerUnit')
+  const price = parseFloat(priceStr)
+  const qty = holding.totalQuantity / 1e8
+  const previewKrw = !isNaN(price) && price > 0 && qty > 0 ? Math.round(price * qty) : null
+
+  function handleSubmit(data: FundPriceFormValues) {
+    startTransition(async () => {
+      const price = parseFloat(data.pricePerUnit)
+      const totalValueKrw = Math.round(price * (holding.totalQuantity / 1e8))
+      const result = await createManualValuation(asset.id, {
+        valueKrw: totalValueKrw.toString(),
+        currency: 'KRW',
+        valuedAt: data.valuedAt,
+        notes: data.notes ?? null,
+      })
+      if (result?.error) {
+        form.setError('root', { message: result.error })
+      } else {
+        onSuccess()
+      }
+    })
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 max-w-sm">
+        <FormField control={form.control} name="pricePerUnit" render={({ field }) => (
+          <FormItem>
+            <FormLabel>현재 단가 (₩)</FormLabel>
+            <FormControl><Input {...field} inputMode="decimal" placeholder="예: 1250" /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+
+        {previewKrw !== null && (
+          <p className="text-xs text-muted-foreground">
+            평가금액 예상: ₩{formatKrw(previewKrw)} ({decodeQuantity(holding.totalQuantity)}좌 × ₩{formatKrw(Math.round(price))})
+          </p>
+        )}
+
+        <FormField control={form.control} name="valuedAt" render={({ field }) => (
+          <FormItem>
+            <FormLabel>기준 날짜</FormLabel>
+            <FormControl><Input type="date" {...field} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+
+        <FormField control={form.control} name="notes" render={({ field }) => (
+          <FormItem>
+            <FormLabel>메모 (선택)</FormLabel>
+            <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+
+        {form.formState.errors.root && (
+          <p className="text-sm text-destructive">{form.formState.errors.root.message}</p>
+        )}
+
+        <div className="flex gap-2">
+          <Button type="submit" disabled={isPending}>
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            가치 저장
+          </Button>
+          <Button type="button" variant="outline" onClick={onSuccess} disabled={isPending}>
+            취소
+          </Button>
+        </div>
+      </form>
+    </Form>
+  )
+}
+
 function ValuationUpdateForm({ asset, onSuccess }: { asset: Asset; onSuccess: () => void }) {
   const [isPending, startTransition] = useTransition()
   const isUSD = asset.currency === 'USD'
@@ -227,10 +317,18 @@ export function OverviewTab({ asset, valuations, holding }: OverviewTabProps) {
             </div>
 
             {showUpdateForm && (
-              <ValuationUpdateForm
-                asset={asset}
-                onSuccess={() => setShowUpdateForm(false)}
-              />
+              asset.assetType === 'fund' && holding ? (
+                <FundValuationForm
+                  asset={asset}
+                  holding={holding}
+                  onSuccess={() => setShowUpdateForm(false)}
+                />
+              ) : (
+                <ValuationUpdateForm
+                  asset={asset}
+                  onSuccess={() => setShowUpdateForm(false)}
+                />
+              )
             )}
 
             {valuations.length === 0 && !showUpdateForm ? (
