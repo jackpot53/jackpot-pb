@@ -2,9 +2,9 @@
 -- Phase: 01-foundation Plan 04 — 멀티 유저 아키텍처
 -- 실행 방법: Supabase Dashboard → SQL Editor에서 아래 SQL 전체를 붙여넣어 실행
 -- 사전 조건: Supabase Dashboard → Authentication → Users에서 관리자 UUID 확인 후
---            아래 '<ADMIN_USER_UUID>' 자리를 실제 UUID로 교체
+--            아래 '8ace9bf2-31fe-462d-88d4-307975ee018b' 자리를 실제 UUID로 교체
 --
--- IMPORTANT: '<ADMIN_USER_UUID>'를 실제 UUID로 교체하지 않으면 실행 실패
+-- IMPORTANT: '8ace9bf2-31fe-462d-88d4-307975ee018b'를 실제 UUID로 교체하지 않으면 실행 실패
 
 -- ============================================================
 -- 1. NULLABLE user_id 컬럼 추가 (기존 데이터가 있으므로 nullable first)
@@ -17,14 +17,14 @@ ALTER TABLE goals ADD COLUMN IF NOT EXISTS user_id uuid;
 ALTER TABLE portfolio_snapshots ADD COLUMN IF NOT EXISTS user_id uuid;
 
 -- ============================================================
--- 2. 기존 행 백필 — '<ADMIN_USER_UUID>'를 실제 UUID로 교체 후 실행
+-- 2. 기존 행 백필 — '8ace9bf2-31fe-462d-88d4-307975ee018b'를 실제 UUID로 교체 후 실행
 -- ============================================================
-UPDATE assets SET user_id = '<ADMIN_USER_UUID>' WHERE user_id IS NULL;
-UPDATE transactions SET user_id = '<ADMIN_USER_UUID>' WHERE user_id IS NULL;
-UPDATE manual_valuations SET user_id = '<ADMIN_USER_UUID>' WHERE user_id IS NULL;
-UPDATE holdings SET user_id = '<ADMIN_USER_UUID>' WHERE user_id IS NULL;
-UPDATE goals SET user_id = '<ADMIN_USER_UUID>' WHERE user_id IS NULL;
-UPDATE portfolio_snapshots SET user_id = '<ADMIN_USER_UUID>' WHERE user_id IS NULL;
+UPDATE assets SET user_id = '8ace9bf2-31fe-462d-88d4-307975ee018b' WHERE user_id IS NULL;
+UPDATE transactions SET user_id = '8ace9bf2-31fe-462d-88d4-307975ee018b' WHERE user_id IS NULL;
+UPDATE manual_valuations SET user_id = '8ace9bf2-31fe-462d-88d4-307975ee018b' WHERE user_id IS NULL;
+UPDATE holdings SET user_id = '8ace9bf2-31fe-462d-88d4-307975ee018b' WHERE user_id IS NULL;
+UPDATE goals SET user_id = '8ace9bf2-31fe-462d-88d4-307975ee018b' WHERE user_id IS NULL;
+UPDATE portfolio_snapshots SET user_id = '8ace9bf2-31fe-462d-88d4-307975ee018b' WHERE user_id IS NULL;
 
 -- ============================================================
 -- 3. NOT NULL 제약 추가
