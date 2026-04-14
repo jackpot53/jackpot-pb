@@ -42,7 +42,7 @@ export function PerformanceFilterClient({ rows }: PerformanceFilterClientProps) 
         <TabsTrigger value="savings">예적금</TabsTrigger>
         <TabsTrigger value="real_estate">부동산</TabsTrigger>
       </TabsList>
-      <TabsContent value={activeTab}>
+      <TabsContent key={activeTab} value={activeTab}>
         <PerformanceTable rows={filteredRows} />
       </TabsContent>
     </Tabs>
