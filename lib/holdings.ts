@@ -66,7 +66,7 @@ export function computeHoldings(txns: TransactionInput[]): HoldingsResult {
  * and upserts the holdings row. Called after every transaction mutation.
  * NOT pure — reads DB and writes DB.
  */
-export async function upsertHoldings(assetId: string): Promise<void> {
+export async function upsertHoldings(assetId: string, userId: string): Promise<void> {
   const txns = await db
     .select({
       type: transactions.type,
@@ -84,6 +84,7 @@ export async function upsertHoldings(assetId: string): Promise<void> {
     .insert(holdings)
     .values({
       assetId,
+      userId,
       totalQuantity: result.totalQuantity,
       avgCostPerUnit: result.avgCostPerUnit,
       totalCostKrw: result.totalCostKrw,
@@ -92,6 +93,7 @@ export async function upsertHoldings(assetId: string): Promise<void> {
     .onConflictDoUpdate({
       target: holdings.assetId,
       set: {
+        // userId는 업데이트 대상이 아님 — 자산 소유자는 변경되지 않음
         totalQuantity: result.totalQuantity,
         avgCostPerUnit: result.avgCostPerUnit,
         totalCostKrw: result.totalCostKrw,

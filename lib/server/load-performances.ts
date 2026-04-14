@@ -10,11 +10,11 @@ function isStalePrice(cachedAt: Date | null): boolean {
   return Date.now() - cachedAt.getTime() > PRICE_TTL_MS
 }
 
-export async function loadPerformances(): Promise<{
+export async function loadPerformances(userId: string): Promise<{
   performances: AssetPerformance[]
   priceMap: Map<string, { priceKrw: number; cachedAt: Date | null }>
 }> {
-  const assetsWithHoldings = await getAssetsWithHoldings()
+  const assetsWithHoldings = await getAssetsWithHoldings(userId)
 
   const liveTickers = assetsWithHoldings
     .filter((a) => a.priceType === 'live' && a.ticker)

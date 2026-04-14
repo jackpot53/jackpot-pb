@@ -19,10 +19,10 @@ export interface AssetWithHolding {
 }
 
 /**
- * Returns ALL assets left-joined with holdings and latest manual valuation.
+ * Returns ALL assets for the given user, left-joined with holdings and latest manual valuation.
  * Assets with no holdings have null quantity/cost fields.
  */
-export async function getAssetsWithHoldings(): Promise<AssetWithHolding[]> {
+export async function getAssetsWithHoldings(userId: string): Promise<AssetWithHolding[]> {
   const rows = await db
     .select({
       assetId: assets.id,
@@ -40,12 +40,14 @@ export async function getAssetsWithHoldings(): Promise<AssetWithHolding[]> {
         SELECT mv.value_krw
         FROM manual_valuations mv
         WHERE mv.asset_id = ${assets.id}
+          AND mv.user_id = ${userId}
         ORDER BY mv.valued_at DESC, mv.created_at DESC
         LIMIT 1
       )`,
     })
     .from(assets)
     .leftJoin(holdings, eq(holdings.assetId, assets.id))
+    .where(eq(assets.userId, userId))
     .orderBy(assets.createdAt)
   return rows as AssetWithHolding[]
 }

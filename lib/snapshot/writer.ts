@@ -6,6 +6,7 @@ export interface SnapshotParams {
   totalValueKrw: number
   totalCostKrw: number
   returnBps: number      // return% × 10000, e.g. 12.34% = 12340
+  userId: string
 }
 
 /**

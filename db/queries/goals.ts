@@ -1,6 +1,6 @@
 import { db } from '@/db'
 import { goals } from '@/db/schema/goals'
-import { asc, eq } from 'drizzle-orm'
+import { asc, eq, and } from 'drizzle-orm'
 
 export interface GoalRow {
   id: string
@@ -12,11 +12,11 @@ export interface GoalRow {
   updatedAt: Date
 }
 
-export async function listGoals(): Promise<GoalRow[]> {
-  return db.select().from(goals).orderBy(asc(goals.createdAt))
+export async function listGoals(userId: string): Promise<GoalRow[]> {
+  return db.select().from(goals).where(eq(goals.userId, userId)).orderBy(asc(goals.createdAt))
 }
 
-export async function getGoalById(id: string): Promise<GoalRow | undefined> {
-  const rows = await db.select().from(goals).where(eq(goals.id, id)).limit(1)
+export async function getGoalById(id: string, userId: string): Promise<GoalRow | undefined> {
+  const rows = await db.select().from(goals).where(and(eq(goals.id, id), eq(goals.userId, userId))).limit(1)
   return rows[0]
 }

@@ -1,7 +1,7 @@
 import { db } from '@/db'
 import { transactions } from '@/db/schema/transactions'
 import { assets } from '@/db/schema/assets'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, and } from 'drizzle-orm'
 import type { InferSelectModel } from 'drizzle-orm'
 
 export type Transaction = InferSelectModel<typeof transactions>
@@ -19,7 +19,7 @@ export async function getTransactionsByAsset(assetId: string): Promise<Transacti
     .orderBy(desc(transactions.transactionDate), desc(transactions.createdAt))
 }
 
-export async function getAllTransactionsWithAsset(): Promise<TransactionWithAsset[]> {
+export async function getAllTransactionsWithAsset(userId: string): Promise<TransactionWithAsset[]> {
   const rows = await db
     .select({
       id: transactions.id,
@@ -38,7 +38,7 @@ export async function getAllTransactionsWithAsset(): Promise<TransactionWithAsse
       assetType: assets.assetType,
     })
     .from(transactions)
-    .innerJoin(assets, eq(transactions.assetId, assets.id))
+    .innerJoin(assets, and(eq(transactions.assetId, assets.id), eq(assets.userId, userId)))
     .orderBy(desc(transactions.transactionDate), desc(transactions.createdAt))
   return rows
 }

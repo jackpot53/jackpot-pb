@@ -1,6 +1,6 @@
 import { db } from '@/db'
 import { portfolioSnapshots } from '@/db/schema/portfolio-snapshots'
-import { asc } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 
 export interface SnapshotRow {
   snapshotDate: string
@@ -14,7 +14,7 @@ export interface SnapshotRow {
  * Used by the charts page (Server Component) and aggregation functions.
  * No live API calls — reads only from pre-computed snapshot table.
  */
-export async function getAllSnapshots(): Promise<SnapshotRow[]> {
+export async function getAllSnapshots(userId: string): Promise<SnapshotRow[]> {
   return db
     .select({
       snapshotDate: portfolioSnapshots.snapshotDate,
@@ -23,5 +23,6 @@ export async function getAllSnapshots(): Promise<SnapshotRow[]> {
       returnBps: portfolioSnapshots.returnBps,
     })
     .from(portfolioSnapshots)
+    .where(eq(portfolioSnapshots.userId, userId))
     .orderBy(asc(portfolioSnapshots.snapshotDate))
 }
