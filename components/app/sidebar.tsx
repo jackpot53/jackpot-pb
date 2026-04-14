@@ -13,10 +13,10 @@ import {
 } from 'lucide-react'
 
 const NAV_ITEMS = [
+  { label: '목표', href: '/goals', icon: Target },
   { label: '자산', href: '/assets', icon: Wallet },
   { label: '거래내역', href: '/transactions', icon: ArrowLeftRight },
   { label: '차트', href: '/charts', icon: LineChart },
-  { label: '목표', href: '/goals', icon: Target },
 ]
 
 export function Sidebar() {

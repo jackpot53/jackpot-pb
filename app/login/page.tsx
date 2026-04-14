@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useSearchParams } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
+import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -101,18 +102,20 @@ function AuthForm() {
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>이메일</FormLabel>
-                <FormControl>
-                  <Input
-                    type="email"
-                    placeholder="name@example.com"
-                    autoComplete="email"
-                    disabled={isSubmitting}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
+              <FormItem className="flex flex-row items-center gap-4">
+                <FormLabel className="w-16 shrink-0 text-right">이메일</FormLabel>
+                <div className="flex-1">
+                  <FormControl>
+                    <Input
+                      type="email"
+                      placeholder="name@example.com"
+                      autoComplete="email"
+                      disabled={isSubmitting}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </div>
               </FormItem>
             )}
           />
@@ -120,23 +123,25 @@ function AuthForm() {
             control={form.control}
             name="password"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>비밀번호</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder=""
-                    autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                    disabled={isSubmitting}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-                {serverError && (
-                  <p className="text-sm text-destructive" role="alert">
-                    {serverError}
-                  </p>
-                )}
+              <FormItem className="flex flex-row items-center gap-4">
+                <FormLabel className="w-16 shrink-0 text-right">비밀번호</FormLabel>
+                <div className="flex-1">
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder=""
+                      autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                      disabled={isSubmitting}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                  {serverError && (
+                    <p className="text-sm text-destructive" role="alert">
+                      {serverError}
+                    </p>
+                  )}
+                </div>
               </FormItem>
             )}
           />
@@ -159,15 +164,19 @@ function AuthForm() {
 export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-background">
-      <Card className="w-full max-w-sm sm:w-[400px]">
-        <CardHeader className="pb-0">
-          <CardTitle className="text-xl font-semibold">Jackpot</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <Suspense fallback={null}>
-            <AuthForm />
-          </Suspense>
-        </CardContent>
+      <Card className="w-full max-w-2xl overflow-hidden">
+        <div className="flex flex-row">
+          <div className="w-1/2 flex items-center justify-center bg-muted/30 p-6">
+            <div className="overflow-hidden rounded-2xl w-full">
+              <Image src="/logo.jpg" alt="77잭팟 로고" width={400} height={200} className="w-full object-cover" />
+            </div>
+          </div>
+          <div className="w-1/2 p-8 flex flex-col justify-center">
+            <Suspense fallback={null}>
+              <AuthForm />
+            </Suspense>
+          </div>
+        </div>
       </Card>
     </main>
   )

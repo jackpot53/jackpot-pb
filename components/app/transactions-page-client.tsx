@@ -97,7 +97,7 @@ export function TransactionsPageClient({ transactions, assetOptions }: Props) {
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2">
           <Label className="text-sm text-muted-foreground shrink-0">자산</Label>
-          <Select value={assetFilter} onValueChange={setAssetFilter}>
+          <Select value={assetFilter} onValueChange={(v) => setAssetFilter(v ?? '전체')}>
             <SelectTrigger className="w-44">
               <SelectValue />
             </SelectTrigger>
@@ -112,7 +112,7 @@ export function TransactionsPageClient({ transactions, assetOptions }: Props) {
 
         <div className="flex items-center gap-2">
           <Label className="text-sm text-muted-foreground shrink-0">유형</Label>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v ?? '전체')}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -152,7 +152,7 @@ export function TransactionsPageClient({ transactions, assetOptions }: Props) {
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-muted-foreground shrink-0">자산 선택</Label>
-                <Select value={selectedAssetId} onValueChange={setSelectedAssetId}>
+                <Select value={selectedAssetId} onValueChange={(v) => setSelectedAssetId(v ?? '')}>
                   <SelectTrigger className="flex-1">
                     <SelectValue>{selectedAsset ? selectedAsset.name : '자산을 선택하세요'}</SelectValue>
                   </SelectTrigger>

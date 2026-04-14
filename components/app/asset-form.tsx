@@ -112,7 +112,7 @@ export function AssetForm({ defaultValues, onSubmit, submitLabel, showInitialTra
   const [suggestions, setSuggestions] = useState<TickerSuggestion[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const searchTimeout = useRef<ReturnType<typeof setTimeout>>()
+  const searchTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {

@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { createClient } from '@/utils/supabase/server'
 import { signOut } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
@@ -9,11 +10,10 @@ export async function Header() {
 
   return (
     <header className="h-14 border-b border-border bg-background flex items-center justify-between px-6 shrink-0">
-      <div className="flex items-center gap-2 select-none">
-        <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary text-primary-foreground font-black text-sm leading-none">
-          77
+      <div className="flex items-center select-none">
+        <div className="overflow-hidden rounded-lg">
+          <Image src="/logo.jpg" alt="77잭팟 로고" width={80} height={40} className="object-cover" />
         </div>
-        <span className="text-base font-black tracking-tight text-foreground">잭팟</span>
       </div>
       <div className="flex items-center gap-4">
         {user && (

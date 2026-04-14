@@ -94,7 +94,12 @@ export async function GET(request: NextRequest) {
 
           performances.push(
             computeAssetPerformance({
-              holding: asset,
+              holding: {
+                ...asset,
+                totalQuantity: asset.totalQuantity ?? 0,
+                avgCostPerUnit: asset.avgCostPerUnit ?? 0,
+                totalCostKrw: asset.totalCostKrw ?? 0,
+              },
               currentPriceKrw,
               isStale: stale,
               cachedAt,
