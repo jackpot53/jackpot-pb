@@ -26,7 +26,7 @@ export function AddAssetDialog() {
       >
         <PlusCircle className="h-4 w-4 mr-1.5" />자산 추가
       </DialogTrigger>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="w-[900px] max-w-[95vw]">
         <DialogHeader>
           <DialogTitle>자산 추가</DialogTitle>
         </DialogHeader>
