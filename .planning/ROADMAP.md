@@ -26,13 +26,14 @@ Build a single-user personal asset management web app in five phases. Phase 1 es
   2. User can log out from any page and their session is immediately invalidated
   3. All database tables exist in Supabase (PostgreSQL) with integer money types, exchange rate fields, and `is_voided` flag on transactions
   4. Unauthenticated requests to any app route are redirected to the login page
-**Plans**: 3 plans
+**Plans**: 4 plans
 **UI hint**: yes
 
 Plans:
 - [x] 01-01-PLAN.md — Next.js 16 scaffold: all Phase 1 dependencies installed, shadcn/ui initialized, Wave 0 test infrastructure (vitest + middleware/schema tests)
 - [x] 01-02-PLAN.md — Drizzle schema for all 7 tables (BIGINT money, is_voided, append-only ManualValuation) + migration applied to Supabase
 - [x] 01-03-PLAN.md — Supabase Auth: SSR client factories, middleware route protection (getUser), login page (Korean UI spec), signIn/signOut Server Actions
+- [ ] 01-04-PLAN.md — Multi-user architecture: user_id column on 6 tables, RLS policies, app-layer userId filters on all queries and Server Actions, cron CRON_TARGET_USER_ID support
 
 ---
 
@@ -122,7 +123,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 1/3 | In Progress|  |
+| 1. Foundation | 3/4 | In Progress|  |
 | 2. Asset & Transaction Management | 0/4 | Not started | - |
 | 3. Price Integration & Dashboard | 0/4 | Not started | - |
 | 4. History & Charts | 3/3 | Complete | 2026-04-13 |
