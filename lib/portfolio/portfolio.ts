@@ -42,7 +42,8 @@ export interface TypeAllocation {
 /**
  * Computes per-asset performance from holdings data + price info.
  * D-15: currentValueKrw = (totalQuantity / 1e8) × currentPriceKrw (LIVE)
- * D-16: MANUAL assets use latestManualValuationKrw directly
+ * D-16: fund: currentValueKrw = (qty/1e8) × latestManualValuationKrw (기준가)
+ *        other manual: currentValueKrw = latestManualValuationKrw (총값 그대로)
  */
 export function computeAssetPerformance(params: {
   holding: AssetHoldingInput
@@ -53,12 +54,18 @@ export function computeAssetPerformance(params: {
 }): AssetPerformance {
   const { holding, currentPriceKrw, isStale, cachedAt, latestManualValuationKrw } = params
 
-  // D-16: MANUAL assets and fund assets use the latest manual valuation, not priceCache
-  // Fund assets have no real-time ticker — NAV is entered manually like manual assets.
+  // D-16: Fund assets store latestManualValuationKrw as NAV per unit (기준가).
+  // Other manual assets store latestManualValuationKrw as total value.
   // missingValuation=true when valuation-based but no valuation row exists — caller should surface warning
-  const usesManualValuation = holding.priceType === 'manual' || holding.assetType === 'fund'
+  const isFund = holding.assetType === 'fund'
+  const isOtherManual = !isFund && holding.priceType === 'manual'
+  const usesManualValuation = isFund || isOtherManual
   const missingValuation = usesManualValuation && latestManualValuationKrw === null
-  const currentValueKrw = usesManualValuation
+
+  // fund: currentValueKrw = (qty/1e8) × 기준가; other manual: 총값 그대로; live: qty × livePrice
+  const currentValueKrw = isFund
+    ? Math.round((holding.totalQuantity / 1e8) * (latestManualValuationKrw ?? 0))
+    : isOtherManual
     ? (latestManualValuationKrw ?? 0)
     : Math.round((holding.totalQuantity / 1e8) * currentPriceKrw)
 
@@ -68,18 +75,10 @@ export function computeAssetPerformance(params: {
       ? ((currentValueKrw - holding.totalCostKrw) / holding.totalCostKrw) * 100
       : 0
 
-  // For fund assets: derive per-unit price from total valuation ÷ quantity
-  const fundUnitPrice =
-    holding.assetType === 'fund' && latestManualValuationKrw !== null && holding.totalQuantity > 0
-      ? Math.round(latestManualValuationKrw / (holding.totalQuantity / 1e8))
-      : null
-
   return {
     ...holding,
     currentPriceKrw:
-      fundUnitPrice !== null
-        ? fundUnitPrice
-        : usesManualValuation && latestManualValuationKrw !== null
+      usesManualValuation && latestManualValuationKrw !== null
         ? latestManualValuationKrw
         : currentPriceKrw,
     currentValueKrw,
