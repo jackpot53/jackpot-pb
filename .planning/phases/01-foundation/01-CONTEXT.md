@@ -1,6 +1,7 @@
 # Phase 1: Foundation - Context
 
 **Gathered:** 2026-04-09
+**Updated:** 2026-04-14 — 멀티 유저 아키텍처 전환
 **Status:** Ready for planning
 
 <domain>
@@ -31,11 +32,19 @@
 - **D-09:** 클라우드 Supabase 프로젝트 직접 사용. 로컬 Supabase CLI 없음.
 - **D-10:** `.env.local`에 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL` (Drizzle용 직접 PostgreSQL 연결) 관리.
 
+### 멀티 유저 아키텍처 (2026-04-14 추가)
+- **D-11:** 모든 사용자 데이터 테이블(Asset, Transaction, ManualValuation, Holdings, PriceCache, PortfolioSnapshot, Goal)에 `user_id UUID NOT NULL REFERENCES auth.users(id)` FK 컬럼 추가 — 싱글 유저 가정 제거.
+- **D-12:** Supabase Row Level Security (RLS) 활성화 — 모든 사용자 데이터 테이블에 `user_id = auth.uid()` 기반 SELECT/INSERT/UPDATE/DELETE 정책 적용. 이전에 deferred였으나 멀티 유저 전환으로 필수화.
+- **D-13:** Server Actions / API Route에서 `supabase.auth.getUser()`로 인증된 user_id를 확인하고 모든 Drizzle 쿼리에 `where(eq(table.userId, user.id))` 필터 추가 — RLS와 이중 방어.
+- **D-14:** Supabase Auth는 이미 멀티 유저를 지원함 (auth.users 테이블). 앱 레벨에서 별도 사용자 관리 테이블 불필요 — Supabase Auth를 직접 활용.
+- **D-15:** 공개 회원가입은 제공하지 않음 — Supabase Dashboard에서 수동으로 사용자 생성하거나 초대 이메일 활용.
+
 ### Claude's Discretion
 - shadcn/ui 컴포넌트 테마 선택 (기본 테마로 시작)
 - ESLint/Prettier 설정 세부사항
 - Drizzle 스키마 파일 구조 (`db/schema/` 디렉토리 권장)
 - 로딩 스켈레톤 및 에러 상태 디자인
+- RLS 정책 이름 규칙 (예: `assets_select_own`)
 
 </decisions>
 
@@ -86,7 +95,7 @@
 
 - 비밀번호 재설정 이메일 — v2 요구사항 (AUTH-V2-01)
 - OAuth 로그인 — v2 요구사항 (AUTH-V2-02)
-- Supabase Row Level Security (RLS) — 싱글 유저라 서버사이드 검증으로 충분, 복잡도 불필요
+- ~~Supabase Row Level Security (RLS)~~ — 2026-04-14 **D-12로 이동, 더 이상 deferred 아님**
 
 </deferred>
 
