@@ -1,12 +1,11 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Wallet, PlusCircle } from 'lucide-react'
+import { Wallet } from 'lucide-react'
 import { createClient } from '@/utils/supabase/server'
 import { refreshAllPrices } from '@/app/actions/prices'
 import { loadPerformances } from '@/lib/server/load-performances'
-import { buttonVariants } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { AssetsPageClient } from '@/components/app/assets-page-client'
+import { AddAssetDialog } from '@/components/app/add-asset-dialog'
 
 export default async function AssetsPage() {
   const supabase = await createClient()
@@ -23,9 +22,7 @@ export default async function AssetsPage() {
           <Wallet className="h-5 w-5" />
           내 자산
         </h1>
-        <Link href="/assets/new" className={buttonVariants()}>
-          <PlusCircle className="h-4 w-4 mr-1.5" />자산 추가
-        </Link>
+        <AddAssetDialog />
       </div>
       <Separator />
       <AssetsPageClient performances={performances} />
