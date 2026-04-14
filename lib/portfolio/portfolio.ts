@@ -8,7 +8,7 @@ export interface AssetHoldingInput {
   assetId: string
   name: string
   ticker: string | null
-  assetType: 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate'
+  assetType: 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'fund' | 'savings' | 'real_estate'
   priceType: 'live' | 'manual'
   totalQuantity: number    // ×10^8 integer
   avgCostPerUnit: number   // KRW per unit
@@ -53,13 +53,14 @@ export function computeAssetPerformance(params: {
 }): AssetPerformance {
   const { holding, currentPriceKrw, isStale, cachedAt, latestManualValuationKrw } = params
 
-  // D-16: MANUAL assets use the latest manual valuation, not priceCache
-  // missingValuation=true when manual but no valuation row exists — caller should surface warning
-  const missingValuation = holding.priceType === 'manual' && latestManualValuationKrw === null
-  const currentValueKrw =
-    holding.priceType === 'manual'
-      ? (latestManualValuationKrw ?? 0)
-      : Math.round((holding.totalQuantity / 1e8) * currentPriceKrw)
+  // D-16: MANUAL assets and fund assets use the latest manual valuation, not priceCache
+  // Fund assets have no real-time ticker — NAV is entered manually like manual assets.
+  // missingValuation=true when valuation-based but no valuation row exists — caller should surface warning
+  const usesManualValuation = holding.priceType === 'manual' || holding.assetType === 'fund'
+  const missingValuation = usesManualValuation && latestManualValuationKrw === null
+  const currentValueKrw = usesManualValuation
+    ? (latestManualValuationKrw ?? 0)
+    : Math.round((holding.totalQuantity / 1e8) * currentPriceKrw)
 
   // T-03-02-T: Avoid divide-by-zero when no cost basis (e.g. gift or initial seed)
   const returnPct =
@@ -70,7 +71,7 @@ export function computeAssetPerformance(params: {
   return {
     ...holding,
     currentPriceKrw:
-      holding.priceType === 'manual' && latestManualValuationKrw !== null
+      usesManualValuation && latestManualValuationKrw !== null
         ? latestManualValuationKrw
         : currentPriceKrw,
     currentValueKrw,
@@ -160,8 +161,11 @@ export function formatReturn(n: number): string {
 export function formatQty(quantityInt: number, isCrypto: boolean): string {
   const value = quantityInt / 1e8
   if (!isCrypto) {
-    return Math.round(value).toString()
+    return new Intl.NumberFormat('ko-KR').format(Math.round(value))
   }
-  // Strip trailing zeros from up to 8 decimal places
-  return value.toFixed(8).replace(/\.?0+$/, '')
+  // Crypto: format integer part with commas, keep up to 8 decimal places
+  const intPart = Math.floor(value)
+  const fracPart = value - intPart
+  const fracStr = fracPart.toFixed(8).slice(1).replace(/0+$/, '')
+  return new Intl.NumberFormat('ko-KR').format(intPart) + (fracStr === '.' ? '' : fracStr)
 }

@@ -141,7 +141,7 @@ function decodeQuantity(stored: number): string {
 
 export function OverviewTab({ asset, valuations, holding }: OverviewTabProps) {
   const [showUpdateForm, setShowUpdateForm] = useState(false)
-  const isManual = asset.priceType === 'manual'
+  const isManual = asset.priceType === 'manual' || asset.assetType === 'fund'
 
   const latestValuationKrw = valuations[0]?.valueKrw ?? null
   const hasPosition = holding !== null && holding.totalQuantity > 0
