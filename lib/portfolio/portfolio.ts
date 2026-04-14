@@ -68,10 +68,18 @@ export function computeAssetPerformance(params: {
       ? ((currentValueKrw - holding.totalCostKrw) / holding.totalCostKrw) * 100
       : 0
 
+  // For fund assets: derive per-unit price from total valuation ÷ quantity
+  const fundUnitPrice =
+    holding.assetType === 'fund' && latestManualValuationKrw !== null && holding.totalQuantity > 0
+      ? Math.round(latestManualValuationKrw / (holding.totalQuantity / 1e8))
+      : null
+
   return {
     ...holding,
     currentPriceKrw:
-      usesManualValuation && latestManualValuationKrw !== null
+      fundUnitPrice !== null
+        ? fundUnitPrice
+        : usesManualValuation && latestManualValuationKrw !== null
         ? latestManualValuationKrw
         : currentPriceKrw,
     currentValueKrw,

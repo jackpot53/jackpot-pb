@@ -55,8 +55,8 @@ function AssetRow({ asset }: { asset: AssetPerformance }) {
             {asset.currentPriceKrw > 0 ? formatKrw(asset.currentPriceKrw) : '—'}
             {asset.isStale && asset.currentPriceKrw > 0 && <StalePriceBadge />}
           </span>
-        ) : asset.assetType === 'fund' && asset.currentValueKrw > 0 ? (
-          formatKrw(asset.currentValueKrw)
+        ) : asset.assetType === 'fund' && asset.currentPriceKrw > 0 ? (
+          formatKrw(asset.currentPriceKrw)
         ) : '—'}
       </TableCell>
       <TableCell className="text-sm text-right">
