@@ -11,10 +11,6 @@ export default async function GoalsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">목표</h1>
-      </div>
-
       {/* PRIMARY VISUAL ANCHOR: chart appears first (D-05, D-08) */}
       <GoalProgressChart snapshots={snapshots} goals={goals} />
 
