@@ -1,11 +1,24 @@
 import { listGoals } from '@/db/queries/goals'
+import { getAllSnapshots } from '@/db/queries/portfolio-snapshots'
+import { GoalProgressChart } from '@/components/app/goal-progress-chart'
 import { GoalListClient } from '@/components/app/goal-list-client'
 
 export default async function GoalsPage() {
-  const goals = await listGoals()
+  const [goals, snapshots] = await Promise.all([
+    listGoals(),
+    getAllSnapshots(),
+  ])
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">목표</h1>
+      </div>
+
+      {/* PRIMARY VISUAL ANCHOR: chart appears first (D-05, D-08) */}
+      <GoalProgressChart snapshots={snapshots} goals={goals} />
+
+      {/* Goal list with CRUD actions */}
       <GoalListClient goals={goals} />
     </div>
   )
