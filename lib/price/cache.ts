@@ -1,0 +1,74 @@
+import { getPriceCacheByTicker, upsertPriceCache } from '@/db/queries/price-cache'
+import { fetchFinnhubQuote } from '@/lib/price/finnhub'
+import { fetchBokFxRate } from '@/lib/price/bok-fx'
+
+const PRICE_TTL_MS = 5 * 60 * 1000    // 5 minutes (D-01)
+const FX_TTL_MS = 60 * 60 * 1000      // 1 hour (D-09)
+
+function isStale(cachedAt: Date, ttlMs: number): boolean {
+  return Date.now() - cachedAt.getTime() > ttlMs
+}
+
+/**
+ * Refreshes price for a LIVE stock/ETF asset if cache is older than 5 minutes.
+ * If API returns null (unavailable / KRX not covered), existing cache is preserved (D-02).
+ *
+ * @param ticker - Asset ticker symbol (e.g. 'AAPL', '005930.KS')
+ * @param assetType - Used to determine USD→KRW conversion path
+ */
+export async function refreshPriceIfStale(ticker: string, assetType: string): Promise<void> {
+  const cached = await getPriceCacheByTicker(ticker)
+
+  // If cache exists and is fresh, skip API call
+  if (cached && !isStale(cached.cachedAt, PRICE_TTL_MS)) return
+
+  // Cache is stale or missing — fetch from Finnhub
+  // Returns USD cents (integer) or null
+  const priceUsdCents = await fetchFinnhubQuote(ticker)
+
+  // D-02: If API fails/returns null, do NOT write zero — preserve existing cache
+  if (priceUsdCents === null) return
+
+  // Need FX rate to convert USD → KRW
+  // Fetch from cache (don't force refresh here — FX has its own TTL)
+  const fxCache = await getPriceCacheByTicker('USD_KRW')
+  // FX rate stored as integer × 10000 (D-17). If unavailable, skip update.
+  if (!fxCache || fxCache.priceKrw === 0) return
+
+  const fxRate = fxCache.priceKrw / 10000  // e.g. 13565000 → 1356.5
+  const priceUsd = priceUsdCents / 100      // cents → dollars
+  const priceKrw = Math.round(priceUsd * fxRate)
+
+  await upsertPriceCache({
+    ticker,
+    priceKrw,
+    priceOriginal: priceUsdCents,
+    currency: 'USD',
+  })
+}
+
+/**
+ * Refreshes USD/KRW exchange rate if cache is older than 1 hour.
+ * Cached as ticker 'USD_KRW'. priceKrw stores rate × 10000 (integer) per D-17.
+ * If BOK API fails, existing cache is preserved (D-09 stale fallback).
+ */
+export async function refreshFxIfStale(): Promise<void> {
+  const cached = await getPriceCacheByTicker('USD_KRW')
+
+  if (cached && !isStale(cached.cachedAt, FX_TTL_MS)) return
+
+  const rateInt = await fetchBokFxRate()  // returns integer × 10000 or null
+  if (rateInt === null) return             // stale fallback: keep existing cache
+
+  await upsertPriceCache({
+    ticker: 'USD_KRW',
+    priceKrw: rateInt,
+    priceOriginal: rateInt,
+    currency: 'KRW',
+  })
+}
+
+/**
+ * Reads priceCache for a ticker. Returns null if no cache entry exists.
+ */
+export { getPriceCacheByTicker as getPriceFromCache }
