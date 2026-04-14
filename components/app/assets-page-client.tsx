@@ -135,8 +135,14 @@ function AssetTable({ assets }: { assets: AssetPerformance[] }) {
   )
 }
 
-function SummaryCards({ grouped }: { grouped: Record<string, AssetPerformance[]> }) {
+function SummaryCards({ grouped, performances }: { grouped: Record<string, AssetPerformance[]>; performances: AssetPerformance[] }) {
   const types = Object.keys(grouped)
+
+  const grandTotalCost = performances.reduce((s, a) => s + a.totalCostKrw, 0)
+  const grandTotalValue = performances.reduce((s, a) => s + a.currentValueKrw, 0)
+  const grandProfit = grandTotalValue - grandTotalCost
+  const grandHasValue = grandTotalValue > 0
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       {types.map((type) => {
@@ -170,6 +176,25 @@ function SummaryCards({ grouped }: { grouped: Record<string, AssetPerformance[]>
           </div>
         )
       })}
+
+      {/* 전체 합계 카드 */}
+      <div className="rounded-lg border-2 border-foreground/20 bg-muted/30 p-4 space-y-2">
+        <p className="text-xs font-semibold text-foreground">전체 합계</p>
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">총 투자금액</p>
+          <p className="text-sm font-semibold">{grandTotalCost > 0 ? formatKrw(grandTotalCost) : '—'}</p>
+        </div>
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">평가손익</p>
+          {grandHasValue && grandTotalCost > 0 ? (
+            <p className={`text-sm font-semibold ${grandProfit >= 0 ? 'text-red-500' : 'text-blue-600'}`}>
+              {grandProfit >= 0 ? '+' : ''}{formatKrw(grandProfit)}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">—</p>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -201,7 +226,7 @@ export function AssetsPageClient({ performances }: AssetsPageClientProps) {
 
   return (
     <div className="space-y-6">
-    <SummaryCards grouped={grouped} />
+    <SummaryCards grouped={grouped} performances={performances} />
     <Tabs defaultValue={showAll ? 'all' : defaultTab}>
       <TabsList>
         {showAll && <TabsTrigger value="all">전체</TabsTrigger>}
