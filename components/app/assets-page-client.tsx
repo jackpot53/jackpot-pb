@@ -135,6 +135,45 @@ function AssetTable({ assets }: { assets: AssetPerformance[] }) {
   )
 }
 
+function SummaryCards({ grouped }: { grouped: Record<string, AssetPerformance[]> }) {
+  const types = Object.keys(grouped)
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+      {types.map((type) => {
+        const assets = grouped[type]
+        const totalCost = assets.reduce((s, a) => s + a.totalCostKrw, 0)
+        const totalValue = assets.reduce((s, a) => s + a.currentValueKrw, 0)
+        const profit = totalValue - totalCost
+        const hasValue = totalValue > 0
+        const profitColor = profit >= 0 ? 'text-red-500' : 'text-blue-600'
+
+        return (
+          <div key={type} className="rounded-lg border bg-card p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <AssetTypeBadge assetType={type as AssetPerformance['assetType']} />
+              <span className="text-xs text-muted-foreground">{assets.length}종목</span>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">총 투자금액</p>
+              <p className="text-sm font-semibold">{totalCost > 0 ? formatKrw(totalCost) : '—'}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">평가손익</p>
+              {hasValue && totalCost > 0 ? (
+                <p className={`text-sm font-semibold ${profitColor}`}>
+                  {profit >= 0 ? '+' : ''}{formatKrw(profit)}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">—</p>
+              )}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 interface AssetsPageClientProps {
   performances: AssetPerformance[]
 }
@@ -161,6 +200,8 @@ export function AssetsPageClient({ performances }: AssetsPageClientProps) {
   const showAll = types.length > 1
 
   return (
+    <div className="space-y-6">
+    <SummaryCards grouped={grouped} />
     <Tabs defaultValue={showAll ? 'all' : defaultTab}>
       <TabsList>
         {showAll && <TabsTrigger value="all">전체</TabsTrigger>}
@@ -194,5 +235,6 @@ export function AssetsPageClient({ performances }: AssetsPageClientProps) {
         </TabsContent>
       ))}
     </Tabs>
+    </div>
   )
 }
