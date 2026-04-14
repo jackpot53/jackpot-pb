@@ -40,83 +40,88 @@ export async function GET(request: NextRequest) {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  // CRON_TARGET_USER_ID: 스냅샷을 기록할 대상 유저 UUID
-  // .env.local (및 Vercel 환경변수)에 설정 필요
-  const targetUserId = process.env.CRON_TARGET_USER_ID
-  if (!targetUserId) {
-    return Response.json({ ok: false, error: 'CRON_TARGET_USER_ID not configured' }, { status: 500 })
-  }
-
   try {
-    // Step 1: Refresh FX rate (stale fallback applies if BOK API fails — D-03, D-09)
+    // Step 1: Refresh FX rate once (shared across all users)
     await refreshFxIfStale()
 
-    // Step 2: Refresh prices for all LIVE assets with a ticker (target user only)
-    // Use Promise.allSettled to apply stale fallback per asset (D-03)
+    // Step 2: Find all users who have assets
+    const userRows = await db
+      .selectDistinct({ userId: assets.userId })
+      .from(assets)
+    const userIds = userRows.map((r) => r.userId)
+
+    if (userIds.length === 0) {
+      return Response.json({ ok: true, skipped: 'no users with assets' })
+    }
+
+    // Step 3: Refresh prices for all live tickers (once, shared across all users)
     const liveAssets = await db
       .select({ ticker: assets.ticker, assetType: assets.assetType })
       .from(assets)
-      .where(and(eq(assets.priceType, 'live'), isNotNull(assets.ticker), eq(assets.userId, targetUserId)))
+      .where(and(eq(assets.priceType, 'live'), isNotNull(assets.ticker)))
 
     await Promise.allSettled(
       liveAssets.map((a) => refreshPriceIfStale(a.ticker!, a.assetType))
     )
 
-    // Step 3: Assemble portfolio data (same pattern as app/(app)/page.tsx, without requireUser())
-    // The cron route has direct DB access — no Supabase session required.
-    const assetsWithHoldings = await getAssetsWithHoldings(targetUserId)
+    const snapshotDate = new Date().toISOString().slice(0, 10) // 'YYYY-MM-DD' UTC
+    const results: Record<string, string> = {}
 
-    const liveTickers = assetsWithHoldings
-      .filter((a) => a.priceType === 'live' && a.ticker)
-      .map((a) => a.ticker!)
-    const priceMap = await getPriceCacheByTickers([...liveTickers, 'USD_KRW'])
-    const fxCache = priceMap.get('USD_KRW')
-    const fxRateInt: number = fxCache?.priceKrw ?? 0
+    // Step 4: Snapshot each user independently
+    for (const userId of userIds) {
+      try {
+        const assetsWithHoldings = await getAssetsWithHoldings(userId)
 
-    // Step 4: Compute per-asset performance
-    const performances: AssetPerformance[] = []
-    for (const asset of assetsWithHoldings) {
-      let currentPriceKrw = 0
-      let cachedAt: Date | null = null
-      let stale = false
+        const liveTickers = assetsWithHoldings
+          .filter((a) => a.priceType === 'live' && a.ticker)
+          .map((a) => a.ticker!)
+        const priceMap = await getPriceCacheByTickers([...liveTickers, 'USD_KRW'])
+        const fxCache = priceMap.get('USD_KRW')
+        const fxRateInt: number = fxCache?.priceKrw ?? 0
 
-      if (asset.priceType === 'live' && asset.ticker) {
-        const priceRow = priceMap.get(asset.ticker)
-        currentPriceKrw = priceRow?.priceKrw ?? 0
-        cachedAt = priceRow?.cachedAt ?? null
-        stale = isStalePrice(cachedAt)
-      }
+        const performances: AssetPerformance[] = []
+        for (const asset of assetsWithHoldings) {
+          let currentPriceKrw = 0
+          let cachedAt: Date | null = null
+          let stale = false
 
-      performances.push(
-        computeAssetPerformance({
-          holding: asset,
-          currentPriceKrw,
-          isStale: stale,
-          cachedAt,
-          latestManualValuationKrw: asset.latestManualValuationKrw,
+          if (asset.priceType === 'live' && asset.ticker) {
+            const priceRow = priceMap.get(asset.ticker)
+            currentPriceKrw = priceRow?.priceKrw ?? 0
+            cachedAt = priceRow?.cachedAt ?? null
+            stale = isStalePrice(cachedAt)
+          }
+
+          performances.push(
+            computeAssetPerformance({
+              holding: asset,
+              currentPriceKrw,
+              isStale: stale,
+              cachedAt,
+              latestManualValuationKrw: asset.latestManualValuationKrw,
+            })
+          )
+        }
+
+        const summary = computePortfolio(performances, fxRateInt)
+        const returnBps = Math.round((summary.returnPct / 100) * 10000)
+
+        await writePortfolioSnapshot({
+          snapshotDate,
+          totalValueKrw: summary.totalValueKrw,
+          totalCostKrw: summary.totalCostKrw,
+          returnBps,
+          userId,
         })
-      )
+
+        results[userId] = 'ok'
+      } catch (userError) {
+        console.error(`[cron/snapshot] error for user ${userId}:`, userError)
+        results[userId] = String(userError)
+      }
     }
 
-    // Step 5: Compute portfolio summary
-    // Pass 0 when FX rate unavailable — computePortfolio guards divide-by-zero
-    const summary = computePortfolio(performances, fxRateInt)
-
-    // Step 6: Write snapshot row (idempotent — onConflictDoNothing on snapshotDate UNIQUE)
-    // Use UTC date — cron runs at 00:00 UTC = 09:00 KST (same calendar day)
-    const snapshotDate = new Date().toISOString().slice(0, 10)  // 'YYYY-MM-DD' UTC
-    // returnBps = overall return vs. cost basis × 10000 (e.g. 13.18% = 13180 bps)
-    const returnBps = Math.round((summary.returnPct / 100) * 10000)
-
-    await writePortfolioSnapshot({
-      snapshotDate,
-      totalValueKrw: summary.totalValueKrw,
-      totalCostKrw: summary.totalCostKrw,
-      returnBps,
-      userId: targetUserId,
-    })
-
-    return Response.json({ ok: true, snapshotDate })
+    return Response.json({ ok: true, snapshotDate, users: results })
   } catch (error) {
     console.error('[cron/snapshot] error:', error)
     return Response.json({ ok: false, error: String(error) }, { status: 500 })
