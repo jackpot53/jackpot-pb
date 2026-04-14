@@ -1,6 +1,9 @@
 import { getPriceCacheByTicker, upsertPriceCache } from '@/db/queries/price-cache'
 import { fetchFinnhubQuote } from '@/lib/price/finnhub'
+import { fetchYahooQuote } from '@/lib/price/yahoo'
 import { fetchBokFxRate } from '@/lib/price/bok-fx'
+
+const KR_ASSET_TYPES = ['stock_kr', 'etf_kr']
 
 const PRICE_TTL_MS = 5 * 60 * 1000    // 5 minutes (D-01)
 const FX_TTL_MS = 60 * 60 * 1000      // 1 hour (D-09)
@@ -22,15 +25,31 @@ export async function refreshPriceIfStale(ticker: string, assetType: string): Pr
   // If cache exists and is fresh, skip API call
   if (cached && !isStale(cached.cachedAt, PRICE_TTL_MS)) return
 
-  // Cache is stale or missing — fetch from Finnhub
-  // Returns USD cents (integer) or null
+  // Korean stocks/ETFs → Yahoo Finance (returns KRW directly, no FX needed)
+  if (KR_ASSET_TYPES.includes(assetType)) {
+    const result = await fetchYahooQuote(ticker)
+    if (result === null) return
+
+    // Yahoo returns KRW for .KS / .KQ tickers
+    const priceKrw = Math.round(result.price)
+    if (priceKrw <= 0) return
+
+    await upsertPriceCache({
+      ticker,
+      priceKrw,
+      priceOriginal: priceKrw,
+      currency: 'KRW',
+    })
+    return
+  }
+
+  // US stocks/ETFs/crypto → Finnhub (returns USD cents, convert via FX rate)
   const priceUsdCents = await fetchFinnhubQuote(ticker)
 
   // D-02: If API fails/returns null, do NOT write zero — preserve existing cache
   if (priceUsdCents === null) return
 
   // Need FX rate to convert USD → KRW
-  // Fetch from cache (don't force refresh here — FX has its own TTL)
   const fxCache = await getPriceCacheByTicker('USD_KRW')
   // FX rate stored as integer × 10000 (D-17). If unavailable, skip update.
   if (!fxCache || fxCache.priceKrw === 0) return

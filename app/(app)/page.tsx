@@ -13,7 +13,6 @@ import { Separator } from '@/components/ui/separator'
 import { DashboardStatCard } from '@/components/app/dashboard-stat-card'
 import { AllocationPieChart, type AllocationSlice } from '@/components/app/allocation-pie-chart'
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
-import { PerformanceTable } from '@/components/app/performance-table'
 import { DashboardGoalsSection } from '@/components/app/dashboard-goals-section'
 
 export default async function DashboardPage() {
@@ -107,17 +106,7 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* Row 3: Performance Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl font-semibold">종목별 성과</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <PerformanceTable rows={performances} />
-        </CardContent>
-      </Card>
-
-      {/* Row 4: Goals Section — hidden when no goals (D-03, D-04) */}
+      {/* Row 3: Goals Section — hidden when no goals (D-03, D-04) */}
       <DashboardGoalsSection goals={goalsList} totalValueKrw={summary.totalValueKrw} />
     </div>
   )

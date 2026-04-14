@@ -58,7 +58,7 @@ const fundPriceSchema = z.object({
 })
 type FundPriceFormValues = z.infer<typeof fundPriceSchema>
 
-function FundValuationForm({ asset, holding, onSuccess }: { asset: Asset; holding: HoldingRow; onSuccess: () => void }) {
+function FundValuationForm({ asset, holding, onSuccess, unitLabel = '좌' }: { asset: Asset; holding: HoldingRow; onSuccess: () => void; unitLabel?: string }) {
   const [isPending, startTransition] = useTransition()
   const form = useForm<FundPriceFormValues>({
     resolver: zodResolver(fundPriceSchema),
@@ -101,7 +101,7 @@ function FundValuationForm({ asset, holding, onSuccess }: { asset: Asset; holdin
 
         {previewKrw !== null && (
           <p className="text-xs text-muted-foreground">
-            평가금액 예상: ₩{formatKrw(previewKrw)} ({decodeQuantity(holding.totalQuantity)}좌 × ₩{formatKrw(Math.round(price))})
+            평가금액 예상: ₩{formatKrw(previewKrw)} ({decodeQuantity(holding.totalQuantity)}{unitLabel} × ₩{formatKrw(Math.round(price))})
           </p>
         )}
 
@@ -231,15 +231,17 @@ function decodeQuantity(stored: number): string {
 
 export function OverviewTab({ asset, valuations, holding }: OverviewTabProps) {
   const [showUpdateForm, setShowUpdateForm] = useState(false)
-  const isManual = asset.priceType === 'manual' || asset.assetType === 'fund'
   const isFundAsset = asset.assetType === 'fund'
+  const isRealEstate = asset.assetType === 'real_estate'
+  const usesUnitPrice = isFundAsset || isRealEstate
+  const isManual = asset.priceType === 'manual' || usesUnitPrice
 
-  const latestValuationKrw = valuations[0]?.valueKrw ?? null  // fund: 기준가; others: 총값
+  const latestValuationKrw = valuations[0]?.valueKrw ?? null  // fund/real_estate: 단가; others: 총값
   const hasPosition = holding !== null && holding.totalQuantity > 0
 
-  // fund: displayValueKrw = qty × 기준가; others: latestValuationKrw 그대로
+  // fund/real_estate: displayValueKrw = qty × 단가; others: latestValuationKrw 그대로
   const displayValueKrw =
-    isFundAsset && latestValuationKrw !== null && holding !== null
+    usesUnitPrice && latestValuationKrw !== null && holding !== null
       ? Math.round((holding.totalQuantity / 1e8) * latestValuationKrw)
       : latestValuationKrw
 
@@ -324,10 +326,11 @@ export function OverviewTab({ asset, valuations, holding }: OverviewTabProps) {
             </div>
 
             {showUpdateForm && (
-              asset.assetType === 'fund' && holding ? (
+              usesUnitPrice && holding ? (
                 <FundValuationForm
                   asset={asset}
                   holding={holding}
+                  unitLabel={isRealEstate ? '개' : '좌'}
                   onSuccess={() => setShowUpdateForm(false)}
                 />
               ) : (
@@ -348,7 +351,7 @@ export function OverviewTab({ asset, valuations, holding }: OverviewTabProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>날짜</TableHead>
-                    <TableHead>{isFundAsset ? '기준가 (₩/좌)' : '평가금액 (₩)'}</TableHead>
+                    <TableHead>{isFundAsset ? '기준가 (₩/좌)' : isRealEstate ? '단가 (₩/개)' : '평가금액 (₩)'}</TableHead>
                     <TableHead>메모</TableHead>
                   </TableRow>
                 </TableHeader>

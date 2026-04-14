@@ -31,11 +31,14 @@ export function computeHoldings(txns: TransactionInput[]): HoldingsResult {
 
   for (const tx of active) {
     if (tx.type === 'buy') {
-      // WAVG formula: keep integer precision by using Math.round only at final division
+      // WAVG: divide by 1e8 first to keep intermediates within safe integer range
+      // (avgCostPerUnit * totalQuantity can exceed MAX_SAFE_INTEGER for large fund quantities)
+      const prevUnits = totalQuantity / 1e8
+      const addUnits = tx.quantity / 1e8
       const newQty = totalQuantity + tx.quantity
       if (newQty > 0) {
         avgCostPerUnit = Math.round(
-          (avgCostPerUnit * totalQuantity + tx.pricePerUnit * tx.quantity) / newQty
+          (avgCostPerUnit * prevUnits + tx.pricePerUnit * addUnits) / (prevUnits + addUnits)
         )
       }
       totalQuantity = newQty

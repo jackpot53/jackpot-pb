@@ -1,5 +1,6 @@
 'use client'
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { Ban, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,6 +20,7 @@ interface VoidTransactionDialogProps {
 }
 
 export function VoidTransactionDialog({ transactionId, assetId }: VoidTransactionDialogProps) {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
@@ -26,6 +28,7 @@ export function VoidTransactionDialog({ transactionId, assetId }: VoidTransactio
     startTransition(async () => {
       await voidTransaction(transactionId, assetId)
       setOpen(false)
+      router.refresh()
     })
   }
 

@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -34,6 +35,7 @@ function decodeQuantity(stored: number): string {
 }
 
 export function TransactionsTab({ asset, transactions }: TransactionsTabProps) {
+  const router = useRouter()
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -97,8 +99,15 @@ export function TransactionsTab({ asset, transactions }: TransactionsTabProps) {
                         fee: tx.fee.toString(),
                         notes: tx.notes,
                       }}
-                      onSubmit={(data) => updateTransaction(tx.id, asset.id, data)}
-                      submitLabel="거래 저장"
+                      onSubmit={async (data) => {
+                        const result = await updateTransaction(tx.id, asset.id, data)
+                        if (!result?.error) {
+                          setEditingId(null)
+                          router.refresh()
+                        }
+                        return result
+                      }}
+                      submitLabel="수정"
                       onCancel={() => setEditingId(null)}
                     />
                   </TableCell>

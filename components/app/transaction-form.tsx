@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useTransition, useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Save, ArrowLeft, ArrowLeftRight, CalendarDays, Hash, CircleDollarSign, BadgeDollarSign, Coins, StickyNote } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -127,8 +127,8 @@ export function TransactionForm({
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <FormField control={form.control} name="type" render={({ field }) => (
           <FormItem>
-            <FormLabel>거래 유형</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <FormLabel><ArrowLeftRight className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />거래 유형</FormLabel>
+            <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>
                 <SelectTrigger><SelectValue /></SelectTrigger>
               </FormControl>
@@ -143,7 +143,7 @@ export function TransactionForm({
 
         <FormField control={form.control} name="transactionDate" render={({ field }) => (
           <FormItem>
-            <FormLabel>날짜</FormLabel>
+            <FormLabel><CalendarDays className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />날짜</FormLabel>
             <FormControl><Input type="date" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
@@ -151,7 +151,7 @@ export function TransactionForm({
 
         <FormField control={form.control} name="quantity" render={({ field }) => (
           <FormItem>
-            <FormLabel>수량</FormLabel>
+            <FormLabel><Hash className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />수량</FormLabel>
             <FormControl>
               <Input
                 {...field}
@@ -165,7 +165,7 @@ export function TransactionForm({
 
         <FormField control={form.control} name="pricePerUnit" render={({ field }) => (
           <FormItem>
-            <FormLabel>단가 {isUSD ? '(USD)' : '(₩)'}</FormLabel>
+            <FormLabel><CircleDollarSign className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />단가 {isUSD ? '(USD)' : '(₩)'}</FormLabel>
             <FormControl>
               <Input
                 {...field}
@@ -180,7 +180,7 @@ export function TransactionForm({
         {isUSD && (
           <FormField control={form.control} name="exchangeRate" render={({ field }) => (
             <FormItem>
-              <FormLabel>거래 시 환율 (₩/＄)</FormLabel>
+              <FormLabel><BadgeDollarSign className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />거래 시 환율 (₩/＄)</FormLabel>
               <FormControl>
                 <Input
                   {...field}
@@ -200,7 +200,7 @@ export function TransactionForm({
 
         <FormField control={form.control} name="fee" render={({ field }) => (
           <FormItem>
-            <FormLabel>수수료 (₩)</FormLabel>
+            <FormLabel><Coins className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />수수료 (₩)</FormLabel>
             <FormControl><Input {...field} inputMode="numeric" /></FormControl>
             <FormMessage />
           </FormItem>
@@ -208,7 +208,7 @@ export function TransactionForm({
 
         <FormField control={form.control} name="notes" render={({ field }) => (
           <FormItem>
-            <FormLabel>메모 (선택)</FormLabel>
+            <FormLabel><StickyNote className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />메모 (선택)</FormLabel>
             <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
             <FormMessage />
           </FormItem>
@@ -220,11 +220,11 @@ export function TransactionForm({
 
         <div className="flex gap-2">
           <Button type="submit" disabled={isPending}>
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
             {submitLabel}
           </Button>
           <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
-            취소
+            <ArrowLeft className="mr-1.5 h-4 w-4" />취소
           </Button>
         </div>
       </form>

@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { db } from '@/db'
 import { manualValuations } from '@/db/schema/manual-valuations'
 import { createClient } from '@/utils/supabase/server'
+import { and, eq, desc } from 'drizzle-orm'
 
 async function requireUser() {
   const supabase = await createClient()
@@ -50,15 +51,29 @@ export async function createManualValuation(
     valueKrwInt = Math.round(parseFloat(d.valueKrw))
   }
 
-  // D-06 / D-09: INSERT ONLY — never update or delete ManualValuation rows
-  await db.insert(manualValuations).values({
-    assetId,
-    valueKrw: valueKrwInt,
-    currency: d.currency,
-    exchangeRateAtTime: exchangeRateEncoded,
-    valuedAt: d.valuedAt,
-    notes: d.notes ?? null,
-  })
+  // 같은 날짜 기록이 있으면 UPDATE, 없으면 INSERT
+  const existing = await db
+    .select({ id: manualValuations.id })
+    .from(manualValuations)
+    .where(and(eq(manualValuations.assetId, assetId), eq(manualValuations.valuedAt, d.valuedAt)))
+    .orderBy(desc(manualValuations.createdAt))
+    .limit(1)
+
+  if (existing[0]) {
+    await db
+      .update(manualValuations)
+      .set({ valueKrw: valueKrwInt, currency: d.currency, exchangeRateAtTime: exchangeRateEncoded, notes: d.notes ?? null })
+      .where(eq(manualValuations.id, existing[0].id))
+  } else {
+    await db.insert(manualValuations).values({
+      assetId,
+      valueKrw: valueKrwInt,
+      currency: d.currency,
+      exchangeRateAtTime: exchangeRateEncoded,
+      valuedAt: d.valuedAt,
+      notes: d.notes ?? null,
+    })
+  }
 
   revalidatePath(`/assets/${assetId}`)
 }

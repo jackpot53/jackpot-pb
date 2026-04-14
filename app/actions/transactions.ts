@@ -99,6 +99,18 @@ export async function createTransaction(
   revalidatePath(`/assets/${assetId}`)
 }
 
+export async function deleteTransaction(
+  transactionId: string,
+  assetId: string
+): Promise<TransactionActionError | void> {
+  await requireUser()
+  if (!transactionId) return { error: '거래 ID가 없습니다.' }
+  await db.delete(transactions).where(eq(transactions.id, transactionId))
+  await upsertHoldings(assetId)
+  revalidatePath(`/assets/${assetId}`)
+  revalidatePath('/transactions')
+}
+
 export async function voidTransaction(
   transactionId: string,
   assetId: string
@@ -156,4 +168,5 @@ export async function updateTransaction(
 
   await upsertHoldings(assetId)
   revalidatePath(`/assets/${assetId}`)
+  revalidatePath('/transactions')
 }

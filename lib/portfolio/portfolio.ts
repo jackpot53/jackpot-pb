@@ -10,6 +10,9 @@ export interface AssetHoldingInput {
   ticker: string | null
   assetType: 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'fund' | 'savings' | 'real_estate'
   priceType: 'live' | 'manual'
+  currency: 'KRW' | 'USD'
+  accountType: 'isa' | 'irp' | 'pension' | 'dc' | 'brokerage' | null
+  notes: string | null
   totalQuantity: number    // ×10^8 integer
   avgCostPerUnit: number   // KRW per unit
   totalCostKrw: number     // total KRW invested (cost basis)
@@ -54,16 +57,16 @@ export function computeAssetPerformance(params: {
 }): AssetPerformance {
   const { holding, currentPriceKrw, isStale, cachedAt, latestManualValuationKrw } = params
 
-  // D-16: Fund assets store latestManualValuationKrw as NAV per unit (기준가).
+  // D-16: Fund/real_estate assets store latestManualValuationKrw as NAV per unit (기준가/단가).
   // Other manual assets store latestManualValuationKrw as total value.
   // missingValuation=true when valuation-based but no valuation row exists — caller should surface warning
-  const isFund = holding.assetType === 'fund'
-  const isOtherManual = !isFund && holding.priceType === 'manual'
-  const usesManualValuation = isFund || isOtherManual
+  const usesUnitPrice = holding.assetType === 'fund' || holding.assetType === 'real_estate'
+  const isOtherManual = !usesUnitPrice && holding.priceType === 'manual'
+  const usesManualValuation = usesUnitPrice || isOtherManual
   const missingValuation = usesManualValuation && latestManualValuationKrw === null
 
-  // fund: currentValueKrw = (qty/1e8) × 기준가; other manual: 총값 그대로; live: qty × livePrice
-  const currentValueKrw = isFund
+  // fund/real_estate: currentValueKrw = (qty/1e8) × 단가; other manual: 총값 그대로; live: qty × livePrice
+  const currentValueKrw = usesUnitPrice
     ? Math.round((holding.totalQuantity / 1e8) * (latestManualValuationKrw ?? 0))
     : isOtherManual
     ? (latestManualValuationKrw ?? 0)

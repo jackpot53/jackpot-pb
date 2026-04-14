@@ -1,12 +1,6 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
-
-const inter = Inter({
-  subsets: ['latin'],
-  weight: ['400', '600'],
-})
 
 export const metadata: Metadata = {
   title: 'jackpot',
@@ -19,8 +13,16 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ko">
-      <body className={inter.className}>
+    <html lang="ko" className="dark">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Dongle&family=Poor+Story&family=Single+Day&family=Sunflower:wght@300&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body>
         {children}
         <Toaster position="bottom-right" />
       </body>

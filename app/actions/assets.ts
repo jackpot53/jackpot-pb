@@ -11,13 +11,14 @@ import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { upsertHoldings } from '@/lib/holdings'
 
-const TRADEABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund'] as const
+const TRADEABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'real_estate'] as const
 
 const assetSchema = z.object({
   name: z.string().min(1, '종목명을 입력해주세요.').max(255),
   assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
+  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot']).optional().nullable(),
   ticker: z.string().max(20).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
   // Initial transaction fields (new asset only, optional)
@@ -50,6 +51,7 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
   const [newAsset] = await db.insert(assets).values({
     ...rest,
     ticker: ticker ?? null,
+    accountType: rest.accountType ?? null,
     notes: notes ?? null,
   }).returning({ id: assets.id })
 
@@ -123,6 +125,7 @@ export async function updateAsset(
   await db.update(assets).set({
     ...rest,
     ticker: ticker ?? null,
+    accountType: rest.accountType ?? null,
     notes: notes ?? null,
   }).where(eq(assets.id, id))
 
@@ -167,7 +170,6 @@ export async function updateAsset(
 
   revalidatePath('/assets')
   revalidatePath(`/assets/${id}`)
-  redirect('/assets')
 }
 
 export async function deleteAsset(id: string): Promise<AssetActionError | void> {

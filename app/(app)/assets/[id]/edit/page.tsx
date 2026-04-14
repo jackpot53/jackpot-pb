@@ -29,7 +29,7 @@ export default async function EditAssetPage({ params }: { params: Promise<{ id: 
       <AssetForm
         defaultValues={{ ...asset, ...holdingDefaults }}
         onSubmit={updateAsset.bind(null, id)}
-        submitLabel="자산 저장"
+        submitLabel="자산 수정"
         showInitialTransaction
         transactionSectionLabel="매수 추가 (선택)"
       />

@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { getAssetById } from '@/db/queries/assets'
 import { getTransactionsByAsset } from '@/db/queries/transactions'
 import { getValuationsByAsset } from '@/db/queries/manual-valuations'
+import { getHoldingByAssetId } from '@/db/queries/holdings'
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TransactionsTab } from '@/components/app/transactions-tab'
@@ -9,10 +10,11 @@ import { OverviewTab } from '@/components/app/overview-tab'
 
 export default async function AssetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const [asset, txns, valuations] = await Promise.all([
+  const [asset, txns, valuations, holding] = await Promise.all([
     getAssetById(id),
     getTransactionsByAsset(id),
     getValuationsByAsset(id),
+    getHoldingByAssetId(id),
   ])
   if (!asset) notFound()
 
@@ -29,7 +31,7 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
           <TabsTrigger value="transactions">거래내역</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
-          <OverviewTab asset={asset} valuations={valuations} />
+          <OverviewTab asset={asset} valuations={valuations} holding={holding} />
         </TabsContent>
         <TabsContent value="transactions">
           <TransactionsTab asset={asset} transactions={txns} />

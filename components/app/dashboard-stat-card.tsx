@@ -17,9 +17,9 @@ export function DashboardStatCard({
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-normal text-muted-foreground">{label}</CardTitle>
+        <CardTitle className="text-sm font-normal text-muted-foreground text-center">{label}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="text-center">
         <p className="text-3xl font-semibold leading-tight">{primaryValue}</p>
         {secondaryValue && (
           <p
