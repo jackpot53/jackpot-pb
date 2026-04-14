@@ -26,7 +26,7 @@ export function AddAssetDialog() {
       >
         <PlusCircle className="h-4 w-4 mr-1.5" />자산 추가
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>자산 추가</DialogTitle>
         </DialogHeader>
@@ -39,6 +39,7 @@ export function AddAssetDialog() {
             }
             return result
           }}
+          onCancel={() => setOpen(false)}
           submitLabel="자산 저장"
           showInitialTransaction
         />

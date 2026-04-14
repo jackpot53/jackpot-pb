@@ -41,7 +41,7 @@ export function EditAssetDialog({ asset }: EditAssetDialogProps) {
       >
         <Pencil className="h-4 w-4" />
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{asset.name} 수정</DialogTitle>
         </DialogHeader>
@@ -55,6 +55,7 @@ export function EditAssetDialog({ asset }: EditAssetDialogProps) {
             }
             return result
           }}
+          onCancel={() => setOpen(false)}
           submitLabel="수정 저장"
         />
       </DialogContent>

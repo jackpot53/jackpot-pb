@@ -102,12 +102,13 @@ const ASSET_TYPE_LABELS: Record<string, string> = {
 interface AssetFormProps {
   defaultValues?: Partial<AssetFormValues>
   onSubmit: (data: AssetFormValues) => Promise<{ error: string } | void>
+  onCancel?: () => void
   submitLabel: string
   showInitialTransaction?: boolean
   transactionSectionLabel?: string
 }
 
-export function AssetForm({ defaultValues, onSubmit, submitLabel, showInitialTransaction, transactionSectionLabel }: AssetFormProps) {
+export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, showInitialTransaction, transactionSectionLabel }: AssetFormProps) {
   const [isPending, startTransition] = useTransition()
   const [suggestions, setSuggestions] = useState<TickerSuggestion[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -348,16 +349,16 @@ export function AssetForm({ defaultValues, onSubmit, submitLabel, showInitialTra
           />
         )}
 
-        <FormField
-          control={form.control}
-          name="currency"
-          render={({ field }) => (
-            <FormItem className={rowClass}>
-              <FormLabel className={labelClass}>통화</FormLabel>
-              <div className="flex-1">
+        <div className="flex gap-4">
+          <FormField
+            control={form.control}
+            name="currency"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel className="text-sm font-medium">통화</FormLabel>
                 <FormControl>
-                  <div className="flex gap-1.5">
-                    {([['KRW', 'KRW (원)'], ['USD', 'USD (달러)']] as const).map(([val, label]) => (
+                  <div className="flex gap-1.5 mt-1">
+                    {([['KRW', 'KRW'], ['USD', 'USD']] as const).map(([val, label]) => (
                       <button
                         key={val}
                         type="button"
@@ -374,21 +375,18 @@ export function AssetForm({ defaultValues, onSubmit, submitLabel, showInitialTra
                   </div>
                 </FormControl>
                 <FormMessage />
-              </div>
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="priceType"
-          render={({ field }) => (
-            <FormItem className={rowClass}>
-              <FormLabel className={labelClass}>시세 유형</FormLabel>
-              <div className="flex-1">
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="priceType"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel className="text-sm font-medium">시세 유형</FormLabel>
                 <FormControl>
-                  <div className="flex gap-1.5">
-                    {([['live', '실시간 (Live)'], ['manual', '수동 (Manual)']] as const).map(([val, label]) => (
+                  <div className="flex gap-1.5 mt-1">
+                    {([['live', 'Live'], ['manual', 'Manual']] as const).map(([val, label]) => (
                       <button
                         key={val}
                         type="button"
@@ -405,10 +403,10 @@ export function AssetForm({ defaultValues, onSubmit, submitLabel, showInitialTra
                   </div>
                 </FormControl>
                 <FormMessage />
-              </div>
-            </FormItem>
-          )}
-        />
+              </FormItem>
+            )}
+          />
+        </div>
 
         {priceType === 'live' && (
           <FormField
@@ -463,71 +461,65 @@ export function AssetForm({ defaultValues, onSubmit, submitLabel, showInitialTra
               <p className="text-xs text-muted-foreground">입력하면 거래 내역에 자동 등록됩니다.</p>
             </div>
 
-            <FormField
-              control={form.control}
-              name="initialQuantity"
-              render={({ field }) => (
-                <FormItem className={rowClass}>
-                  <FormLabel className={labelClass}>수량</FormLabel>
-                  <div className="flex-1">
+            <div className="flex gap-4">
+              <FormField
+                control={form.control}
+                name="initialQuantity"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel className="text-sm font-medium">수량</FormLabel>
                     <FormControl>
                       <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder={assetType === 'crypto' ? '예: 0.5' : '예: 10'} />
                     </FormControl>
                     <FormMessage />
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="initialPricePerUnit"
-              render={({ field }) => (
-                <FormItem className={rowClass}>
-                  <FormLabel className={labelClass}>매수 단가 {isUSD ? '(USD)' : '(₩)'}</FormLabel>
-                  <div className="flex-1">
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="initialPricePerUnit"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel className="text-sm font-medium">매수 단가 {isUSD ? '(USD)' : '(₩)'}</FormLabel>
                     <FormControl>
                       <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 75000" />
                     </FormControl>
                     <FormMessage />
-                  </div>
-                </FormItem>
-              )}
-            />
-
-            {isUSD && (
-              <FormField
-                control={form.control}
-                name="initialExchangeRate"
-                render={({ field }) => (
-                  <FormItem className={rowClass}>
-                    <FormLabel className={labelClass}>환율 (₩/＄)</FormLabel>
-                    <div className="flex-1">
-                      <FormControl>
-                        <Input {...field} value={field.value ?? ''} inputMode="numeric" placeholder="예: 1350" />
-                      </FormControl>
-                      <FormMessage />
-                    </div>
                   </FormItem>
                 )}
               />
-            )}
+            </div>
 
-            <FormField
-              control={form.control}
-              name="initialTransactionDate"
-              render={({ field }) => (
-                <FormItem className={rowClass}>
-                  <FormLabel className={labelClass}>매수일</FormLabel>
-                  <div className="flex-1">
+            <div className="flex gap-4">
+              <FormField
+                control={form.control}
+                name="initialTransactionDate"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel className="text-sm font-medium">매수일</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
-                  </div>
-                </FormItem>
+                  </FormItem>
+                )}
+              />
+              {isUSD && (
+                <FormField
+                  control={form.control}
+                  name="initialExchangeRate"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel className="text-sm font-medium">환율 (₩/＄)</FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value ?? ''} inputMode="numeric" placeholder="예: 1350" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
-            />
+            </div>
           </>
         )}
 
@@ -535,19 +527,20 @@ export function AssetForm({ defaultValues, onSubmit, submitLabel, showInitialTra
           <p className="text-sm text-destructive">{form.formState.errors.root.message}</p>
         )}
 
-        <div className="flex gap-2 pl-24">
+        <div className="flex gap-2">
           <Button type="submit" disabled={isPending}>
             {isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
             {submitLabel}
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => window.history.back()}
-            disabled={isPending}
-          >
-            <ArrowLeft className="mr-1.5 h-4 w-4" />취소
-          </Button>
+          {onCancel ? (
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
+              취소
+            </Button>
+          ) : (
+            <Button type="button" variant="outline" onClick={() => window.history.back()} disabled={isPending}>
+              <ArrowLeft className="mr-1.5 h-4 w-4" />취소
+            </Button>
+          )}
         </div>
       </form>
     </Form>
