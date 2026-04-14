@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -60,6 +61,7 @@ interface GoalDialogProps {
 
 export function GoalDialog({ mode, goal, open, onOpenChange }: GoalDialogProps) {
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
 
   const form = useForm<GoalFormValues>({
     resolver: zodResolver(goalFormSchema),
@@ -106,11 +108,10 @@ export function GoalDialog({ mode, goal, open, onOpenChange }: GoalDialogProps) 
           : await createGoal(payload)
 
       if (result && 'error' in result) {
-        toast('목표를 저장하지 못했습니다. 다시 시도하세요.', {
-          style: { background: 'var(--destructive)' },
-        })
+        toast.error('목표를 저장하지 못했습니다. 다시 시도하세요.')
       } else {
         onOpenChange(false)
+        router.refresh()
       }
     })
   }

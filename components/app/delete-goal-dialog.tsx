@@ -1,5 +1,6 @@
 'use client'
 import { useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -27,16 +28,16 @@ export function DeleteGoalDialog({
   onOpenChange,
 }: DeleteGoalDialogProps) {
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
 
   function handleDelete() {
     startTransition(async () => {
       const result = await deleteGoal(goalId)
       if (result && 'error' in result) {
-        toast('목표를 삭제하지 못했습니다. 다시 시도하세요.', {
-          style: { background: 'var(--destructive)' },
-        })
+        toast.error('목표를 삭제하지 못했습니다. 다시 시도하세요.')
       } else {
         onOpenChange(false)
+        router.refresh()
       }
     })
   }
