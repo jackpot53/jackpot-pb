@@ -16,3 +16,12 @@ export async function signIn(email: string, password: string, redirectPath: stri
   }
   redirect(safeRedirectPath(redirectPath))
 }
+
+export async function signUp(email: string, password: string) {
+  const supabase = await createClient()
+  const { error } = await supabase.auth.signUp({ email, password })
+  if (error) {
+    return { error: error.message }
+  }
+  return { success: true }
+}
