@@ -5,7 +5,7 @@ milestone_name: milestone
 status: uat_complete
 stopped_at: Phase 5 UAT passed
 last_updated: "2026-04-14T00:00:00.000Z"
-last_activity: 2026-04-14 -- Phase 5 goals-performance UAT passed (8/8)
+last_activity: 2026-04-14 - Completed quick task 260414-lx3: 펀드 평가금액 계산 방식 변경
 progress:
   total_phases: 5
   completed_phases: 5
@@ -75,6 +75,12 @@ None yet.
 ### Blockers/Concerns
 
 - [Phase 3]: Korean stock (KRX) ticker coverage on Finnhub free tier is unconfirmed. If insufficient, need an alternative (KIS Developers API requires KIS brokerage account; KRX OpenAPI is EOD only).
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260414-lx3 | 펀드 평가금액 계산 방식 변경: value_krw에 기준가 저장, currentValueKrw = 수량 × 기준가로 동적 계산 | 2026-04-14 | b5e7989 | [260414-lx3-value-krw-currentvaluekrw](./quick/260414-lx3-value-krw-currentvaluekrw/) |
 
 ## Session Continuity
 
