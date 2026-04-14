@@ -109,7 +109,7 @@ function SortableHead({
   )
 }
 
-function AssetRow({ asset }: { asset: AssetPerformance }) {
+function AssetRow({ asset, even }: { asset: AssetPerformance; even?: boolean }) {
   const hasHolding = asset.totalQuantity > 0
   const isCrypto = asset.assetType === 'crypto'
   const hasValue = asset.currentValueKrw > 0
@@ -126,7 +126,7 @@ function AssetRow({ asset }: { asset: AssetPerformance }) {
     ) : '—'
 
   return (
-    <TableRow>
+    <TableRow className={even ? 'bg-muted/10' : undefined}>
       <TableCell className="text-center px-1">
         <Link href={`/assets/${asset.assetId}`} className="hover:underline font-medium">
           {asset.name}
@@ -134,7 +134,7 @@ function AssetRow({ asset }: { asset: AssetPerformance }) {
       </TableCell>
       <TableCell className="text-center">
         {asset.accountType ? (
-          <span className="text-xs border rounded-full px-2 py-0.5 text-muted-foreground">
+          <span className="text-xs rounded-full px-2 py-0.5 bg-secondary text-secondary-foreground font-medium">
             {ACCOUNT_TYPE_LABELS[asset.accountType]}
           </span>
         ) : '—'}
@@ -196,7 +196,7 @@ function mergeAssets(assets: AssetPerformance[]): MergedAsset[] {
   return Array.from(map.values())
 }
 
-function MergedAssetRow({ asset }: { asset: MergedAsset }) {
+function MergedAssetRow({ asset, even }: { asset: MergedAsset; even?: boolean }) {
   const hasHolding = asset.totalQuantity > 0
   const isCrypto = asset.assetType === 'crypto'
   const hasValue = asset.currentValueKrw > 0
@@ -213,7 +213,7 @@ function MergedAssetRow({ asset }: { asset: MergedAsset }) {
     ) : '—'
 
   return (
-    <TableRow>
+    <TableRow className={even ? 'bg-muted/10' : undefined}>
       <TableCell className="text-center px-1">
         <span className="font-medium">{asset.name}</span>
         {asset.mergedCount > 1 && (
@@ -224,7 +224,7 @@ function MergedAssetRow({ asset }: { asset: MergedAsset }) {
       </TableCell>
       <TableCell className="text-center">
         {asset.accountType ? (
-          <span className="text-xs border rounded-full px-2 py-0.5 text-muted-foreground">
+          <span className="text-xs rounded-full px-2 py-0.5 bg-secondary text-secondary-foreground font-medium">
             {ACCOUNT_TYPE_LABELS[asset.accountType]}
           </span>
         ) : '—'}
@@ -348,10 +348,10 @@ function AssetTable({ assets, title }: { assets: AssetPerformance[]; title?: Rea
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sorted.map((asset) =>
+          {sorted.map((asset, i) =>
             merged
-              ? <MergedAssetRow key={(asset as MergedAsset).ticker ?? asset.name} asset={asset as MergedAsset} />
-              : <AssetRow key={asset.assetId} asset={asset as AssetPerformance} />
+              ? <MergedAssetRow key={(asset as MergedAsset).ticker ?? asset.name} asset={asset as MergedAsset} even={i % 2 === 0} />
+              : <AssetRow key={asset.assetId} asset={asset as AssetPerformance} even={i % 2 === 0} />
           )}
         </TableBody>
       </Table>
