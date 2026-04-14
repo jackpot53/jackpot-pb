@@ -82,9 +82,14 @@ function AuthForm() {
       </div>
 
       {signUpSuccess && (
-        <p className="text-sm text-emerald-600 bg-emerald-50 rounded p-3">
-          가입이 완료됐습니다. 이메일 확인 후 로그인해주세요.
-        </p>
+        <div className="text-sm bg-emerald-50 border border-emerald-200 rounded p-3 flex flex-col gap-1">
+          <p className="font-medium text-emerald-700">📧 이메일을 확인해주세요</p>
+          <p className="text-emerald-600">
+            가입 확인 링크를 이메일로 보냈습니다.<br />
+            받은 메일함에서 <strong>"Confirm your signup"</strong> 메일을 열고
+            링크를 클릭한 뒤 로그인해주세요.
+          </p>
+        </div>
       )}
 
       <Form {...form}>
