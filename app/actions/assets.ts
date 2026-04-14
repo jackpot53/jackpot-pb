@@ -9,14 +9,22 @@ import { manualValuations } from '@/db/schema/manual-valuations'
 import { eq, sql } from 'drizzle-orm'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { upsertHoldings } from '@/lib/holdings'
+
+const TRADEABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund'] as const
 
 const assetSchema = z.object({
   name: z.string().min(1, '종목명을 입력해주세요.').max(255),
-  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'savings', 'real_estate']),
+  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
   ticker: z.string().max(20).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
+  // Initial transaction fields (new asset only, optional)
+  initialQuantity: z.string().optional().nullable(),
+  initialPricePerUnit: z.string().optional().nullable(),
+  initialTransactionDate: z.string().optional().nullable(),
+  initialExchangeRate: z.string().optional().nullable(),
 })
 
 export type AssetFormValues = z.infer<typeof assetSchema>
@@ -33,12 +41,57 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
   await requireUser()
   const parsed = assetSchema.safeParse(data)
   if (!parsed.success) return { error: '입력 값을 확인해주세요.' }
-  const { ticker, notes, ...rest } = parsed.data
-  await db.insert(assets).values({
+  const {
+    ticker, notes,
+    initialQuantity, initialPricePerUnit, initialTransactionDate, initialExchangeRate,
+    ...rest
+  } = parsed.data
+
+  const [newAsset] = await db.insert(assets).values({
     ...rest,
     ticker: ticker ?? null,
     notes: notes ?? null,
-  })
+  }).returning({ id: assets.id })
+
+  // Create initial buy transaction if quantity and price are provided
+  const isTradeable = (TRADEABLE_TYPES as readonly string[]).includes(rest.assetType)
+  if (
+    isTradeable &&
+    initialQuantity && initialPricePerUnit &&
+    !isNaN(parseFloat(initialQuantity)) && parseFloat(initialQuantity) > 0 &&
+    !isNaN(parseFloat(initialPricePerUnit)) && parseFloat(initialPricePerUnit) >= 0
+  ) {
+    const quantityEncoded = Math.round(parseFloat(initialQuantity) * 1e8)
+    const txDate = initialTransactionDate || new Date().toISOString().split('T')[0]
+
+    let pricePerUnitKrw: number
+    let exchangeRateEncoded: number | null = null
+
+    if (rest.currency === 'USD') {
+      if (!initialExchangeRate || isNaN(parseFloat(initialExchangeRate)) || parseFloat(initialExchangeRate) <= 0) {
+        return { error: 'USD 자산의 초기 매수에는 환율이 필요합니다.' }
+      }
+      pricePerUnitKrw = Math.round(parseFloat(initialPricePerUnit) * parseFloat(initialExchangeRate))
+      exchangeRateEncoded = Math.round(parseFloat(initialExchangeRate) * 10000)
+    } else {
+      pricePerUnitKrw = Math.round(parseFloat(initialPricePerUnit))
+    }
+
+    await db.insert(transactions).values({
+      assetId: newAsset.id,
+      type: 'buy',
+      quantity: quantityEncoded,
+      pricePerUnit: pricePerUnitKrw,
+      fee: 0,
+      currency: rest.currency,
+      exchangeRateAtTime: exchangeRateEncoded,
+      transactionDate: txDate,
+      isVoided: false,
+      notes: null,
+    })
+    await upsertHoldings(newAsset.id)
+  }
+
   revalidatePath('/assets')
   redirect('/assets')
 }
@@ -61,12 +114,57 @@ export async function updateAsset(
     }
   }
 
-  const { ticker, notes, ...rest } = parsed.data
+  const {
+    ticker, notes,
+    initialQuantity, initialPricePerUnit, initialTransactionDate, initialExchangeRate,
+    ...rest
+  } = parsed.data
+
   await db.update(assets).set({
     ...rest,
     ticker: ticker ?? null,
     notes: notes ?? null,
   }).where(eq(assets.id, id))
+
+  // Optionally add a new buy transaction if quantity and price are provided
+  const isTradeable = (TRADEABLE_TYPES as readonly string[]).includes(rest.assetType)
+  if (
+    isTradeable &&
+    initialQuantity && initialPricePerUnit &&
+    !isNaN(parseFloat(initialQuantity)) && parseFloat(initialQuantity) > 0 &&
+    !isNaN(parseFloat(initialPricePerUnit)) && parseFloat(initialPricePerUnit) >= 0
+  ) {
+    const quantityEncoded = Math.round(parseFloat(initialQuantity) * 1e8)
+    const txDate = initialTransactionDate || new Date().toISOString().split('T')[0]
+
+    let pricePerUnitKrw: number
+    let exchangeRateEncoded: number | null = null
+
+    if (rest.currency === 'USD') {
+      if (!initialExchangeRate || isNaN(parseFloat(initialExchangeRate)) || parseFloat(initialExchangeRate) <= 0) {
+        return { error: 'USD 자산의 매수 추가에는 환율이 필요합니다.' }
+      }
+      pricePerUnitKrw = Math.round(parseFloat(initialPricePerUnit) * parseFloat(initialExchangeRate))
+      exchangeRateEncoded = Math.round(parseFloat(initialExchangeRate) * 10000)
+    } else {
+      pricePerUnitKrw = Math.round(parseFloat(initialPricePerUnit))
+    }
+
+    await db.insert(transactions).values({
+      assetId: id,
+      type: 'buy',
+      quantity: quantityEncoded,
+      pricePerUnit: pricePerUnitKrw,
+      fee: 0,
+      currency: rest.currency,
+      exchangeRateAtTime: exchangeRateEncoded,
+      transactionDate: txDate,
+      isVoided: false,
+      notes: null,
+    })
+    await upsertHoldings(id)
+  }
+
   revalidatePath('/assets')
   revalidatePath(`/assets/${id}`)
   redirect('/assets')

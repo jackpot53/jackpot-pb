@@ -16,6 +16,7 @@ import {
 import { createManualValuation } from '@/app/actions/manual-valuations'
 import type { Asset } from '@/db/queries/assets'
 import type { ManualValuation } from '@/db/queries/manual-valuations'
+import type { HoldingRow } from '@/db/queries/holdings'
 
 const valuationSchema = z.object({
   valueKrw: z.string()
@@ -36,7 +37,7 @@ function formatKrw(value: number): string {
 const ASSET_TYPE_LABELS: Record<string, string> = {
   stock_kr: '주식 (국내)', stock_us: '주식 (미국)',
   etf_kr: 'ETF (국내)', etf_us: 'ETF (미국)',
-  crypto: '코인', savings: '예적금', real_estate: '부동산',
+  crypto: '코인', fund: '펀드', savings: '예적금', real_estate: '부동산',
 }
 const PRICE_TYPE_LABELS: Record<string, string> = {
   live: '실시간 (Live)', manual: '수동 (Manual)',
@@ -45,6 +46,7 @@ const PRICE_TYPE_LABELS: Record<string, string> = {
 interface OverviewTabProps {
   asset: Asset
   valuations: ManualValuation[]
+  holding: HoldingRow | null
 }
 
 function ValuationUpdateForm({ asset, onSuccess }: { asset: Asset; onSuccess: () => void }) {
@@ -130,12 +132,62 @@ function ValuationUpdateForm({ asset, onSuccess }: { asset: Asset; onSuccess: ()
   )
 }
 
-export function OverviewTab({ asset, valuations }: OverviewTabProps) {
+function decodeQuantity(stored: number): string {
+  const intPart = Math.floor(stored / 1e8)
+  const fracPart = stored % 1e8
+  if (fracPart === 0) return intPart.toString()
+  return `${intPart}.${fracPart.toString().padStart(8, '0').replace(/0+$/, '')}`
+}
+
+export function OverviewTab({ asset, valuations, holding }: OverviewTabProps) {
   const [showUpdateForm, setShowUpdateForm] = useState(false)
   const isManual = asset.priceType === 'manual'
 
+  const latestValuationKrw = valuations[0]?.valueKrw ?? null
+  const hasPosition = holding !== null && holding.totalQuantity > 0
+
+  let evalProfitKrw: number | null = null
+  let returnRate: number | null = null
+  if (hasPosition && latestValuationKrw !== null && holding!.totalCostKrw > 0) {
+    evalProfitKrw = latestValuationKrw - holding!.totalCostKrw
+    returnRate = (evalProfitKrw / holding!.totalCostKrw) * 100
+  }
+
   return (
     <div className="space-y-6 pt-4">
+      {/* Holdings summary */}
+      {hasPosition && (
+        <>
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold">보유 현황</h2>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-2 max-w-sm">
+              <span className="text-sm text-muted-foreground">보유 수량</span>
+              <span className="text-sm font-mono">{decodeQuantity(holding!.totalQuantity)}</span>
+              <span className="text-sm text-muted-foreground">평균 단가</span>
+              <span className="text-sm">₩{formatKrw(holding!.avgCostPerUnit)}</span>
+              <span className="text-sm text-muted-foreground">총 투자금액</span>
+              <span className="text-sm">₩{formatKrw(holding!.totalCostKrw)}</span>
+              {latestValuationKrw !== null && (
+                <>
+                  <span className="text-sm text-muted-foreground">현재 평가금액</span>
+                  <span className="text-sm">₩{formatKrw(latestValuationKrw)}</span>
+                </>
+              )}
+              {evalProfitKrw !== null && returnRate !== null && (
+                <>
+                  <span className="text-sm text-muted-foreground">평가손익</span>
+                  <span className={`text-sm font-medium ${evalProfitKrw >= 0 ? 'text-red-500' : 'text-blue-600'}`}>
+                    {evalProfitKrw >= 0 ? '+' : ''}₩{formatKrw(evalProfitKrw)}
+                    {' '}({returnRate >= 0 ? '+' : ''}{returnRate.toFixed(2)}%)
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+          <Separator />
+        </>
+      )}
+
       {/* Asset metadata */}
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-x-8 gap-y-2 max-w-sm">
