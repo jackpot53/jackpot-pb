@@ -491,7 +491,9 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
           <p className="text-sm text-destructive">{form.formState.errors.root.message}</p>
         )}
 
-        <div className="flex justify-center gap-2 pt-1">
+        <div className="border-t" />
+
+        <div className="flex justify-center gap-2">
           <Button type="submit" disabled={isPending} className="w-32">
             {isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
             {submitLabel}
