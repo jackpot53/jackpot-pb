@@ -36,7 +36,7 @@ describe('GET /api/cron/snapshot', () => {
   const ORIGINAL_ENV = process.env
 
   beforeEach(() => {
-    process.env = { ...ORIGINAL_ENV, CRON_SECRET: 'testSecret' }
+    process.env = { ...ORIGINAL_ENV, CRON_SECRET: 'testSecret', CRON_TARGET_USER_ID: 'test-user-uuid' }
     vi.resetModules()
   })
 
