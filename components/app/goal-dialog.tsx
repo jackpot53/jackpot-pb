@@ -34,8 +34,8 @@ const goalFormSchema = z.object({
     .min(1, '올바른 금액을 입력하세요 (1원 이상의 숫자)')
     .refine(
       (v) => {
-        const n = parseInt(v, 10)
-        return !isNaN(n) && n >= 1 && Number.isInteger(n)
+        const n = Number(v)
+        return !isNaN(n) && Number.isInteger(n) && n >= 1
       },
       '올바른 금액을 입력하세요 (1원 이상의 숫자)'
     ),
