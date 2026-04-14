@@ -294,6 +294,33 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
           )}
         />
 
+        {/* 종목코드 (conditional) */}
+        {priceType === 'live' && (
+          <FormField
+            control={form.control}
+            name="ticker"
+            render={({ field }) => {
+              const hint = TICKER_HINTS[assetType]
+              return (
+                <FormItem className={row}>
+                  <FormLabel className={lbl}>종목코드</FormLabel>
+                  <div className="flex-1">
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ''} placeholder={hint?.placeholder ?? '예: AAPL'} />
+                    </FormControl>
+                    {hint && (
+                      <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed mt-1">
+                        {hint.hint}
+                      </p>
+                    )}
+                    <FormMessage />
+                  </div>
+                </FormItem>
+              )
+            }}
+          />
+        )}
+
         {/* 자산 유형 */}
         <FormField
           control={form.control}
@@ -385,33 +412,6 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
             </FormItem>
           )}
         />
-
-        {/* 종목코드 (conditional) */}
-        {priceType === 'live' && (
-          <FormField
-            control={form.control}
-            name="ticker"
-            render={({ field }) => {
-              const hint = TICKER_HINTS[assetType]
-              return (
-                <FormItem className={row}>
-                  <FormLabel className={lbl}>종목코드</FormLabel>
-                  <div className="flex-1">
-                    <FormControl>
-                      <Input {...field} value={field.value ?? ''} placeholder={hint?.placeholder ?? '예: AAPL'} />
-                    </FormControl>
-                    {hint && (
-                      <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed mt-1">
-                        {hint.hint}
-                      </p>
-                    )}
-                    <FormMessage />
-                  </div>
-                </FormItem>
-              )
-            }}
-          />
-        )}
 
         {/* 메모 */}
         <FormField
