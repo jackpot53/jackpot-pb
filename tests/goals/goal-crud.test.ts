@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
 
 // Pure functions extracted from the achievement % formula (D-03)
+// Mirrors the guard in dashboard-goals-section.tsx
 function achievementPct(currentKrw: number, targetKrw: number): number {
-  return Math.round((currentKrw / targetKrw) * 100)
+  return targetKrw > 0 ? Math.round((currentKrw / targetKrw) * 100) : 0
 }
 function progressBarValue(pct: number): number {
   return Math.min(pct, 100)
@@ -20,6 +21,9 @@ describe('goal achievement %', () => {
   })
   it('returns 0 when current is zero', () => {
     expect(achievementPct(0, 1_000_000)).toBe(0)
+  })
+  it('returns 0 when target is zero (guard against division by zero)', () => {
+    expect(achievementPct(1_000_000, 0)).toBe(0)
   })
 })
 

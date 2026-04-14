@@ -25,7 +25,11 @@ export function DashboardGoalsSection({ goals, totalValueKrw }: DashboardGoalsSe
         <CardContent className="pt-4 pb-2">
           {goals.map((goal) => {
             // Achievement % formula (D-03): computed at read time
-            const achievementPct = Math.round((totalValueKrw / goal.targetAmountKrw) * 100)
+            // Guard against division by zero when targetAmountKrw is 0 (e.g. direct DB insert)
+            const achievementPct =
+              goal.targetAmountKrw > 0
+                ? Math.round((totalValueKrw / goal.targetAmountKrw) * 100)
+                : 0
             const isOverachieved = achievementPct >= 100
             return (
               <div
