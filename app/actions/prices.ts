@@ -34,9 +34,10 @@ export async function refreshAllPrices(): Promise<void> {
     .from(assets)
     .where(and(eq(assets.priceType, 'live'), isNotNull(assets.ticker)))
 
-  // Step 3: Refresh each live asset price sequentially (free-tier API rate limit caution)
-  for (const asset of liveAssets) {
-    if (!asset.ticker) continue
-    await refreshPriceIfStale(asset.ticker, asset.assetType)
-  }
+  // Step 3: Refresh all live asset prices in parallel
+  await Promise.allSettled(
+    liveAssets
+      .filter((a) => a.ticker)
+      .map((a) => refreshPriceIfStale(a.ticker!, a.assetType))
+  )
 }
