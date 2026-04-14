@@ -1,15 +1,12 @@
 import { refreshAllPrices } from '@/app/actions/prices'
-import { getAssetsWithHoldings } from '@/db/queries/assets-with-holdings'
-import { getPriceCacheByTickers } from '@/db/queries/price-cache'
 import { listGoals } from '@/db/queries/goals'
+import { loadPerformances } from '@/lib/server/load-performances'
 import {
-  computeAssetPerformance,
   computePortfolio,
   aggregateByType,
   formatKrw,
   formatUsd,
   formatReturn,
-  type AssetPerformance,
 } from '@/lib/portfolio'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
@@ -19,61 +16,24 @@ import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { PerformanceTable } from '@/components/app/performance-table'
 import { DashboardGoalsSection } from '@/components/app/dashboard-goals-section'
 
-// Stale threshold: prices older than 5 minutes show a stale badge in the performance table
-const PRICE_TTL_MS = 5 * 60 * 1000
-
-function isStalePrice(cachedAt: Date | null): boolean {
-  if (!cachedAt) return true
-  return Date.now() - cachedAt.getTime() > PRICE_TTL_MS
-}
-
 export default async function DashboardPage() {
   // Step 1: Refresh all prices on-demand (D-01, D-03)
   await refreshAllPrices()
 
-  // Step 2: Load all asset positions
-  const assetsWithHoldings = await getAssetsWithHoldings()
+  // Step 2: Load performances + price map via shared helper
+  const { performances, priceMap } = await loadPerformances()
 
-  // Step 3: Get FX rate + all live asset prices in one bulk query
-  const liveTickers = assetsWithHoldings
-    .filter((a) => a.priceType === 'live' && a.ticker)
-    .map((a) => a.ticker!)
-  const priceMap = await getPriceCacheByTickers([...liveTickers, 'USD_KRW'])
+  // Step 3: Extract FX rate from price map
   const fxCache = priceMap.get('USD_KRW')
   // null signals FX rate unavailable (BOK key not configured or first fetch failed)
   const fxRateInt: number | null = fxCache?.priceKrw ?? null
 
-  // Step 4: Compute per-asset performance
-  const performances: AssetPerformance[] = []
-  for (const asset of assetsWithHoldings) {
-    let currentPriceKrw = 0
-    let cachedAt: Date | null = null
-    let stale = false
-
-    if (asset.priceType === 'live' && asset.ticker) {
-      const priceRow = priceMap.get(asset.ticker)
-      currentPriceKrw = priceRow?.priceKrw ?? 0
-      cachedAt = priceRow?.cachedAt ?? null
-      stale = isStalePrice(cachedAt)
-    }
-
-    performances.push(
-      computeAssetPerformance({
-        holding: asset,
-        currentPriceKrw,
-        isStale: stale,
-        cachedAt,
-        latestManualValuationKrw: asset.latestManualValuationKrw,
-      })
-    )
-  }
-
-  // Step 5: Portfolio summary + type allocation
+  // Step 4: Portfolio summary + type allocation
   // Pass 0 when FX rate unavailable — computePortfolio guards against divide-by-zero
   const summary = computePortfolio(performances, fxRateInt ?? 0)
   const byType: AllocationSlice[] = aggregateByType(performances)
 
-  // Step 6b: Load goals for dashboard goals section (D-03, D-04)
+  // Step 5: Load goals for dashboard goals section (D-03, D-04)
   const goalsList = await listGoals()
 
   // Step 6: Determine color sign for stat cards
