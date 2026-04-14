@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: uat_complete
-stopped_at: Phase 5 UAT passed
-last_updated: "2026-04-14T00:00:00.000Z"
-last_activity: 2026-04-14 - Completed quick task 260414-lx3: 펀드 평가금액 계산 방식 변경
+status: executing
+stopped_at: Completed 01-04-PLAN.md
+last_updated: "2026-04-14T12:46:53.499Z"
+last_activity: 2026-04-14
 progress:
   total_phases: 5
   completed_phases: 5
-  total_plans: 14
-  completed_plans: 14
+  total_plans: 18
+  completed_plans: 18
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-09)
 
 **Core value:** 연말 결산 — 전체 자산의 연간 수익률과 상품별 성과를 한눈에 볼 수 있어야 한다.
-**Current focus:** v1.0 milestone COMPLETE — UAT passed
+**Current focus:** Phase 01 — foundation
 
 ## Current Position
 
-Phase: 05 (goals-performance-comparison) — COMPLETE
-Plan: 3 of 3
-Status: All phases complete, UAT passed — ready to ship
-Last activity: 2026-04-14 -- Phase 5 UAT passed (8/8), bugs fixed
+Phase: 01 (foundation) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-04-14
 
 Progress: [██████████] 100%
 
@@ -53,6 +53,7 @@ Progress: [██████████] 100%
 
 *Updated after each plan completion*
 | Phase 01 P01 | 20 | 2 tasks | 13 files |
+| Phase 01 P04 | 45min | 3 tasks | 29 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,9 @@ Recent decisions affecting current work:
 - [Pre-planning]: Korean stock price API coverage on Finnhub is unconfirmed — verify before Phase 3 planning begins.
 - [Phase 01]: shadcn v4 uses base-nova style with @base-ui/react; form.tsx created manually with react-hook-form
 - [Phase 01]: .env.local.example force-added to git past .env* gitignore (no real secrets in example file)
+- [Phase 01]: userId 컬럼은 Drizzle 스키마에서 FK 없이 uuid만 선언 — auth.users FK는 SQL 마이그레이션에서 추가
+- [Phase 01]: DATABASE_URL superuser 연결 RLS 우회 — 앱 레이어 userId 필터 1차 방어, RLS는 Dashboard/PostgREST 심층 방어
+- [Phase 01]: CRON_TARGET_USER_ID 미설정 시 cron 500 반환 — fail-closed 안전 패턴
 
 ### Pending Todos
 
@@ -84,6 +88,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-13T07:16:53.155Z
-Stopped at: Phase 5 UI-SPEC approved
-Resume file: .planning/phases/05-goals-performance-comparison/05-UI-SPEC.md
+Last session: 2026-04-14T12:46:53.497Z
+Stopped at: Completed 01-04-PLAN.md
+Resume file: None

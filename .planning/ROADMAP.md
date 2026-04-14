@@ -9,7 +9,7 @@ Build a single-user personal asset management web app in five phases. Phase 1 es
 
 ## Phases
 
-- [ ] **Phase 1: Foundation** - Scaffold Next.js app with Supabase Auth and correct data schema on PostgreSQL
+- [x] **Phase 1: Foundation** - Scaffold Next.js app with Supabase Auth and correct data schema on PostgreSQL (completed 2026-04-14)
 - [ ] **Phase 2: Asset & Transaction Management** - Full CRUD for assets, transactions, and manual valuations
 - [ ] **Phase 3: Price Integration & Dashboard** - Live prices wired into holdings math; working portfolio dashboard
 - [x] **Phase 4: History & Charts** - Snapshot cron job and year-over-year / monthly return charts
@@ -33,7 +33,7 @@ Plans:
 - [x] 01-01-PLAN.md — Next.js 16 scaffold: all Phase 1 dependencies installed, shadcn/ui initialized, Wave 0 test infrastructure (vitest + middleware/schema tests)
 - [x] 01-02-PLAN.md — Drizzle schema for all 7 tables (BIGINT money, is_voided, append-only ManualValuation) + migration applied to Supabase
 - [x] 01-03-PLAN.md — Supabase Auth: SSR client factories, middleware route protection (getUser), login page (Korean UI spec), signIn/signOut Server Actions
-- [ ] 01-04-PLAN.md — Multi-user architecture: user_id column on 6 tables, RLS policies, app-layer userId filters on all queries and Server Actions, cron CRON_TARGET_USER_ID support
+- [x] 01-04-PLAN.md — Multi-user architecture: user_id column on 6 tables, RLS policies, app-layer userId filters on all queries and Server Actions, cron CRON_TARGET_USER_ID support
 
 ---
 
@@ -123,7 +123,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 3/4 | In Progress|  |
+| 1. Foundation | 4/4 | Complete   | 2026-04-14 |
 | 2. Asset & Transaction Management | 0/4 | Not started | - |
 | 3. Price Integration & Dashboard | 0/4 | Not started | - |
 | 4. History & Charts | 3/3 | Complete | 2026-04-13 |
