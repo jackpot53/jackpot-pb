@@ -73,9 +73,9 @@ function FundValuationForm({ asset, holding, onSuccess }: { asset: Asset; holdin
   function handleSubmit(data: FundPriceFormValues) {
     startTransition(async () => {
       const price = parseFloat(data.pricePerUnit)
-      const totalValueKrw = Math.round(price * (holding.totalQuantity / 1e8))
+      // 기준가(NAV per unit)를 그대로 저장 — 곱셈 없음 (D-16 변경)
       const result = await createManualValuation(asset.id, {
-        valueKrw: totalValueKrw.toString(),
+        valueKrw: Math.round(price).toString(),
         currency: 'KRW',
         valuedAt: data.valuedAt,
         notes: data.notes ?? null,
@@ -232,14 +232,21 @@ function decodeQuantity(stored: number): string {
 export function OverviewTab({ asset, valuations, holding }: OverviewTabProps) {
   const [showUpdateForm, setShowUpdateForm] = useState(false)
   const isManual = asset.priceType === 'manual' || asset.assetType === 'fund'
+  const isFundAsset = asset.assetType === 'fund'
 
-  const latestValuationKrw = valuations[0]?.valueKrw ?? null
+  const latestValuationKrw = valuations[0]?.valueKrw ?? null  // fund: 기준가; others: 총값
   const hasPosition = holding !== null && holding.totalQuantity > 0
+
+  // fund: displayValueKrw = qty × 기준가; others: latestValuationKrw 그대로
+  const displayValueKrw =
+    isFundAsset && latestValuationKrw !== null && holding !== null
+      ? Math.round((holding.totalQuantity / 1e8) * latestValuationKrw)
+      : latestValuationKrw
 
   let evalProfitKrw: number | null = null
   let returnRate: number | null = null
-  if (hasPosition && latestValuationKrw !== null && holding!.totalCostKrw > 0) {
-    evalProfitKrw = latestValuationKrw - holding!.totalCostKrw
+  if (hasPosition && displayValueKrw !== null && holding!.totalCostKrw > 0) {
+    evalProfitKrw = displayValueKrw - holding!.totalCostKrw
     returnRate = (evalProfitKrw / holding!.totalCostKrw) * 100
   }
 
@@ -257,10 +264,10 @@ export function OverviewTab({ asset, valuations, holding }: OverviewTabProps) {
               <span className="text-sm">₩{formatKrw(holding!.avgCostPerUnit)}</span>
               <span className="text-sm text-muted-foreground">총 투자금액</span>
               <span className="text-sm">₩{formatKrw(holding!.totalCostKrw)}</span>
-              {latestValuationKrw !== null && (
+              {displayValueKrw !== null && (
                 <>
                   <span className="text-sm text-muted-foreground">현재 평가금액</span>
-                  <span className="text-sm">₩{formatKrw(latestValuationKrw)}</span>
+                  <span className="text-sm">₩{formatKrw(displayValueKrw)}</span>
                 </>
               )}
               {evalProfitKrw !== null && returnRate !== null && (
@@ -341,7 +348,7 @@ export function OverviewTab({ asset, valuations, holding }: OverviewTabProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>날짜</TableHead>
-                    <TableHead>평가금액 (₩)</TableHead>
+                    <TableHead>{isFundAsset ? '기준가 (₩/좌)' : '평가금액 (₩)'}</TableHead>
                     <TableHead>메모</TableHead>
                   </TableRow>
                 </TableHeader>
