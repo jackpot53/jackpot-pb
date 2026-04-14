@@ -352,8 +352,8 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
               <div className="flex-1">
                 <FormControl>
                   <div className="flex gap-1.5">
-                    {(['KRW', 'USD'] as const).map((val) => (
-                      <button key={val} type="button" onClick={() => field.onChange(val)} className={pillClass(field.value === val)}>{val}</button>
+                    {([['KRW', '원화'], ['USD', '달러']] as const).map(([val, label]) => (
+                      <button key={val} type="button" onClick={() => field.onChange(val)} className={pillClass(field.value === val)}>{label}</button>
                     ))}
                   </div>
                 </FormControl>
