@@ -113,6 +113,8 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
   const [suggestions, setSuggestions] = useState<TickerSuggestion[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const isComposingRef = useRef(false)
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -182,6 +184,7 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
         const data = await res.json()
         const results: TickerSuggestion[] = data.results ?? []
         setSuggestions(results)
+        setActiveIndex(0)
         setShowSuggestions(results.length > 0)
       } catch {
         setSuggestions([])
@@ -190,6 +193,24 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
         setIsSearching(false)
       }
     }, 400)
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!showSuggestions || suggestions.length === 0) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveIndex((i) => Math.max(i - 1, 0))
+    } else if (e.key === 'Enter') {
+      if (isComposingRef.current || e.nativeEvent.isComposing) return
+      e.preventDefault()
+      const picked = suggestions[activeIndex]
+      if (picked) selectSuggestion(picked)
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false)
+    }
   }
 
   function selectSuggestion(suggestion: TickerSuggestion) {
@@ -242,6 +263,29 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-3">
 
+        {/* 자산 유형 */}
+        <FormField
+          control={form.control}
+          name="assetType"
+          render={({ field }) => (
+            <FormItem className={row}>
+              <FormLabel className={lbl}>자산 유형</FormLabel>
+              <div className="flex-1">
+                <FormControl>
+                  <div className="flex flex-wrap gap-1.5">
+                    {Object.entries(ASSET_TYPE_LABELS).map(([val, label]) => (
+                      <button key={val} type="button" onClick={() => field.onChange(val)} className={pillClass(field.value === val)}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </div>
+            </FormItem>
+          )}
+        />
+
         {/* 종목명 */}
         <FormField
           control={form.control}
@@ -258,6 +302,9 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
                         autoComplete="off"
                         onChange={(e) => handleNameInput(e.target.value, field.onChange)}
                         onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                        onKeyDown={handleKeyDown}
+                        onCompositionStart={() => { isComposingRef.current = true }}
+                        onCompositionEnd={() => { isComposingRef.current = false }}
                       />
                       {isSearchable && (
                         <button
@@ -273,11 +320,12 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
                   </FormControl>
                   {showSuggestions && (
                     <ul className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-md overflow-hidden">
-                      {suggestions.map((s) => (
+                      {suggestions.map((s, i) => (
                         <li key={s.ticker}>
                           <button
                             type="button"
-                            className="w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center justify-between gap-2"
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center justify-between gap-2${activeIndex === i ? ' bg-accent' : ''}`}
+                            onMouseEnter={() => setActiveIndex(i)}
                             onMouseDown={(e) => { e.preventDefault(); selectSuggestion(s) }}
                           >
                             <span className="truncate">{s.name}</span>
@@ -320,29 +368,6 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
             }}
           />
         )}
-
-        {/* 자산 유형 */}
-        <FormField
-          control={form.control}
-          name="assetType"
-          render={({ field }) => (
-            <FormItem className={row}>
-              <FormLabel className={lbl}>자산 유형</FormLabel>
-              <div className="flex-1">
-                <FormControl>
-                  <div className="flex flex-wrap gap-1.5">
-                    {Object.entries(ASSET_TYPE_LABELS).map(([val, label]) => (
-                      <button key={val} type="button" onClick={() => field.onChange(val)} className={pillClass(field.value === val)}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </div>
-            </FormItem>
-          )}
-        />
 
         {/* 계좌 유형 (conditional) */}
         {isAccountTypeable && (
