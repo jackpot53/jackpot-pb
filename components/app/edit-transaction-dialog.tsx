@@ -13,7 +13,7 @@ import { TransactionForm } from '@/components/app/transaction-form'
 import { updateTransaction } from '@/app/actions/transactions'
 import type { TransactionWithAsset } from '@/db/queries/transactions'
 
-type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate'
+type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund'
 
 function decodeQty(stored: number): string {
   const intPart = Math.floor(stored / 1e8)

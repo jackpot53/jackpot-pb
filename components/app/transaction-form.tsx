@@ -3,9 +3,10 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useTransition, useState } from 'react'
-import { Loader2, Save, ArrowLeft, ArrowLeftRight, CalendarDays, Hash, CircleDollarSign, BadgeDollarSign, Coins, StickyNote } from 'lucide-react'
+import { Loader2, Save, X, ArrowLeftRight, CalendarDays, Hash, CircleDollarSign, BadgeDollarSign, Coins, StickyNote } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Separator } from '@/components/ui/separator'
 import {
   Form,
   FormControl,
@@ -23,7 +24,7 @@ import {
 } from '@/components/ui/select'
 import type { TransactionFormValues, TransactionActionError } from '@/app/actions/transactions'
 
-type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate'
+type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund'
 type Currency = 'KRW' | 'USD'
 
 const STOCK_ETF_TYPES: AssetType[] = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us']
@@ -124,93 +125,107 @@ export function TransactionForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-3">
         <FormField control={form.control} name="type" render={({ field }) => (
-          <FormItem>
-            <FormLabel><ArrowLeftRight className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />거래 유형</FormLabel>
-            <Select onValueChange={field.onChange} value={field.value}>
-              <FormControl>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="buy">매수</SelectItem>
-                <SelectItem value="sell">매도</SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
+          <FormItem className="flex flex-row items-center gap-4">
+            <FormLabel className="w-24 shrink-0 text-right"><ArrowLeftRight className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />거래 유형</FormLabel>
+            <div className="flex-1">
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger className="w-full"><SelectValue>{field.value === 'buy' ? '매수' : '매도'}</SelectValue></SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="buy">매수</SelectItem>
+                  <SelectItem value="sell">매도</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </div>
           </FormItem>
         )} />
 
         <FormField control={form.control} name="transactionDate" render={({ field }) => (
-          <FormItem>
-            <FormLabel><CalendarDays className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />날짜</FormLabel>
-            <FormControl><Input type="date" {...field} /></FormControl>
-            <FormMessage />
+          <FormItem className="flex flex-row items-center gap-4">
+            <FormLabel className="w-24 shrink-0 text-right"><CalendarDays className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />날짜</FormLabel>
+            <div className="flex-1">
+              <FormControl><Input type="date" {...field} /></FormControl>
+              <FormMessage />
+            </div>
           </FormItem>
         )} />
 
         <FormField control={form.control} name="quantity" render={({ field }) => (
-          <FormItem>
-            <FormLabel><Hash className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />수량</FormLabel>
-            <FormControl>
-              <Input
-                {...field}
-                inputMode="decimal"
-                onBlur={() => { field.onBlur(); computeKrwPreview() }}
-              />
-            </FormControl>
-            <FormMessage />
+          <FormItem className="flex flex-row items-center gap-4">
+            <FormLabel className="w-24 shrink-0 text-right"><Hash className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />수량</FormLabel>
+            <div className="flex-1">
+              <FormControl>
+                <Input
+                  {...field}
+                  inputMode="decimal"
+                  onBlur={() => { field.onBlur(); computeKrwPreview() }}
+                />
+              </FormControl>
+              <FormMessage />
+            </div>
           </FormItem>
         )} />
 
         <FormField control={form.control} name="pricePerUnit" render={({ field }) => (
-          <FormItem>
-            <FormLabel><CircleDollarSign className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />단가 {isUSD ? '(USD)' : '(₩)'}</FormLabel>
-            <FormControl>
-              <Input
-                {...field}
-                inputMode="decimal"
-                onBlur={() => { field.onBlur(); computeKrwPreview() }}
-              />
-            </FormControl>
-            <FormMessage />
+          <FormItem className="flex flex-row items-center gap-4">
+            <FormLabel className="w-24 shrink-0 text-right"><CircleDollarSign className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />단가 {isUSD ? '(USD)' : '(₩)'}</FormLabel>
+            <div className="flex-1">
+              <FormControl>
+                <Input
+                  {...field}
+                  inputMode="decimal"
+                  onBlur={() => { field.onBlur(); computeKrwPreview() }}
+                />
+              </FormControl>
+              <FormMessage />
+            </div>
           </FormItem>
         )} />
 
         {isUSD && (
           <FormField control={form.control} name="exchangeRate" render={({ field }) => (
-            <FormItem>
-              <FormLabel><BadgeDollarSign className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />거래 시 환율 (₩/＄)</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  inputMode="numeric"
-                  placeholder="예: 1350"
-                  onBlur={() => { field.onBlur(); computeKrwPreview() }}
-                />
-              </FormControl>
-              <FormMessage />
+            <FormItem className="flex flex-row items-center gap-4">
+              <FormLabel className="w-24 shrink-0 text-right"><BadgeDollarSign className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />환율 (₩/$)</FormLabel>
+              <div className="flex-1">
+                <FormControl>
+                  <Input
+                    {...field}
+                    inputMode="numeric"
+                    placeholder="예: 1350"
+                    onBlur={() => { field.onBlur(); computeKrwPreview() }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </div>
             </FormItem>
           )} />
         )}
 
         {krwPreview && (
-          <div className="text-sm text-muted-foreground font-mono">{krwPreview}</div>
+          <div className="text-sm text-muted-foreground font-mono pl-28">{krwPreview}</div>
         )}
 
         <FormField control={form.control} name="fee" render={({ field }) => (
-          <FormItem>
-            <FormLabel><Coins className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />수수료 (₩)</FormLabel>
-            <FormControl><Input {...field} inputMode="numeric" /></FormControl>
-            <FormMessage />
+          <FormItem className="flex flex-row items-center gap-4">
+            <FormLabel className="w-24 shrink-0 text-right"><Coins className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />수수료 (₩)</FormLabel>
+            <div className="flex-1">
+              <FormControl><Input {...field} inputMode="numeric" /></FormControl>
+              <FormMessage />
+            </div>
           </FormItem>
         )} />
 
         <FormField control={form.control} name="notes" render={({ field }) => (
-          <FormItem>
-            <FormLabel><StickyNote className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />메모 (선택)</FormLabel>
-            <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
-            <FormMessage />
+          <FormItem className="flex flex-row items-center gap-4">
+            <FormLabel className="w-24 shrink-0 text-right"><StickyNote className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />메모</FormLabel>
+            <div className="flex-1">
+              <FormControl><Input {...field} value={field.value ?? ''} /></FormControl>
+              <FormMessage />
+            </div>
           </FormItem>
         )} />
 
@@ -218,13 +233,15 @@ export function TransactionForm({
           <p className="text-sm text-destructive">{form.formState.errors.root.message}</p>
         )}
 
-        <div className="flex gap-2">
-          <Button type="submit" disabled={isPending}>
+        <Separator />
+
+        <div className="flex justify-center gap-2">
+          <Button type="submit" disabled={isPending} className="min-w-28">
             {isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
             {submitLabel}
           </Button>
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
-            <ArrowLeft className="mr-1.5 h-4 w-4" />취소
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isPending} className="min-w-28">
+            <X className="mr-1.5 h-4 w-4" />취소
           </Button>
         </div>
       </form>
