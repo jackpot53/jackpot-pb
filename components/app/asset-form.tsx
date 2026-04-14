@@ -375,7 +375,7 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
                   <div className="flex gap-1.5">
                     {(['live', 'manual'] as const).map((val) => (
                       <button key={val} type="button" onClick={() => field.onChange(val)} className={pillClass(field.value === val)}>
-                        {val === 'live' ? 'Live' : 'Manual'}
+                        {val === 'live' ? '실시간' : '수동입력'}
                       </button>
                     ))}
                   </div>
