@@ -491,17 +491,17 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
           <p className="text-sm text-destructive">{form.formState.errors.root.message}</p>
         )}
 
-        <div className="flex gap-2 pt-1">
-          <Button type="submit" disabled={isPending}>
+        <div className="flex justify-center gap-2 pt-1">
+          <Button type="submit" disabled={isPending} className="w-32">
             {isPending ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
             {submitLabel}
           </Button>
           {onCancel ? (
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isPending} className="w-32">
               취소
             </Button>
           ) : (
-            <Button type="button" variant="outline" onClick={() => window.history.back()} disabled={isPending}>
+            <Button type="button" variant="outline" onClick={() => window.history.back()} disabled={isPending} className="w-32">
               <ArrowLeft className="mr-1.5 h-4 w-4" />취소
             </Button>
           )}
