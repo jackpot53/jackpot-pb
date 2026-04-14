@@ -3,7 +3,7 @@ import { Suspense, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -29,6 +29,7 @@ type AuthFormValues = z.infer<typeof authSchema>
 function AuthForm() {
   const searchParams = useSearchParams()
   const redirectPath = searchParams.get('redirect') ?? '/'
+  const router = useRouter()
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [serverError, setServerError] = useState<string | null>(null)
   const [signUpSuccess, setSignUpSuccess] = useState(false)
@@ -45,9 +46,12 @@ function AuthForm() {
     setSignUpSuccess(false)
     try {
       if (mode === 'login') {
-        const result = await signIn(values.email, values.password, redirectPath)
+        const result = await signIn(values.email, values.password)
         if (result?.error) {
           setServerError('이메일 또는 비밀번호가 올바르지 않습니다.')
+        } else {
+          router.push(redirectPath.startsWith('/') && !redirectPath.startsWith('//') ? redirectPath : '/')
+          router.refresh()
         }
       } else {
         const result = await signUp(values.email, values.password)
