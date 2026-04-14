@@ -34,13 +34,22 @@ export async function loadPerformances(): Promise<{
       stale = isStalePrice(cachedAt)
     }
 
+    // DB bigint columns returned as strings when coming from raw SQL subqueries —
+    // explicitly coerce to number to prevent string concatenation in reduce().
     performances.push(
       computeAssetPerformance({
-        holding: asset,
+        holding: {
+          ...asset,
+          totalQuantity: Number(asset.totalQuantity ?? 0),
+          avgCostPerUnit: Number(asset.avgCostPerUnit ?? 0),
+          totalCostKrw: Number(asset.totalCostKrw ?? 0),
+        },
         currentPriceKrw,
         isStale: stale,
         cachedAt,
-        latestManualValuationKrw: asset.latestManualValuationKrw,
+        latestManualValuationKrw: asset.latestManualValuationKrw !== null
+          ? Number(asset.latestManualValuationKrw)
+          : null,
       })
     )
   }
