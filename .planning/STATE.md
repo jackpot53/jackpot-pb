@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 5 UI-SPEC approved
-last_updated: "2026-04-13T07:16:53.158Z"
-last_activity: 2026-04-13 -- Phase 4 history-charts complete (3/3 plans)
+status: uat_complete
+stopped_at: Phase 5 UAT passed
+last_updated: "2026-04-14T00:00:00.000Z"
+last_activity: 2026-04-14 -- Phase 5 goals-performance UAT passed (8/8)
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 14
   completed_plans: 14
   percent: 100
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-09)
 
 **Core value:** 연말 결산 — 전체 자산의 연간 수익률과 상품별 성과를 한눈에 볼 수 있어야 한다.
-**Current focus:** Phase 04 — history-charts (COMPLETE)
+**Current focus:** v1.0 milestone COMPLETE — UAT passed
 
 ## Current Position
 
-Phase: 04 (history-charts) — COMPLETE
+Phase: 05 (goals-performance-comparison) — COMPLETE
 Plan: 3 of 3
-Status: Phase 4 complete — ready for Phase 5
-Last activity: 2026-04-13 -- Phase 4 history-charts complete (3/3 plans)
+Status: All phases complete, UAT passed — ready to ship
+Last activity: 2026-04-14 -- Phase 5 UAT passed (8/8), bugs fixed
 
-Progress: [█████████░] 93%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 

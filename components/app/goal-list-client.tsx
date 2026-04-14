@@ -77,6 +77,7 @@ export function GoalListClient({ goals }: GoalListClientProps) {
       </Card>
 
       <GoalDialog
+        key={dialogMode ?? 'closed'}
         mode={dialogMode === 'edit' ? 'edit' : 'create'}
         goal={selectedGoal ?? undefined}
         open={dialogMode !== null}
