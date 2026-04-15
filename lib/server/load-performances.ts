@@ -23,7 +23,9 @@ export async function loadPerformances(userId: string): Promise<{
   const priceMap = await getPriceCacheByTickers([...liveTickers, 'USD_KRW'])
 
   const performances: AssetPerformance[] = []
-  for (const asset of assetsWithHoldings) {
+  for (const asset of assetsWithHoldings.filter(
+    (a) => Number(a.totalQuantity ?? 0) > 0 || Number(a.totalCostKrw ?? 0) > 0 || a.latestManualValuationKrw !== null
+  )) {
     let currentPriceKrw = 0
     let cachedAt: Date | null = null
     let stale = false

@@ -90,7 +90,6 @@ async function searchNaverKr(q: string): Promise<{ name: string; ticker: string 
         /^\d{6}$/.test(item.code) &&
         (item.typeCode === 'KOSPI' || item.typeCode === 'KOSDAQ')
       )
-      .slice(0, 6)
       .map((item) => ({ name: item.name, ticker: item.code + krSuffix(item.typeCode) }))
   } catch {
     return []
@@ -124,7 +123,7 @@ async function krxStocksRaw(q: string): Promise<{ name: string; ticker: string }
     let data: { block1?: KrxStockResult[] }
     try { data = JSON.parse(text) } catch { data = {} }
     const items = data?.block1 ?? []
-    return items.slice(0, 6).map((item) => ({
+    return items.map((item) => ({
       name: item.codeName,
       ticker: item.short_code + krSuffix(item.marketName === '코스닥' ? 'KOSDAQ' : 'KOSPI'),
     }))
@@ -144,7 +143,6 @@ async function krxEtfsRaw(q: string): Promise<{ name: string; ticker: string }[]
     try { data = JSON.parse(text) } catch { data = {} }
     return (data?.block1 ?? [])
       .filter((item) => /^\d{6}$/.test(item.short_code))
-      .slice(0, 6)
       .map((item) => ({ name: item.codeName, ticker: item.short_code + '.KS' }))
   } catch {
     return []
@@ -189,7 +187,6 @@ async function searchYahooKr(q: string, type: string): Promise<{ name: string; t
         if (type === 'etf_kr') return q.quoteType === 'ETF' && (sym.endsWith('.KS') || sym.endsWith('.KQ'))
         return false
       })
-      .slice(0, 6)
       .map((q) => ({
         name: q.longname ?? q.shortname ?? q.symbol,
         ticker: q.symbol,
@@ -234,47 +231,94 @@ async function getFunetfSession(q: string): Promise<{ csrf: string; cookies: str
   }
 }
 
+async function funetfFetchPage(schVal: string, session: { csrf: string; cookies: string }, page: number): Promise<{ content: unknown[]; totalPages: number } | null> {
+  const body = new URLSearchParams({
+    schVal,
+    page: String(page),
+    fundOrderTarget: 'fundNm',
+    fundOrderType: 'ASC',
+    _csrf: session.csrf,
+  })
+  const res = await fetch('https://www.funetf.co.kr/api/public/main/search/fund', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Referer': `https://www.funetf.co.kr/search?schVal=${encodeURIComponent(schVal)}`,
+      'X-Requested-With': 'XMLHttpRequest',
+      'Cookie': session.cookies,
+    },
+    body: body.toString(),
+    signal: AbortSignal.timeout(6000),
+    cache: 'no-store',
+  })
+  if (!res.ok) return null
+  const data = await res.json()
+  if (data.result !== 1) return null
+  return {
+    content: data.fundList?.content ?? [],
+    totalPages: data.fundList?.totalPages ?? 1,
+  }
+}
+
+async function funetfQuery(schVal: string, session: { csrf: string; cookies: string }): Promise<{ name: string; ticker: string }[]> {
+  const seen = new Set<string>()
+  const results: { name: string; ticker: string }[] = []
+
+  let page = 1
+  let totalPages = 1
+  // Fetch pages sequentially to avoid CSRF conflicts (cap at 10 pages)
+  while (page <= Math.min(totalPages, 10)) {
+    const data = await funetfFetchPage(schVal, session, page)
+    if (!data) break
+    totalPages = data.totalPages
+    for (const item of data.content as { fundFnm?: string; repFundNm?: string; fundCd?: string; repFundCd?: string }[]) {
+      const name = item.fundFnm ?? item.repFundNm
+      const ticker = item.fundCd ?? item.repFundCd
+      if (!ticker || seen.has(ticker)) continue
+      seen.add(ticker)
+      results.push({ name: name ?? ticker, ticker })
+    }
+    page++
+  }
+  return results
+}
+
 async function searchFund(q: string): Promise<{ name: string; ticker: string }[]> {
   try {
     const session = await getFunetfSession(q)
     if (!session) return []
 
-    const body = new URLSearchParams({
-      schVal: q,
-      page: '1',
-      fundOrderTarget: 'fundNm',
-      fundOrderType: 'ASC',
-      _csrf: session.csrf,
-    })
-
-    const res = await fetch('https://www.funetf.co.kr/api/public/main/search/fund', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': `https://www.funetf.co.kr/search?schVal=${encodeURIComponent(q)}`,
-        'X-Requested-With': 'XMLHttpRequest',
-        'Cookie': session.cookies,
-      },
-      body: body.toString(),
-      signal: AbortSignal.timeout(6000),
-      cache: 'no-store',
-    })
-
-    if (!res.ok) return []
-    const data = await res.json()
-    if (data.result !== 1) return []
-
-    // Deduplicate by repFundCd (representative fund — groups all classes together)
-    const seen = new Set<string>()
-    const results: { name: string; ticker: string }[] = []
-    for (const item of data.fundList?.content ?? []) {
-      if (!item.repFundCd || seen.has(item.repFundCd)) continue
-      seen.add(item.repFundCd)
-      results.push({ name: item.repFundNm, ticker: item.repFundCd })
-      if (results.length >= 8) break
+    // Try full query first; if no results, retry with progressively shorter prefix
+    // (funetf API tokenizes fund names and fails on number boundaries like "투자100세")
+    const queries: string[] = [q]
+    // Strip trailing non-Korean/non-digit, then shorten by 4 chars up to 5 fallbacks
+    // Also add digit-stripped variant of each candidate (e.g. "투자1" → "투자")
+    const addCandidate = (s: string) => {
+      if (s.length >= 4 && !queries.includes(s)) queries.push(s)
+      const noTrailingDigit = s.replace(/\d+$/, '')
+      if (noTrailingDigit.length >= 4 && !queries.includes(noTrailingDigit)) queries.push(noTrailingDigit)
     }
-    return results
+    const stripped = q.replace(/[^가-힣\d]+$/, '')
+    let cur = stripped.length >= 4 && stripped !== q ? stripped : q
+    if (cur !== q) addCandidate(cur)
+    for (let i = 0; i < 5 && cur.length > 6; i++) {
+      cur = cur.slice(0, -4)
+      addCandidate(cur)
+    }
+
+    for (const qry of queries) {
+      const results = await funetfQuery(qry, session)
+      if (results.length > 0) {
+        // Filter by original query if we fell back to a shorter one
+        if (qry !== q) {
+          const filtered = results.filter(r => r.name.includes(q) || q.includes(r.name.slice(0, 6)))
+          if (filtered.length > 0) return filtered
+        }
+        return results
+      }
+    }
+    return []
   } catch {
     return []
   }
@@ -299,8 +343,61 @@ async function searchYahoo(q: string, type: string): Promise<{ name: string; tic
       if (type === 'etf_us') return q.quoteType === 'ETF' && !sym.includes('.')
       return false
     })
-    .slice(0, 6)
     .map((q) => ({ name: q.longname ?? q.shortname ?? q.symbol, ticker: q.symbol }))
+}
+
+const INSURANCE_PRODUCTS: { name: string; ticker: string }[] = [
+  // 삼성생명
+  { name: '삼성생명 종신보험', ticker: '' }, { name: '삼성생명 연금보험', ticker: '' },
+  { name: '삼성생명 암보험', ticker: '' }, { name: '삼성생명 CI보험', ticker: '' },
+  { name: '삼성생명 변액연금보험', ticker: '' }, { name: '삼성생명 변액종신보험', ticker: '' },
+  // 한화생명
+  { name: '한화생명 종신보험', ticker: '' }, { name: '한화생명 연금보험', ticker: '' },
+  { name: '한화생명 암보험', ticker: '' }, { name: '한화생명 변액보험', ticker: '' },
+  // 교보생명
+  { name: '교보생명 종신보험', ticker: '' }, { name: '교보생명 연금보험', ticker: '' },
+  { name: '교보생명 CI보험', ticker: '' }, { name: '교보생명 암보험', ticker: '' },
+  { name: '교보생명 변액연금보험', ticker: '' },
+  // 신한라이프
+  { name: '신한라이프 종신보험', ticker: '' }, { name: '신한라이프 연금보험', ticker: '' },
+  { name: '신한라이프 암보험', ticker: '' },
+  // NH농협생명
+  { name: 'NH농협생명 종신보험', ticker: '' }, { name: 'NH농협생명 연금보험', ticker: '' },
+  // KB라이프
+  { name: 'KB라이프 종신보험', ticker: '' }, { name: 'KB라이프 연금보험', ticker: '' },
+  // AIA·메트라이프·푸르덴셜
+  { name: 'AIA생명 종신보험', ticker: '' }, { name: 'AIA생명 CI보험', ticker: '' },
+  { name: '메트라이프 종신보험', ticker: '' }, { name: '메트라이프 변액보험', ticker: '' },
+  { name: '푸르덴셜 종신보험', ticker: '' },
+  // 삼성화재
+  { name: '삼성화재 실손보험', ticker: '' }, { name: '삼성화재 운전자보험', ticker: '' },
+  { name: '삼성화재 어린이보험', ticker: '' }, { name: '삼성화재 암보험', ticker: '' },
+  { name: '삼성화재 치아보험', ticker: '' },
+  // 현대해상
+  { name: '현대해상 실손보험', ticker: '' }, { name: '현대해상 운전자보험', ticker: '' },
+  { name: '현대해상 어린이보험', ticker: '' }, { name: '현대해상 암보험', ticker: '' },
+  // DB손보
+  { name: 'DB손보 실손보험', ticker: '' }, { name: 'DB손보 운전자보험', ticker: '' },
+  { name: 'DB손보 어린이보험', ticker: '' }, { name: 'DB손보 암보험', ticker: '' },
+  // KB손보
+  { name: 'KB손보 실손보험', ticker: '' }, { name: 'KB손보 운전자보험', ticker: '' },
+  { name: 'KB손보 암보험', ticker: '' },
+  // 메리츠화재
+  { name: '메리츠화재 실손보험', ticker: '' }, { name: '메리츠화재 암보험', ticker: '' },
+  { name: '메리츠화재 운전자보험', ticker: '' },
+  // 공통 상품 유형
+  { name: '종신보험', ticker: '' }, { name: '정기보험', ticker: '' },
+  { name: '연금보험', ticker: '' }, { name: '변액연금보험', ticker: '' },
+  { name: '변액종신보험', ticker: '' }, { name: '실손의료보험', ticker: '' },
+  { name: '암보험', ticker: '' }, { name: 'CI보험', ticker: '' },
+  { name: '치아보험', ticker: '' }, { name: '운전자보험', ticker: '' },
+  { name: '어린이보험', ticker: '' }, { name: '태아보험', ticker: '' },
+  { name: '노인장기요양보험', ticker: '' }, { name: '저축보험', ticker: '' },
+]
+
+function searchInsurance(q: string): { name: string; ticker: string }[] {
+  const lower = q.toLowerCase()
+  return INSURANCE_PRODUCTS.filter((p) => p.name.toLowerCase().includes(lower))
 }
 
 export async function GET(req: NextRequest) {
@@ -317,6 +414,9 @@ export async function GET(req: NextRequest) {
     }
     if (type === 'fund') {
       return NextResponse.json({ results: await searchFund(q) })
+    }
+    if (type === 'insurance') {
+      return NextResponse.json({ results: searchInsurance(q) })
     }
     return NextResponse.json({ results: await searchYahoo(q, type) })
   } catch {

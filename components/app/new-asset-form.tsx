@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Form,
   FormControl,
@@ -167,13 +168,25 @@ const ASSET_TYPE_COLORS: Record<string, { icon: string; bg: string }> = {
   insurance:     { icon: 'text-cyan-500',   bg: 'bg-cyan-50' },
   precious_metal:{ icon: 'text-amber-500',  bg: 'bg-amber-50' },
 }
+const ASSET_TYPE_ACTIVE: Record<string, { border: string; bg: string; text: string; iconBg: string }> = {
+  stock_kr:      { border: 'border-blue-400',    bg: 'bg-blue-50',    text: 'text-blue-700',    iconBg: 'bg-blue-100' },
+  stock_us:      { border: 'border-sky-400',     bg: 'bg-sky-50',     text: 'text-sky-700',     iconBg: 'bg-sky-100' },
+  etf_kr:        { border: 'border-emerald-400', bg: 'bg-emerald-50', text: 'text-emerald-700', iconBg: 'bg-emerald-100' },
+  etf_us:        { border: 'border-teal-400',    bg: 'bg-teal-50',    text: 'text-teal-700',    iconBg: 'bg-teal-100' },
+  crypto:        { border: 'border-orange-400',  bg: 'bg-orange-50',  text: 'text-orange-700',  iconBg: 'bg-orange-100' },
+  fund:          { border: 'border-violet-400',  bg: 'bg-violet-50',  text: 'text-violet-700',  iconBg: 'bg-violet-100' },
+  savings:       { border: 'border-yellow-400',  bg: 'bg-yellow-50',  text: 'text-yellow-700',  iconBg: 'bg-yellow-100' },
+  real_estate:   { border: 'border-rose-400',    bg: 'bg-rose-50',    text: 'text-rose-700',    iconBg: 'bg-rose-100' },
+  insurance:     { border: 'border-cyan-400',    bg: 'bg-cyan-50',    text: 'text-cyan-700',    iconBg: 'bg-cyan-100' },
+  precious_metal:{ border: 'border-amber-400',   bg: 'bg-amber-50',   text: 'text-amber-700',   iconBg: 'bg-amber-100' },
+}
 const TICKER_HINTS: Record<string, { placeholder: string; hint: string }> = {
   stock_kr: { placeholder: '예: 005930.KS', hint: 'KOSPI는 {종목코드}.KS, KOSDAQ는 {종목코드}.KQ\n예) 삼성전자 005930.KS · 카카오 035720.KQ' },
   etf_kr:   { placeholder: '예: 069500.KS', hint: 'KOSPI 상장 ETF는 {종목코드}.KS\n예) KODEX 200 069500.KS · TIGER 미국S&P500 360750.KS' },
   stock_us: { placeholder: '예: AAPL',      hint: '예) AAPL · MSFT · TSLA · NVDA' },
   etf_us:   { placeholder: '예: VOO',       hint: '예) VOO · QQQ · SPY · SCHD' },
   crypto:   { placeholder: '예: BINANCE:BTCUSDT', hint: 'Finnhub 형식: {거래소}:{심볼}\n예) BINANCE:BTCUSDT' },
-  fund:     { placeholder: '예: K55236CN5311', hint: 'funetf.co.kr에서 펀드 검색 후 URL 마지막 코드 입력' },
+  fund:     { placeholder: '예: KR5236A93166', hint: 'funetf.co.kr에서 펀드 상품 페이지 접속 후\nURL 주소창 마지막 코드 입력\n예) .../view/KR5236A93166 → KR5236A93166' },
 }
 
 // ── Schema ─────────────────────────────────────────────────────────────────
@@ -190,9 +203,26 @@ const assetSchema = z.object({
   initialPricePerUnit: z.string().optional().nullable(),
   initialTransactionDate: z.string().optional().nullable(),
   initialExchangeRate: z.string().optional().nullable(),
+  initialSurrenderValue: z.string().optional().nullable(),
 })
 
 interface TickerSuggestion { name: string; ticker: string }
+
+const INSURANCE_COMPANY_KEY: [string, string][] = [
+  ['삼성생명', 'ins_samsung_life'], ['한화생명', 'ins_hanwha_life'], ['교보생명', 'ins_kyobo'],
+  ['신한라이프', 'ins_shinhan_life'], ['NH농협생명', 'ins_nh_life'], ['KB라이프', 'ins_kb_life'],
+  ['AIA생명', 'ins_aia'], ['메트라이프', 'ins_metlife'], ['푸르덴셜', 'ins_prudential'],
+  ['삼성화재', 'ins_samsung_fire'], ['현대해상', 'ins_hyundai'], ['DB손보', 'ins_db_fire'],
+  ['KB손보', 'ins_kb_fire'], ['메리츠화재', 'ins_meritz'], ['한화손보', 'ins_hanwha_fire'],
+  ['롯데손보', 'ins_lotte_fire'],
+]
+
+function getInsuranceCompanyKey(name: string): string | null {
+  for (const [prefix, key] of INSURANCE_COMPANY_KEY) {
+    if (name.startsWith(prefix)) return key
+  }
+  return null
+}
 
 const STEPS = [
   { label: '자산 유형' },
@@ -221,7 +251,7 @@ export function NewAssetForm({ onSubmit }: {
       accountType: null, ticker: null, notes: null,
       initialQuantity: null, initialPricePerUnit: null,
       initialTransactionDate: new Date().toISOString().split('T')[0],
-      initialExchangeRate: null,
+      initialExchangeRate: null, initialSurrenderValue: null,
     },
     mode: 'onBlur',
   })
@@ -229,7 +259,7 @@ export function NewAssetForm({ onSubmit }: {
   const assetType = form.watch('assetType')
   const priceType = form.watch('priceType')
   const currency = form.watch('currency')
-  const isSearchable = SEARCHABLE_TYPES.includes(assetType) && priceType === 'live'
+  const isSearchable = (SEARCHABLE_TYPES.includes(assetType) && priceType === 'live') || assetType === 'insurance'
   const isAccountTypeable = ACCOUNT_TYPE_TYPES.includes(assetType)
   const availableAccountTypes = ACCOUNT_TYPE_BY_ASSET[assetType] ?? Object.keys(ACCOUNT_TYPE_LABELS)
   const isUSD = currency === 'USD'
@@ -275,7 +305,10 @@ export function NewAssetForm({ onSubmit }: {
 
   function selectSuggestion(s: TickerSuggestion) {
     form.setValue('name', s.name, { shouldValidate: true })
-    form.setValue('ticker', s.ticker, { shouldValidate: true })
+    if (assetType !== 'insurance') {
+      form.setValue('ticker', s.ticker, { shouldValidate: true })
+    }
+    setSuggestions([])
   }
 
   // ── Step navigation ──────────────────────────────────────────────────────
@@ -356,17 +389,17 @@ export function NewAssetForm({ onSubmit }: {
       <form
         onSubmit={form.handleSubmit(handleSubmit)}
         onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) e.preventDefault() }}
-        className="space-y-4"
+        className="space-y-4 max-w-[640px]"
       >
         {/* ── Step 1: 자산 유형 ────────────────────────────────────────── */}
         {step === 0 && (
-          <div className="flex gap-4 items-stretch">
+          <div className="flex flex-col gap-4">
             {/* 자산 유형 카드 */}
             <FormField
               control={form.control}
               name="assetType"
               render={({ field }) => (
-                <FormItem className="flex-1 min-w-0 self-start">
+                <FormItem className="min-w-0">
                   <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground mb-3">
                     <Layers className="h-4 w-4" />자산 유형
                   </FormLabel>
@@ -382,16 +415,16 @@ export function NewAssetForm({ onSubmit }: {
                             type="button"
                             onClick={() => field.onChange(val)}
                             className={cn(
-                              'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border transition-all duration-150 cursor-pointer',
+                              'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border-2 transition-all duration-150 cursor-pointer',
                               active
-                                ? 'border-foreground bg-foreground text-background shadow-sm'
-                                : 'border-border bg-card hover:border-foreground/40 hover:bg-muted/30'
+                                ? cn(ASSET_TYPE_ACTIVE[val]?.border, ASSET_TYPE_ACTIVE[val]?.bg, 'shadow-sm ring-1 ring-inset ring-current/10')
+                                : 'border-border bg-card hover:border-foreground/30 hover:bg-muted/30'
                             )}
                           >
-                            <span className={cn('flex items-center justify-center rounded-lg p-1.5', active ? 'bg-background/20' : color?.bg)}>
-                              <Icon className={cn('h-4 w-4 shrink-0', active ? 'text-background' : color?.icon)} />
+                            <span className={cn('flex items-center justify-center rounded-lg p-1.5', active ? ASSET_TYPE_ACTIVE[val]?.iconBg : color?.bg)}>
+                              <Icon className={cn('h-4 w-4 shrink-0', active ? ASSET_TYPE_ACTIVE[val]?.text : color?.icon)} />
                             </span>
-                            <span className={cn('text-[11px] font-medium leading-tight text-center', active ? 'text-background' : 'text-foreground/70')}>{label}</span>
+                            <span className={cn('text-[11px] font-medium leading-tight text-center', active ? ASSET_TYPE_ACTIVE[val]?.text : 'text-foreground/70')}>{label}</span>
                           </button>
                         )
                       })}
@@ -402,14 +435,12 @@ export function NewAssetForm({ onSubmit }: {
               )}
             />
 
-            <div className="w-px bg-border self-stretch" />
-
             {/* 계좌 유형 카드 */}
             <FormField
               control={form.control}
               name="accountType"
               render={({ field }) => (
-                <FormItem className="flex-1 min-w-0 self-start">
+                <FormItem className="min-w-0">
                   <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground mb-3">
                     <Wallet className="h-4 w-4" />{assetType === 'crypto' ? '거래소' : assetType === 'fund' ? '운용사' : assetType === 'savings' ? '은행' : assetType === 'insurance' ? '보험사' : '계좌 유형'}
                     <span className="text-xs font-normal text-muted-foreground/60">(선택)</span>
@@ -434,10 +465,10 @@ export function NewAssetForm({ onSubmit }: {
                                     type="button"
                                     onClick={() => field.onChange(active ? null : val)}
                                     className={cn(
-                                      'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border transition-all duration-150 cursor-pointer',
+                                      'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border-2 transition-all duration-150 cursor-pointer',
                                       active
-                                        ? 'border-foreground bg-foreground text-background shadow-sm'
-                                        : 'border-border bg-card text-foreground/60 hover:border-foreground/40 hover:text-foreground hover:bg-muted/30'
+                                        ? 'border-indigo-400 bg-indigo-50 text-indigo-700 shadow-sm'
+                                        : 'border-border bg-card text-foreground/60 hover:border-foreground/30 hover:text-foreground hover:bg-muted/30'
                                     )}
                                   >
                                     <DomainLogo value={val} size={28} />
@@ -460,14 +491,14 @@ export function NewAssetForm({ onSubmit }: {
                                 type="button"
                                 onClick={() => field.onChange(active ? null : val)}
                                 className={cn(
-                                  'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border transition-all duration-150 cursor-pointer',
+                                  'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border-2 transition-all duration-150 cursor-pointer',
                                   active
-                                    ? 'border-foreground bg-foreground text-background shadow-sm'
-                                    : 'border-border bg-card text-foreground/60 hover:border-foreground/40 hover:text-foreground hover:bg-muted/30'
+                                    ? 'border-indigo-400 bg-indigo-50 text-indigo-700 shadow-sm'
+                                    : 'border-border bg-card text-foreground/60 hover:border-foreground/30 hover:text-foreground hover:bg-muted/30'
                                 )}
                               >
-                                <span className={cn('flex items-center justify-center rounded-lg p-1.5', active ? 'bg-background/20' : color?.bg)}>
-                                  <Icon className={cn('h-4 w-4 shrink-0', active ? 'text-background' : color?.icon)} />
+                                <span className={cn('flex items-center justify-center rounded-lg p-1.5', active ? 'bg-indigo-100' : color?.bg)}>
+                                  <Icon className={cn('h-4 w-4 shrink-0', active ? 'text-indigo-600' : color?.icon)} />
                                 </span>
                                 <span className="text-[11px] font-medium leading-tight text-center">{ACCOUNT_TYPE_LABELS[val]}</span>
                               </button>
@@ -486,16 +517,16 @@ export function NewAssetForm({ onSubmit }: {
 
         {/* ── Step 2: 종목 정보 ────────────────────────────────────────── */}
         {step === 1 && (
-          <div className="grid grid-cols-2 gap-3 items-start">
+          <div className="flex flex-col gap-3">
 
-            {/* 좌: 종목명 */}
+            {/* 상: 종목명 검색 */}
             <FormField
               control={form.control}
               name="name"
               render={({ field: { value, onChange: fieldOnChange, ...restField } }) => (
-                <FormItem className="rounded-xl border border-border bg-card p-4 space-y-3 row-span-2">
+                <FormItem className="rounded-xl border border-border bg-card p-4 space-y-3">
                   <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-                    <Tag className="h-4 w-4 shrink-0" />종목명
+                    <Tag className="h-4 w-4 shrink-0" />{assetType === 'insurance' ? '보험 상품명' : assetType === 'fund' ? '펀드명' : '종목명'}
                   </FormLabel>
                   <FormControl>
                     <div className="relative">
@@ -525,7 +556,7 @@ export function NewAssetForm({ onSubmit }: {
                         const isSelected = value === s.name
                         return (
                           <button
-                            key={s.ticker}
+                            key={s.ticker || s.name}
                             type="button"
                             onClick={() => selectSuggestion(s)}
                             className={cn(
@@ -535,12 +566,10 @@ export function NewAssetForm({ onSubmit }: {
                                 : 'border-border bg-white hover:border-foreground/30 hover:bg-muted/30'
                             )}
                           >
-                            <AssetLogo
-                              ticker={s.ticker}
-                              name={s.name}
-                              assetType={assetType as Parameters<typeof AssetLogo>[0]['assetType']}
-                              size={32}
-                            />
+                            {assetType === 'insurance'
+                              ? <DomainLogo value={getInsuranceCompanyKey(s.name) ?? 'ins_samsung_life'} size={32} />
+                              : <AssetLogo ticker={s.ticker} name={s.name} assetType={assetType as Parameters<typeof AssetLogo>[0]['assetType']} size={32} />
+                            }
                             <span className="flex-1 text-sm font-medium truncate">{s.name}</span>
                             <span className={cn('text-xs font-mono shrink-0', isSelected ? 'text-background/70' : 'text-muted-foreground')}>{s.ticker}</span>
                           </button>
@@ -552,50 +581,53 @@ export function NewAssetForm({ onSubmit }: {
               )}
             />
 
-            {/* 우상: 종목코드 */}
-            <FormField
-              control={form.control}
-              name="ticker"
-              render={({ field }) => {
-                const hint = TICKER_HINTS[assetType]
-                const disabled = priceType !== 'live'
-                return (
-                  <FormItem className="rounded-xl border border-border bg-card p-4 space-y-2">
+            {/* 하: 종목코드 + 메모 */}
+            <div className="flex flex-col gap-3">
+              {/* 좌: 종목코드 */}
+              {assetType !== 'insurance' && <FormField
+                control={form.control}
+                name="ticker"
+                render={({ field }) => {
+                  const hint = TICKER_HINTS[assetType]
+                  const disabled = priceType !== 'live'
+                  return (
+                    <FormItem className="rounded-xl border border-border bg-card p-4 space-y-2">
+                      <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                        <Hash className="h-4 w-4 shrink-0" />종목코드
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value ?? ''} placeholder={hint?.placeholder ?? '예: AAPL'} disabled={disabled} />
+                      </FormControl>
+                      {hint && !disabled && (
+                        <div className="flex gap-2 rounded-md border border-border bg-muted/60 px-3 py-2.5">
+                          <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">{hint.hint}</p>
+                        </div>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )
+                }}
+              />}
+
+              {/* 우: 메모 */}
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2">
                     <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-                      <Hash className="h-4 w-4 shrink-0" />종목코드
+                      <MessageSquare className="h-4 w-4 shrink-0" />메모
+                      <span className="text-xs font-normal text-muted-foreground/60">(선택)</span>
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} value={field.value ?? ''} placeholder={hint?.placeholder ?? '예: AAPL'} disabled={disabled} />
+                      <Textarea {...field} value={field.value ?? ''} placeholder="예: 물타기" />
                     </FormControl>
-                    {hint && !disabled && (
-                      <div className="flex gap-2 rounded-md border border-border bg-muted/60 px-3 py-2.5">
-                        <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-muted-foreground" />
-                        <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">{hint.hint}</p>
-                      </div>
-                    )}
                     <FormMessage />
                   </FormItem>
-                )
-              }}
-            />
-
-            {/* 우하: 메모 */}
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem className="rounded-xl border border-border bg-card p-4 space-y-2">
-                  <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-                    <MessageSquare className="h-4 w-4 shrink-0" />메모
-                    <span className="text-xs font-normal text-muted-foreground/60">(선택)</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input {...field} value={field.value ?? ''} placeholder="예: 물타기" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                )}
+              />
+            </div>
           </div>
         )}
 
@@ -605,73 +637,123 @@ export function NewAssetForm({ onSubmit }: {
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-border" />
               <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                초기 매수 내역 · 선택
+                {assetType === 'insurance' ? '보험 납입 내역 · 선택' : '초기 매수 내역 · 선택'}
               </span>
               <div className="h-px flex-1 bg-border" />
             </div>
 
-            <div className="grid grid-cols-[1fr_2fr_1.5fr] gap-3">
-              <FormField
-                control={form.control}
-                name="initialQuantity"
-                render={({ field }) => (
-                  <FormItem className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2">
-                    <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-                      <Package className="h-3.5 w-3.5 shrink-0" />수량
-                    </FormLabel>
-                    <FormControl>
-                      <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder={assetType === 'crypto' ? '예: 0.5' : '예: 10'} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="initialPricePerUnit"
-                render={({ field }) => (
-                  <FormItem className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2">
-                    <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-                      <Receipt className="h-3.5 w-3.5 shrink-0" />매수 단가
-                    </FormLabel>
-                    <div className="flex items-center gap-1.5">
-                      <FormControl className="flex-1 min-w-0">
-                        <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 75000" className="w-full" />
+            {assetType === 'insurance' ? (
+              <div className="flex flex-col gap-3">
+                <FormField
+                  control={form.control}
+                  name="initialPricePerUnit"
+                  render={({ field }) => (
+                    <FormItem className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2">
+                      <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                        <Receipt className="h-3.5 w-3.5 shrink-0" />총납입보험료
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 12000000" />
                       </FormControl>
-                      <div className="flex gap-1 shrink-0">
-                        {([['KRW', '₩'], ['USD', '$']] as const).map(([val, label]) => {
-                          const Icon = val === 'KRW' ? Banknote : DollarSign
-                          return (
-                            <button key={val} type="button" onClick={() => form.setValue('currency', val)} className={pillClass(currency === val)}>
-                              <Icon className="h-3 w-3 shrink-0" />{label}
-                            </button>
-                          )
-                        })}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="initialSurrenderValue"
+                  render={({ field }) => (
+                    <FormItem className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2">
+                      <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                        <Wallet className="h-3.5 w-3.5 shrink-0" />해지환급금
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 10500000" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="initialTransactionDate"
+                  render={({ field }) => (
+                    <FormItem className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2">
+                      <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5 shrink-0" />납입 시작일
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <FormField
+                  control={form.control}
+                  name="initialQuantity"
+                  render={({ field }) => (
+                    <FormItem className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2">
+                      <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                        <Package className="h-3.5 w-3.5 shrink-0" />수량
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder={assetType === 'crypto' ? '예: 0.5' : '예: 10'} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="initialPricePerUnit"
+                  render={({ field }) => (
+                    <FormItem className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2">
+                      <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                        <Receipt className="h-3.5 w-3.5 shrink-0" />매수 단가
+                      </FormLabel>
+                      <div className="flex items-center gap-1.5">
+                        <FormControl className="flex-1 min-w-0">
+                          <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 75000" className="w-full" />
+                        </FormControl>
+                        <div className="flex gap-1 shrink-0">
+                          {([['KRW', '₩'], ['USD', '$']] as const).map(([val, label]) => {
+                            const Icon = val === 'KRW' ? Banknote : DollarSign
+                            return (
+                              <button key={val} type="button" onClick={() => form.setValue('currency', val)} className={pillClass(currency === val)}>
+                                <Icon className="h-3 w-3 shrink-0" />{label}
+                              </button>
+                            )
+                          })}
+                        </div>
                       </div>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="initialTransactionDate"
-                render={({ field }) => (
-                  <FormItem className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2">
-                    <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5 shrink-0" />매수일
-                    </FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} value={field.value ?? ''} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="initialTransactionDate"
+                  render={({ field }) => (
+                    <FormItem className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2">
+                      <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5 shrink-0" />매수일
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
 
-            {/* 환율 (USD인 경우만) */}
-            {isUSD && (
+            {/* 환율 (USD인 경우만, 비보험) */}
+            {isUSD && assetType !== 'insurance' && (
               <FormField
                 control={form.control}
                 name="initialExchangeRate"

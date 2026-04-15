@@ -95,6 +95,8 @@ export default async function GoalsPage() {
         </div>
       </div>
 
+      <Separator className="bg-foreground" />
+
       {/* 브랜드 로고 */}
       <div className="flex flex-col items-center gap-3 py-8">
         <div className="relative">
@@ -103,9 +105,9 @@ export default async function GoalsPage() {
           <Image
             src="/logo.jpg"
             alt="77잭팟 로고"
-            width={420}
-            height={210}
-            className="relative rounded-3xl shadow-lg hover:scale-105 transition-transform duration-300"
+            width={200}
+            height={100}
+            className="relative rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300"
           />
         </div>
         <p className="text-xs text-muted-foreground tracking-widest uppercase">

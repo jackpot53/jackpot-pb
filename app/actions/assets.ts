@@ -26,6 +26,8 @@ const assetSchema = z.object({
   initialPricePerUnit: z.string().optional().nullable(),
   initialTransactionDate: z.string().optional().nullable(),
   initialExchangeRate: z.string().optional().nullable(),
+  // Insurance-specific fields
+  initialSurrenderValue: z.string().optional().nullable(),
 })
 
 export type AssetFormValues = z.infer<typeof assetSchema>
@@ -45,6 +47,7 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
   const {
     ticker, notes,
     initialQuantity, initialPricePerUnit, initialTransactionDate, initialExchangeRate,
+    initialSurrenderValue,
     ...rest
   } = parsed.data
 
@@ -56,6 +59,42 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
     notes: notes ?? null,
   }).returning({ id: assets.id })
 
+  const txDate = initialTransactionDate || new Date().toISOString().split('T')[0]
+
+  // Insurance: 총납입보험료 → buy tx (qty=1), 해지환급금 → manual valuation
+  if (rest.assetType === 'insurance') {
+    if (initialPricePerUnit && !isNaN(parseFloat(initialPricePerUnit)) && parseFloat(initialPricePerUnit) > 0) {
+      const premiumKrw = Math.round(parseFloat(initialPricePerUnit))
+      await db.insert(transactions).values({
+        assetId: newAsset.id,
+        userId: user.id,
+        type: 'buy',
+        quantity: 1e8, // 1 unit encoded
+        pricePerUnit: premiumKrw,
+        fee: 0,
+        currency: 'KRW',
+        exchangeRateAtTime: null,
+        transactionDate: txDate,
+        isVoided: false,
+        notes: '총납입보험료',
+      })
+      await upsertHoldings(newAsset.id, user.id)
+    }
+    if (initialSurrenderValue && !isNaN(parseFloat(initialSurrenderValue)) && parseFloat(initialSurrenderValue) >= 0) {
+      await db.insert(manualValuations).values({
+        assetId: newAsset.id,
+        userId: user.id,
+        valueKrw: Math.round(parseFloat(initialSurrenderValue)),
+        currency: 'KRW',
+        exchangeRateAtTime: null,
+        valuedAt: txDate,
+        notes: '해지환급금',
+      })
+    }
+    revalidatePath('/assets')
+    redirect('/assets')
+  }
+
   // Create initial buy transaction if quantity and price are provided
   const isTradeable = (TRADEABLE_TYPES as readonly string[]).includes(rest.assetType)
   if (
@@ -65,7 +104,6 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
     !isNaN(parseFloat(initialPricePerUnit)) && parseFloat(initialPricePerUnit) >= 0
   ) {
     const quantityEncoded = Math.round(parseFloat(initialQuantity) * 1e8)
-    const txDate = initialTransactionDate || new Date().toISOString().split('T')[0]
 
     let pricePerUnitKrw: number
     let exchangeRateEncoded: number | null = null

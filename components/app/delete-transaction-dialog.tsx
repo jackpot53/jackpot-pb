@@ -41,7 +41,7 @@ export function DeleteTransactionDialog({
       >
         <Trash2 className="h-4 w-4 text-destructive" />
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>거래 삭제</DialogTitle>
           <DialogDescription>
