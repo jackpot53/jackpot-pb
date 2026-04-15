@@ -246,13 +246,13 @@ export function NewAssetForm({ onSubmit }: {
       >
         {/* ── Step 1: 자산 유형 ────────────────────────────────────────── */}
         {step === 0 && (
-          <div className="space-y-5">
+          <div className="flex gap-4 items-start">
             {/* 자산 유형 카드 */}
             <FormField
               control={form.control}
               name="assetType"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex-1 min-w-0">
                   <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground mb-3">
                     <Layers className="h-4 w-4" />자산 유형
                   </FormLabel>
@@ -290,7 +290,7 @@ export function NewAssetForm({ onSubmit }: {
               control={form.control}
               name="accountType"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex-1 min-w-0">
                   <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground mb-3">
                     <Wallet className="h-4 w-4" />계좌 유형
                     <span className="text-xs font-normal text-muted-foreground/60">(선택)</span>
