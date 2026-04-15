@@ -1,19 +1,20 @@
 'use client'
 import Link from 'next/link'
 import { useState } from 'react'
-import { ArrowUp, ArrowDown, ArrowUpDown, Layers, LayoutGrid, TrendingUp, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen } from 'lucide-react'
+import { Layers, LayoutGrid, TrendingUp, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
-import { EditAssetDialog } from '@/components/app/edit-asset-dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table'
 import { Separator } from '@/components/ui/separator'
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { cn } from '@/lib/utils'
 import { StalePriceBadge } from '@/components/app/stale-price-badge'
+import { SparklineChart } from '@/components/app/sparkline-chart'
+import { AssetGroupChart } from '@/components/app/asset-group-chart'
+import { AssetLogo } from '@/components/app/asset-logo'
 import { formatKrw, formatReturn, formatQty } from '@/lib/portfolio'
 import type { AssetPerformance } from '@/lib/portfolio'
+import type { MonthlyDataPoint, AnnualDataPoint } from '@/lib/snapshot/aggregation'
+import type { OhlcPoint } from '@/lib/price/sparkline'
 
 const ASSET_TYPE_ORDER = [
   'stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate',
@@ -50,122 +51,7 @@ const ASSET_TYPE_ICONS: Record<string, React.ElementType> = {
   real_estate: Building2,
 }
 
-type SortKey = 'name' | 'totalQuantity' | 'avgCostPerUnit' | 'currentPriceKrw' | 'totalCostKrw' | 'currentValueKrw' | 'profit'
-type SortDir = 'asc' | 'desc'
-
-function sortAssets(assets: AssetPerformance[], key: SortKey, dir: SortDir) {
-  return [...assets].sort((a, b) => {
-    let av: number | string
-    let bv: number | string
-    if (key === 'name') {
-      av = a.name
-      bv = b.name
-    } else if (key === 'profit') {
-      av = a.currentValueKrw - a.totalCostKrw
-      bv = b.currentValueKrw - b.totalCostKrw
-    } else {
-      av = a[key]
-      bv = b[key]
-    }
-    if (av < bv) return dir === 'asc' ? -1 : 1
-    if (av > bv) return dir === 'asc' ? 1 : -1
-    return 0
-  })
-}
-
-function SortableHead({
-  label,
-  sortKey,
-  current,
-  dir,
-  onSort,
-  className,
-  align = 'right',
-}: {
-  label: string
-  sortKey: SortKey
-  current: SortKey | null
-  dir: SortDir
-  onSort: (key: SortKey) => void
-  className?: string
-  align?: 'left' | 'center' | 'right'
-}) {
-  const isActive = current === sortKey
-  const justify = align === 'center' ? 'justify-center' : align === 'left' ? 'justify-start' : 'justify-end'
-  return (
-    <TableHead
-      className={cn('cursor-pointer select-none whitespace-nowrap', className)}
-      onClick={() => onSort(sortKey)}
-    >
-      <span className={cn('inline-flex items-center gap-1 w-full', justify)}>
-        {label}
-        {isActive ? (
-          dir === 'asc' ? <ArrowUp size={13} /> : <ArrowDown size={13} />
-        ) : (
-          <ArrowUpDown size={13} className="text-muted-foreground/40" />
-        )}
-      </span>
-    </TableHead>
-  )
-}
-
-function AssetRow({ asset, even }: { asset: AssetPerformance; even?: boolean }) {
-  const hasHolding = asset.totalQuantity > 0
-  const isCrypto = asset.assetType === 'crypto'
-  const hasValue = asset.currentValueKrw > 0
-  const hasCost = asset.totalCostKrw > 0
-
-  const currentPriceCell =
-    asset.priceType === 'live' && asset.ticker ? (
-      <span className="flex items-center justify-end gap-1">
-        {asset.currentPriceKrw > 0 ? formatKrw(asset.currentPriceKrw) : '—'}
-        {asset.isStale && asset.currentPriceKrw > 0 && asset.cachedAt && <StalePriceBadge cachedAt={asset.cachedAt} />}
-      </span>
-    ) : asset.assetType === 'fund' && asset.currentPriceKrw > 0 ? (
-      formatKrw(asset.currentPriceKrw)
-    ) : '—'
-
-  return (
-    <TableRow className={even ? 'bg-muted/10' : undefined}>
-      <TableCell className="text-center px-1">
-        <Link href={`/assets/${asset.assetId}`} className="hover:underline font-medium">
-          {asset.name}
-        </Link>
-      </TableCell>
-      <TableCell className="text-center">
-        {asset.accountType ? (
-          <span className="text-xs rounded-full px-2 py-0.5 bg-secondary text-secondary-foreground font-medium">
-            {ACCOUNT_TYPE_LABELS[asset.accountType]}
-          </span>
-        ) : '—'}
-      </TableCell>
-      <TableCell className="text-sm text-right font-mono">
-        {hasHolding ? formatQty(asset.totalQuantity, isCrypto) : '—'}
-      </TableCell>
-      <TableCell className="text-sm text-right">
-        {asset.avgCostPerUnit > 0 ? formatKrw(asset.avgCostPerUnit) : '—'}
-      </TableCell>
-      <TableCell className="text-sm text-right">{currentPriceCell}</TableCell>
-      <TableCell className="text-sm text-right">
-        {hasCost ? formatKrw(asset.totalCostKrw) : '—'}
-      </TableCell>
-      <TableCell className="text-sm text-right">
-        {hasValue ? formatKrw(asset.currentValueKrw) : '—'}
-      </TableCell>
-      <TableCell className="text-right">
-        {hasValue && hasCost ? (
-          <span className={`text-lg font-semibold ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-600'}`}>
-            {formatKrw(asset.currentValueKrw - asset.totalCostKrw)}
-            <span className="text-base font-medium ml-1 opacity-80">{formatReturn(asset.returnPct)}</span>
-          </span>
-        ) : '—'}
-      </TableCell>
-      <TableCell className="text-center">
-        <EditAssetDialog asset={asset} />
-      </TableCell>
-    </TableRow>
-  )
-}
+const NO_SPARKLINE_TYPES = new Set(['fund', 'real_estate', 'savings'])
 
 type MergedAsset = AssetPerformance & { mergedCount: number }
 
@@ -196,88 +82,114 @@ function mergeAssets(assets: AssetPerformance[]): MergedAsset[] {
   return Array.from(map.values())
 }
 
-function MergedAssetRow({ asset, even }: { asset: MergedAsset; even?: boolean }) {
+const CARD_LIST_HEIGHT_PX = 360
+const CARD_LIST_PADDING_PX = 16 // p-2 top + bottom
+const CARD_HEIGHT_PX = 64 // approximate card height (py-3 + 40px logo)
+const CARD_GAP_PX = 6 // space-y-1.5
+const CARD_LIST_VISIBLE = Math.floor((CARD_LIST_HEIGHT_PX - CARD_LIST_PADDING_PX + CARD_GAP_PX) / (CARD_HEIGHT_PX + CARD_GAP_PX))
+
+function AssetCardSkeleton({ showSparkline }: { showSparkline?: boolean }) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-border">
+      <div className="w-10 h-10 rounded-full bg-muted animate-pulse shrink-0" />
+      <div className="flex-1 space-y-2">
+        <div className="h-3.5 w-28 bg-muted animate-pulse rounded-md" />
+        <div className="h-3 w-44 bg-muted animate-pulse rounded-md" />
+      </div>
+      {showSparkline && <div className="w-20 h-9 bg-muted animate-pulse rounded-md shrink-0" />}
+      <div className="text-right space-y-2 shrink-0">
+        <div className="h-3.5 w-20 bg-muted animate-pulse rounded-md ml-auto" />
+        <div className="h-3 w-14 bg-muted animate-pulse rounded-md ml-auto" />
+      </div>
+    </div>
+  )
+}
+
+function AssetCard({ asset, sparklineData, showSparkline }: {
+  asset: AssetPerformance & { mergedCount?: number }
+  sparklineData?: number[]
+  showSparkline?: boolean
+}) {
   const hasHolding = asset.totalQuantity > 0
   const isCrypto = asset.assetType === 'crypto'
   const hasValue = asset.currentValueKrw > 0
   const hasCost = asset.totalCostKrw > 0
+  const profit = asset.currentValueKrw - asset.totalCostKrw
+  const mergedCount = (asset as MergedAsset).mergedCount ?? 1
 
-  const currentPriceCell =
-    asset.priceType === 'live' && asset.ticker ? (
-      <span className="flex items-center justify-end gap-1">
-        {asset.currentPriceKrw > 0 ? formatKrw(asset.currentPriceKrw) : '—'}
-        {asset.isStale && asset.currentPriceKrw > 0 && asset.cachedAt && <StalePriceBadge cachedAt={asset.cachedAt} />}
-      </span>
-    ) : asset.assetType === 'fund' && asset.currentPriceKrw > 0 ? (
-      formatKrw(asset.currentPriceKrw)
-    ) : '—'
+  const badge = mergedCount > 1 ? (
+    <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+      {mergedCount}계좌
+    </span>
+  ) : asset.accountType ? (
+    <span className="text-xs rounded-full px-2 py-0.5 bg-secondary text-secondary-foreground font-medium shrink-0">
+      {ACCOUNT_TYPE_LABELS[asset.accountType]}
+    </span>
+  ) : null
+
+  const nameBlock = (
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-1.5">
+        <span className="font-medium text-sm leading-tight truncate">{asset.name}</span>
+        {badge}
+      </div>
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+        {hasHolding && <span>수량 {formatQty(asset.totalQuantity, isCrypto)}</span>}
+        {asset.avgCostPerUnit > 0 && (
+          <><span className="opacity-30">·</span><span>매수 {formatKrw(asset.avgCostPerUnit)}</span></>
+        )}
+        {asset.currentPriceKrw > 0 && asset.priceType === 'live' && (
+          <><span className="opacity-30">·</span>
+          <span className="flex items-center gap-1">
+            현재 {formatKrw(asset.currentPriceKrw)}
+            {asset.isStale && asset.cachedAt && <StalePriceBadge cachedAt={asset.cachedAt} />}
+          </span></>
+        )}
+      </div>
+    </div>
+  )
+
+  const valueBlock = (
+    <div className="text-right shrink-0">
+      <div className="text-sm font-semibold tabular-nums">
+        {hasValue ? formatKrw(asset.currentValueKrw) : hasCost ? formatKrw(asset.totalCostKrw) : '—'}
+      </div>
+      {hasValue && hasCost && (
+        <div className={`text-xs font-medium tabular-nums ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-600'}`}>
+          {profit >= 0 ? '+' : ''}{formatKrw(profit)}
+          <span className="ml-1 opacity-75">{formatReturn(asset.returnPct)}</span>
+        </div>
+      )}
+    </div>
+  )
 
   return (
-    <TableRow className={even ? 'bg-muted/10' : undefined}>
-      <TableCell className="text-center px-1">
-        <span className="font-medium">{asset.name}</span>
-        {asset.mergedCount > 1 && (
-          <span className="ml-2 text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-            {asset.mergedCount}계좌
-          </span>
-        )}
-      </TableCell>
-      <TableCell className="text-center">
-        {asset.accountType ? (
-          <span className="text-xs rounded-full px-2 py-0.5 bg-secondary text-secondary-foreground font-medium">
-            {ACCOUNT_TYPE_LABELS[asset.accountType]}
-          </span>
-        ) : '—'}
-      </TableCell>
-      <TableCell className="text-sm text-right font-mono">
-        {hasHolding ? formatQty(asset.totalQuantity, isCrypto) : '—'}
-      </TableCell>
-      <TableCell className="text-sm text-right">
-        {asset.avgCostPerUnit > 0 ? formatKrw(asset.avgCostPerUnit) : '—'}
-      </TableCell>
-      <TableCell className="text-sm text-right">{currentPriceCell}</TableCell>
-      <TableCell className="text-sm text-right">
-        {hasCost ? formatKrw(asset.totalCostKrw) : '—'}
-      </TableCell>
-      <TableCell className="text-sm text-right">
-        {hasValue ? formatKrw(asset.currentValueKrw) : '—'}
-      </TableCell>
-      <TableCell className="text-right">
-        {hasValue && hasCost ? (
-          <span className={`text-lg font-semibold ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-600'}`}>
-            {formatKrw(asset.currentValueKrw - asset.totalCostKrw)}
-            <span className="text-base font-medium ml-1 opacity-80">{formatReturn(asset.returnPct)}</span>
-          </span>
-        ) : '—'}
-      </TableCell>
-      <TableCell className="text-center w-20">
-        {asset.mergedCount === 1 && <EditAssetDialog asset={asset} />}
-      </TableCell>
-    </TableRow>
+    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-border hover:bg-muted/30 transition-colors">
+      {mergedCount === 1 ? (
+        <Link href={`/assets/${asset.assetId}`} className="flex items-center gap-3 flex-1 min-w-0">
+          <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={40} />
+          {nameBlock}
+        </Link>
+      ) : (
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={40} />
+          {nameBlock}
+        </div>
+      )}
+      {showSparkline && (
+        <div className="shrink-0 w-20 flex items-center justify-center">
+          {sparklineData && (
+            <SparklineChart data={sparklineData} positive={asset.returnPct >= 0} width={80} height={36} />
+          )}
+        </div>
+      )}
+      {valueBlock}
+    </div>
   )
 }
 
-function AssetTable({ assets, title }: { assets: AssetPerformance[]; title?: React.ReactNode }) {
-  const [sortKey, setSortKey] = useState<SortKey | null>(null)
-  const [sortDir, setSortDir] = useState<SortDir>('desc')
-  const [merged, setMerged] = useState(true)
-
-  function handleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    } else {
-      setSortKey(key)
-      setSortDir('desc')
-    }
-  }
-
-  const hasDuplicates = new Set(assets.map((a) => a.ticker ?? a.name)).size < assets.length
-
-  const displayAssets = merged ? mergeAssets(assets) : assets
-  const sorted = sortKey ? sortAssets(displayAssets as AssetPerformance[], sortKey, sortDir) : displayAssets
-
+function SummaryBar({ assets }: { assets: AssetPerformance[] }) {
   const totalCost = assets.reduce((s, a) => s + a.totalCostKrw, 0)
-  // 평가손익은 평가금액이 있는 자산만 기준 (평가 불가 자산 비용 제외)
   const valuedAssets = assets.filter((a) => a.currentValueKrw > 0)
   const totalValue = valuedAssets.reduce((s, a) => s + a.currentValueKrw, 0)
   const valuedCost = valuedAssets.reduce((s, a) => s + a.totalCostKrw, 0)
@@ -285,76 +197,101 @@ function AssetTable({ assets, title }: { assets: AssetPerformance[]; title?: Rea
   const totalReturnPct = valuedCost > 0 ? (totalProfit / valuedCost) * 100 : null
   const hasAnyValue = totalValue > 0
 
-  const mergeBtn = hasDuplicates ? (
-    <button
-      onClick={() => setMerged((v) => !v)}
-      className={cn(
-        buttonVariants({ variant: 'default', size: 'sm' }),
-        !merged && 'opacity-50'
-      )}
-    >
-      <Layers className="h-3.5 w-3.5" />
-      종목 합산
-    </button>
-  ) : null
-
-  const summaryBar = (
-    <div className="flex items-center gap-4 px-1">
+  return (
+    <div className="flex items-center gap-3 text-sm px-1">
       <div className="flex items-baseline gap-1">
-        <span className="text-xs text-muted-foreground whitespace-nowrap">투자</span>
-        <span className="text-sm font-semibold">{totalCost > 0 ? formatKrw(totalCost) : '—'}</span>
+        <span className="text-xs text-muted-foreground">투자</span>
+        <span className="font-semibold">{totalCost > 0 ? formatKrw(totalCost) : '—'}</span>
       </div>
       <div className="h-4 w-px bg-border shrink-0" />
       <div className="flex items-baseline gap-1">
-        <span className="text-xs text-muted-foreground whitespace-nowrap">평가</span>
-        <span className="text-sm font-semibold">{hasAnyValue ? formatKrw(totalValue) : '—'}</span>
+        <span className="text-xs text-muted-foreground">평가</span>
+        <span className="font-semibold">{hasAnyValue ? formatKrw(totalValue) : '—'}</span>
       </div>
       <div className="h-4 w-px bg-border shrink-0" />
       <div className="flex items-baseline gap-1">
-        <span className="text-xs text-muted-foreground whitespace-nowrap">손익</span>
+        <span className="text-xs text-muted-foreground">손익</span>
         {hasAnyValue && totalCost > 0 ? (
-          <span className={`text-sm font-semibold ${totalProfit >= 0 ? 'text-red-500' : 'text-blue-600'}`}>
+          <span className={`font-semibold ${totalProfit >= 0 ? 'text-red-500' : 'text-blue-600'}`}>
             {totalProfit >= 0 ? '+' : ''}{formatKrw(totalProfit)}
             {totalReturnPct !== null && (
-              <span className="text-xs ml-1 font-medium opacity-80">{formatReturn(totalReturnPct)}</span>
+              <span className="text-xs ml-1 opacity-80">{formatReturn(totalReturnPct)}</span>
             )}
           </span>
-        ) : <span className="text-sm text-muted-foreground">—</span>}
+        ) : <span className="text-muted-foreground">—</span>}
       </div>
     </div>
   )
+}
+
+function AssetCardList({ assets, title, sparklines }: {
+  assets: AssetPerformance[]
+  title?: React.ReactNode
+  sparklines?: Record<string, number[]>
+}) {
+  const [merged, setMerged] = useState(true)
+
+  const showSparkline = assets.some((a) => !NO_SPARKLINE_TYPES.has(a.assetType))
+  const hasDuplicates = new Set(assets.map((a) => a.ticker ?? a.name)).size < assets.length
+  const displayAssets = merged ? mergeAssets(assets) : assets
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-4">
+      {(title || hasDuplicates) && (
+        <div className="flex items-center justify-between px-1">
           {title && <div className="flex items-center gap-2">{title}</div>}
-          {summaryBar}
-        </div>
-        {mergeBtn}
-      </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <SortableHead label="종목명" sortKey="name" current={sortKey} dir={sortDir} onSort={handleSort} className="text-center px-1 w-28" align="center" />
-            <TableHead className="text-center w-20">계좌유형</TableHead>
-            <SortableHead label="보유수량" sortKey="totalQuantity" current={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
-            <SortableHead label="매수단가" sortKey="avgCostPerUnit" current={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
-            <SortableHead label="현재가" sortKey="currentPriceKrw" current={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
-            <SortableHead label="투자금액" sortKey="totalCostKrw" current={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
-            <SortableHead label="평가금액" sortKey="currentValueKrw" current={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
-            <SortableHead label="평가손익" sortKey="profit" current={sortKey} dir={sortDir} onSort={handleSort} className="text-right" />
-            <TableHead className="w-20" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sorted.map((asset, i) =>
-            merged
-              ? <MergedAssetRow key={(asset as MergedAsset).ticker ?? asset.name} asset={asset as MergedAsset} even={i % 2 === 0} />
-              : <AssetRow key={asset.assetId} asset={asset as AssetPerformance} even={i % 2 === 0} />
+          {hasDuplicates && (
+            <button
+              onClick={() => setMerged((v) => !v)}
+              className={cn(buttonVariants({ variant: 'default', size: 'sm' }), !merged && 'opacity-50')}
+            >
+              <Layers className="h-3.5 w-3.5" />
+              종목 합산
+            </button>
           )}
-        </TableBody>
-      </Table>
+        </div>
+      )}
+      <div className="space-y-1.5 h-[360px] overflow-y-auto pr-1 rounded-xl border border-border bg-muted/20 p-2">
+        {displayAssets.map((asset) => (
+          <AssetCard
+            key={'mergedCount' in asset && (asset as MergedAsset).mergedCount > 1
+              ? (asset.ticker ?? asset.name)
+              : asset.assetId}
+            asset={asset}
+            sparklineData={asset.ticker ? sparklines?.[asset.ticker] : undefined}
+            showSparkline={showSparkline}
+          />
+        ))}
+        {Array.from({ length: Math.max(0, CARD_LIST_VISIBLE - displayAssets.length) }).map((_, i) => (
+          <AssetCardSkeleton key={`skeleton-${i}`} showSparkline={showSparkline} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CollapsibleChart({ assets, sparklines, ohlcData, monthlyData, annualData }: {
+  assets: AssetPerformance[]
+  sparklines?: Record<string, number[]>
+  ohlcData?: Record<string, OhlcPoint[]>
+  monthlyData: MonthlyDataPoint[]
+  annualData: AnnualDataPoint[]
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="bg-card rounded-2xl overflow-hidden border border-border">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+      >
+        <span>차트</span>
+        <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="h-[360px] px-4 pb-4">
+          <AssetGroupChart assets={assets} sparklines={sparklines} ohlcData={ohlcData} monthlyData={monthlyData} annualData={annualData} />
+        </div>
+      )}
     </div>
   )
 }
@@ -362,9 +299,7 @@ function AssetTable({ assets, title }: { assets: AssetPerformance[]; title?: Rea
 function SummaryCards({ grouped, performances }: { grouped: Record<string, AssetPerformance[]>; performances: AssetPerformance[] }) {
   const types = Object.keys(grouped)
 
-  // Sum ALL assets for cost regardless of whether current value exists
   const grandTotalCost = performances.reduce((s, a) => s + Number(a.totalCostKrw), 0)
-  // Only sum assets that actually have a current value (price loaded or manual valuation entered)
   const valuedAssets = performances.filter((a) => a.currentValueKrw > 0)
   const grandTotalValue = valuedAssets.reduce((s, a) => s + Number(a.currentValueKrw), 0)
   const valuedCost = valuedAssets.reduce((s, a) => s + Number(a.totalCostKrw), 0)
@@ -373,63 +308,95 @@ function SummaryCards({ grouped, performances }: { grouped: Record<string, Asset
   const grandHasValue = grandTotalValue > 0
 
   return (
-    <div className="flex flex-wrap justify-center gap-4">
-      {/* 전체 합계 카드 */}
-      <div className="rounded-2xl bg-white shadow-lg px-6 py-4 min-w-36 flex flex-col gap-1 text-gray-900">
-        <span className="text-xs text-gray-500 font-medium">전체 투자</span>
-        <span className="text-xl font-bold">{grandTotalCost > 0 ? formatKrw(grandTotalCost) : '—'}</span>
-        {grandHasValue ? (
-          <span className={`text-sm font-semibold ${grandProfit >= 0 ? 'text-red-500' : 'text-blue-600'}`}>
-            {grandProfit >= 0 ? '+' : ''}{formatKrw(grandProfit)}
-            {grandReturnPct !== null && (
-              <span className="text-xs ml-1 opacity-80">{formatReturn(grandReturnPct)}</span>
-            )}
-          </span>
-        ) : (
-          <span className="text-sm text-gray-400">—</span>
-        )}
+    <div className="space-y-3">
+      {/* Hero */}
+      <div className="rounded-2xl bg-gradient-to-br from-zinc-100 via-white to-zinc-100 text-zinc-900 px-8 py-6 relative overflow-hidden border border-border">
+        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-zinc-200/40" />
+        <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-zinc-200/30" />
+        <div className="relative flex items-stretch gap-10 flex-wrap">
+          <div>
+            <p className="text-[11px] font-medium text-zinc-400 uppercase tracking-widest mb-2">총 투자</p>
+            <p className="text-3xl font-bold tabular-nums">{grandTotalCost > 0 ? formatKrw(grandTotalCost) : '—'}</p>
+            <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-500 text-xs">
+              <PiggyBank className="h-3 w-3" />투자한 원금 합계
+            </span>
+          </div>
+          {grandHasValue && (
+            <>
+              <div className="w-px bg-zinc-200 self-stretch" />
+              <div>
+                <p className="text-[11px] font-medium text-zinc-400 uppercase tracking-widest mb-2">평가금액</p>
+                <p className="text-3xl font-bold tabular-nums">{formatKrw(grandTotalValue)}</p>
+                <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-500 text-xs">
+                  <BarChart2 className="h-3 w-3" />현재 시세 기준 총 자산
+                </span>
+              </div>
+              <div className="w-px bg-zinc-200 self-stretch" />
+              <div className="ml-auto text-right">
+                <p className="text-[11px] font-medium text-zinc-400 uppercase tracking-widest mb-2">평가손익</p>
+                <p className={`text-3xl font-bold tabular-nums ${grandProfit >= 0 ? 'text-red-500' : 'text-blue-600'}`}>
+                  {grandProfit >= 0 ? '+' : ''}{formatKrw(grandProfit)}
+                </p>
+                {grandReturnPct !== null && (
+                  <p className={`text-sm font-semibold mt-1 ${grandProfit >= 0 ? 'text-red-400' : 'text-blue-500'}`}>
+                    {formatReturn(grandReturnPct)}
+                  </p>
+                )}
+                <span className="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-500 text-xs">
+                  <TrendingUp className="h-3 w-3" />원금 대비 수익금
+                </span>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
-      {types.map((type) => {
-        const assets = grouped[type]
-        const totalCost = assets.reduce((s, a) => s + a.totalCostKrw, 0)
-        const valuedInType = assets.filter((a) => a.currentValueKrw > 0)
-        const totalValue = valuedInType.reduce((s, a) => s + a.currentValueKrw, 0)
-        const valuedCostInType = valuedInType.reduce((s, a) => s + a.totalCostKrw, 0)
-        const profit = totalValue - valuedCostInType
-        const returnPct = valuedCostInType > 0 ? (profit / valuedCostInType) * 100 : null
-        const hasValue = totalValue > 0
-        const profitColor = profit >= 0 ? 'text-red-500' : 'text-blue-600'
+      {/* Per-type strip */}
+      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${types.length}, 1fr)` }}>
+        {types.map((type) => {
+          const assets = grouped[type]
+          const totalCost = assets.reduce((s, a) => s + a.totalCostKrw, 0)
+          const valuedInType = assets.filter((a) => a.currentValueKrw > 0)
+          const totalValue = valuedInType.reduce((s, a) => s + a.currentValueKrw, 0)
+          const valuedCostInType = valuedInType.reduce((s, a) => s + a.totalCostKrw, 0)
+          const profit = totalValue - valuedCostInType
+          const returnPct = valuedCostInType > 0 ? (profit / valuedCostInType) * 100 : null
+          const hasValue = totalValue > 0
 
-        return (
-          <div key={type} className="rounded-2xl bg-white shadow-lg px-6 py-4 min-w-36 flex flex-col gap-1 text-gray-900">
-            <div className="flex items-center gap-1.5">
-              <AssetTypeBadge assetType={type as AssetPerformance['assetType']} />
-              <span className="text-xs text-gray-500">{assets.length}종목</span>
+          return (
+            <div key={type} className="rounded-xl bg-card border border-border px-4 py-3 flex flex-col gap-1">
+              <div className="flex items-center justify-between mb-0.5">
+                <AssetTypeBadge assetType={type as AssetPerformance['assetType']} />
+                <span className="text-xs text-muted-foreground">{assets.length}종목</span>
+              </div>
+              <p className="text-base font-bold tabular-nums">{totalCost > 0 ? formatKrw(totalCost) : '—'}</p>
+              {hasValue && valuedCostInType > 0 ? (
+                <p className={`text-xs font-semibold tabular-nums ${profit >= 0 ? 'text-red-500' : 'text-blue-600'}`}>
+                  {profit >= 0 ? '+' : ''}{formatKrw(profit)}
+                  {returnPct !== null && <span className="ml-1 opacity-70">{formatReturn(returnPct)}</span>}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">—</p>
+              )}
             </div>
-            <span className="text-xl font-bold">{totalCost > 0 ? formatKrw(totalCost) : '—'}</span>
-            {hasValue && valuedCostInType > 0 ? (
-              <span className={`text-sm font-semibold ${profitColor}`}>
-                {profit >= 0 ? '+' : ''}{formatKrw(profit)}
-                {returnPct !== null && (
-                  <span className="text-xs ml-1 opacity-80">{formatReturn(returnPct)}</span>
-                )}
-              </span>
-            ) : (
-              <span className="text-sm text-gray-400">—</span>
-            )}
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }
 
 interface AssetsPageClientProps {
   performances: AssetPerformance[]
+  sparklines?: Record<string, number[]>
+  ohlcData?: Record<string, OhlcPoint[]>
+  monthlyData?: MonthlyDataPoint[]
+  annualData?: AnnualDataPoint[]
+  monthlyByType?: Record<string, MonthlyDataPoint[]>
+  annualByType?: Record<string, AnnualDataPoint[]>
 }
 
-export function AssetsPageClient({ performances }: AssetsPageClientProps) {
+export function AssetsPageClient({ performances, sparklines, ohlcData = {}, monthlyData = [], annualData = [], monthlyByType = {}, annualByType = {} }: AssetsPageClientProps) {
   const grouped = ASSET_TYPE_ORDER.reduce<Record<string, AssetPerformance[]>>((acc, type) => {
     const items = performances.filter((a) => a.assetType === type)
     if (items.length > 0) acc[type] = items
@@ -452,53 +419,79 @@ export function AssetsPageClient({ performances }: AssetsPageClientProps) {
 
   return (
     <div className="space-y-6">
-    <SummaryCards grouped={grouped} performances={performances} />
-    <Separator />
-    <Tabs defaultValue={showAll ? 'all' : defaultTab}>
-      <TabsList className="w-full">
-        {showAll && (
-          <TabsTrigger value="all" className="flex-1">
-            <LayoutGrid className="h-3.5 w-3.5" />
-            전체
-          </TabsTrigger>
-        )}
-        {types.map((type) => {
-          const Icon = ASSET_TYPE_ICONS[type]
-          return (
-            <TabsTrigger key={type} value={type} className="flex-1">
-              {Icon && <Icon className="h-3.5 w-3.5" />}
-              {ASSET_TYPE_LABELS[type]}
-              <span className="ml-1 text-xs opacity-60">({grouped[type].length})</span>
+      <SummaryCards grouped={grouped} performances={performances} />
+      <Separator className="bg-foreground" />
+      <Tabs defaultValue={showAll ? 'all' : defaultTab}>
+        <TabsList className="w-full">
+          {showAll && (
+            <TabsTrigger value="all" className="flex-1">
+              <LayoutGrid className="h-3.5 w-3.5" />
+              전체
             </TabsTrigger>
-          )
-        })}
-      </TabsList>
+          )}
+          {types.map((type) => {
+            const Icon = ASSET_TYPE_ICONS[type]
+            return (
+              <TabsTrigger key={type} value={type} className="flex-1">
+                {Icon && <Icon className="h-3.5 w-3.5" />}
+                {ASSET_TYPE_LABELS[type]}
+                <span className="ml-1 text-xs opacity-60">({grouped[type].length})</span>
+              </TabsTrigger>
+            )
+          })}
+        </TabsList>
 
-      {showAll && (
-        <TabsContent value="all" className="mt-4">
-          <div className="space-y-0">
-            {types.map((type, i) => (
-              <div key={type}>
-                {i > 0 && <Separator className="my-6" />}
-                <AssetTable
-                  assets={grouped[type]}
-                  title={<>
-                    <AssetTypeBadge assetType={type as AssetPerformance['assetType']} />
-                    <span className="text-sm text-muted-foreground">{ASSET_TYPE_LABELS[type]}</span>
-                  </>}
-                />
+        {showAll && (
+          <TabsContent value="all" className="mt-4">
+            <div className="space-y-0">
+              {types.map((type, i) => (
+                <div key={type}>
+                  {i > 0 && <Separator className="my-6 bg-foreground" />}
+                  <div className="flex gap-4 items-start">
+                    <div className="w-[640px] shrink-0">
+                      <AssetCardList
+                        assets={grouped[type]}
+                        sparklines={sparklines}
+                        title={<AssetTypeBadge assetType={type as AssetPerformance['assetType']} />}
+                      />
+                    </div>
+                    <div className="self-stretch w-px bg-foreground shrink-0" />
+                    <div className="space-y-3 flex-1 min-w-0">
+                      <SummaryBar assets={grouped[type]} />
+                      <div className="h-[360px] bg-card rounded-2xl border border-border p-4">
+                        <AssetGroupChart assets={grouped[type]} sparklines={sparklines} ohlcData={ohlcData} monthlyData={monthlyByType[type] ?? []} annualData={annualByType[type] ?? []} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </TabsContent>
+        )}
+
+        {types.map((type) => (
+          <TabsContent key={type} value={type} className="mt-4">
+            <div className="flex gap-4 items-start">
+              <div className="w-[640px] shrink-0">
+                <AssetCardList assets={grouped[type]} sparklines={sparklines} />
               </div>
-            ))}
-          </div>
-        </TabsContent>
-      )}
-
-      {types.map((type) => (
-        <TabsContent key={type} value={type} className="mt-4">
-          <AssetTable assets={grouped[type]} />
-        </TabsContent>
-      ))}
-    </Tabs>
+              <div className="self-stretch w-px bg-border shrink-0" />
+              <div className="space-y-3 flex-1 min-w-0">
+                <SummaryBar assets={grouped[type]} />
+                <div className="h-[360px] bg-card rounded-2xl border border-border p-4">
+                  <AssetGroupChart
+                    assets={grouped[type]}
+                    sparklines={sparklines}
+                    ohlcData={ohlcData}
+                    monthlyData={monthlyByType[type] ?? []}
+                    annualData={annualByType[type] ?? []}
+                  />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   )
 }
