@@ -292,7 +292,7 @@ export function NewAssetForm({ onSubmit }: {
               control={form.control}
               name="accountType"
               render={({ field }) => (
-                <FormItem className="flex-1 min-w-0">
+                <FormItem className="flex-1 min-w-0 self-start">
                   <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground mb-3">
                     <Wallet className="h-4 w-4" />계좌 유형
                     <span className="text-xs font-normal text-muted-foreground/60">(선택)</span>
