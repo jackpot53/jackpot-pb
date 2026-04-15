@@ -46,11 +46,11 @@ const ACCOUNT_TYPE_BY_ASSET: Record<string, string[]> = {
 }
 const ASSET_TYPE_LABELS: Record<string, string> = {
   stock_kr: '주식 (국내)', stock_us: '주식 (미국)', etf_kr: 'ETF (국내)', etf_us: 'ETF (미국)',
-  crypto: '코인', fund: '펀드', savings: '예적금', real_estate: '부동산',
+  crypto: '코인', fund: '펀드', savings: '예적금', real_estate: '부동산', insurance: '보험',
 }
 const ASSET_TYPE_ICONS: Record<string, LucideIcon> = {
   stock_kr: TrendingUp, stock_us: Globe, etf_kr: BarChart2, etf_us: BarChart3,
-  crypto: Bitcoin, fund: Briefcase, savings: Landmark, real_estate: Building2,
+  crypto: Bitcoin, fund: Briefcase, savings: Landmark, real_estate: Building2, insurance: ShieldCheck,
 }
 const TICKER_HINTS: Record<string, { placeholder: string; hint: string }> = {
   stock_kr: { placeholder: '예: 005930.KS', hint: 'KOSPI는 {종목코드}.KS, KOSDAQ는 {종목코드}.KQ\n예) 삼성전자 005930.KS · 카카오 035720.KQ' },
@@ -65,7 +65,7 @@ const TICKER_HINTS: Record<string, { placeholder: string; hint: string }> = {
 
 const assetSchema = z.object({
   name: z.string().min(1, '종목명을 입력해주세요.').max(255),
-  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate']),
+  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
   accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance']).optional().nullable(),

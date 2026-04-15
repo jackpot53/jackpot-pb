@@ -15,7 +15,7 @@ const TRADEABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', '
 
 const assetSchema = z.object({
   name: z.string().min(1, '종목명을 입력해주세요.').max(255),
-  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate']),
+  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
   accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance']).optional().nullable(),

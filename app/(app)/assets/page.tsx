@@ -5,10 +5,12 @@ import { refreshAllPrices } from '@/app/actions/prices'
 import { loadPerformances } from '@/lib/server/load-performances'
 import { fetchSparklinesForTickers } from '@/lib/price/sparkline'
 import { getAllSnapshotsWithBreakdowns } from '@/db/queries/portfolio-snapshots'
-import { toMonthlyData, toAnnualData, snapshotsForType } from '@/lib/snapshot/aggregation'
+import { toMonthlyData, toAnnualData, toDailyData, snapshotsForType } from '@/lib/snapshot/aggregation'
 import { Separator } from '@/components/ui/separator'
 import { AssetsPageClient } from '@/components/app/assets-page-client'
-import { AddAssetDialog } from '@/components/app/add-asset-dialog'
+import Link from 'next/link'
+import { PlusCircle } from 'lucide-react'
+import { buttonVariants } from '@/components/ui/button'
 
 export default async function AssetsPage() {
   const supabase = await createClient()
@@ -34,13 +36,15 @@ export default async function AssetsPage() {
   const monthlyData = toMonthlyData(snapshots)
   const annualData = toAnnualData(snapshots)
 
-  const assetTypes = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate'] as const
+  const assetTypes = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance'] as const
   const monthlyByType: Record<string, ReturnType<typeof toMonthlyData>> = {}
   const annualByType: Record<string, ReturnType<typeof toAnnualData>> = {}
+  const dailyByType: Record<string, ReturnType<typeof toDailyData>> = {}
   for (const type of assetTypes) {
     const typeSnaps = snapshotsForType(snapshots, type)
     monthlyByType[type] = toMonthlyData(typeSnaps)
     annualByType[type] = toAnnualData(typeSnaps)
+    dailyByType[type] = toDailyData(typeSnaps)
   }
 
   return (
@@ -50,7 +54,10 @@ export default async function AssetsPage() {
           <Wallet className="h-5 w-5" />
           내 자산
         </h1>
-        <AddAssetDialog />
+        <Link href="/assets/new" className={buttonVariants({ size: 'sm' })}>
+          <PlusCircle className="mr-1.5 h-4 w-4" />
+          자산 추가
+        </Link>
       </div>
       <Separator className="bg-foreground" />
       <AssetsPageClient
@@ -60,6 +67,7 @@ export default async function AssetsPage() {
         annualData={annualData}
         monthlyByType={monthlyByType}
         annualByType={annualByType}
+        dailyByType={dailyByType}
       />
     </div>
   )

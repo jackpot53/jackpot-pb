@@ -1,7 +1,6 @@
 'use client'
-import Link from 'next/link'
 import { useState } from 'react'
-import { Layers, LayoutGrid, TrendingUp, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown } from 'lucide-react'
+import { Layers, LayoutGrid, TrendingUp, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown, HelpCircle, ShieldCheck } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
@@ -13,10 +12,10 @@ import { AssetGroupChart } from '@/components/app/asset-group-chart'
 import { AssetLogo } from '@/components/app/asset-logo'
 import { formatKrw, formatReturn, formatQty } from '@/lib/portfolio'
 import type { AssetPerformance } from '@/lib/portfolio'
-import type { MonthlyDataPoint, AnnualDataPoint } from '@/lib/snapshot/aggregation'
+import type { MonthlyDataPoint, AnnualDataPoint, DailyDataPoint } from '@/lib/snapshot/aggregation'
 
 const ASSET_TYPE_ORDER = [
-  'stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate',
+  'stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance',
 ] as const
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -37,6 +36,7 @@ const ASSET_TYPE_LABELS: Record<string, string> = {
   fund: '펀드',
   savings: '예적금',
   real_estate: '부동산',
+  insurance: '보험',
 }
 
 const ASSET_TYPE_ICONS: Record<string, React.ElementType> = {
@@ -48,9 +48,10 @@ const ASSET_TYPE_ICONS: Record<string, React.ElementType> = {
   fund: BookOpen,
   savings: PiggyBank,
   real_estate: Building2,
+  insurance: ShieldCheck,
 }
 
-const NO_SPARKLINE_TYPES = new Set(['fund', 'real_estate', 'savings'])
+const NO_SPARKLINE_TYPES = new Set(['fund', 'real_estate', 'savings', 'insurance'])
 
 type MergedAsset = AssetPerformance & { mergedCount: number }
 
@@ -116,6 +117,19 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
   const profit = asset.currentValueKrw - asset.totalCostKrw
   const mergedCount = (asset as MergedAsset).mergedCount ?? 1
 
+  const RETURN_BADGE_TYPES = new Set(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund'])
+  const dailyChangePct = asset.dailyChangeBps !== null && asset.dailyChangeBps !== undefined
+    ? asset.dailyChangeBps / 100
+    : null
+  const showReturnBadge = RETURN_BADGE_TYPES.has(asset.assetType) && dailyChangePct !== null
+  const returnBadge = showReturnBadge ? (
+    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 tabular-nums ${
+      dailyChangePct! >= 0 ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-600'
+    }`}>
+      {dailyChangePct! >= 0 ? '+' : ''}{dailyChangePct!.toFixed(2)}%
+    </span>
+  ) : null
+
   const badge = mergedCount > 1 ? (
     <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
       {mergedCount}계좌
@@ -130,6 +144,7 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-1.5">
         <span className="font-medium text-sm leading-tight truncate">{asset.name}</span>
+        {returnBadge}
         {badge}
       </div>
       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
@@ -137,7 +152,7 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
         {asset.avgCostPerUnit > 0 && (
           <><span className="opacity-30">·</span><span>매수 {formatKrw(asset.avgCostPerUnit)}</span></>
         )}
-        {asset.currentPriceKrw > 0 && asset.priceType === 'live' && (
+        {asset.currentPriceKrw > 0 && (asset.priceType === 'live' || asset.assetType === 'fund') && (
           <><span className="opacity-30">·</span>
           <span className="flex items-center gap-1">
             현재 {formatKrw(asset.currentPriceKrw)}
@@ -164,17 +179,10 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
 
   return (
     <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-border hover:bg-muted/30 transition-colors">
-      {mergedCount === 1 ? (
-        <Link href={`/assets/${asset.assetId}`} className="flex items-center gap-3 flex-1 min-w-0">
-          <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={40} />
-          {nameBlock}
-        </Link>
-      ) : (
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={40} />
-          {nameBlock}
-        </div>
-      )}
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={40} />
+        {nameBlock}
+      </div>
       {showSparkline && (
         <div className="shrink-0 w-20 flex items-center justify-center">
           {sparklineData && (
@@ -391,9 +399,10 @@ interface AssetsPageClientProps {
   annualData?: AnnualDataPoint[]
   monthlyByType?: Record<string, MonthlyDataPoint[]>
   annualByType?: Record<string, AnnualDataPoint[]>
+  dailyByType?: Record<string, DailyDataPoint[]>
 }
 
-export function AssetsPageClient({ performances, sparklines, monthlyData = [], annualData = [], monthlyByType = {}, annualByType = {} }: AssetsPageClientProps) {
+export function AssetsPageClient({ performances, sparklines, monthlyData = [], annualData = [], monthlyByType = {}, annualByType = {}, dailyByType = {} }: AssetsPageClientProps) {
   const grouped = ASSET_TYPE_ORDER.reduce<Record<string, AssetPerformance[]>>((acc, type) => {
     const items = performances.filter((a) => a.assetType === type)
     if (items.length > 0) acc[type] = items
@@ -449,14 +458,24 @@ export function AssetsPageClient({ performances, sparklines, monthlyData = [], a
                       <AssetCardList
                         assets={grouped[type]}
                         sparklines={sparklines}
-                        title={<AssetTypeBadge assetType={type as AssetPerformance['assetType']} />}
+                        title={
+                          <>
+                            <AssetTypeBadge assetType={type as AssetPerformance['assetType']} />
+                            {type === 'fund' && (
+                              <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                <HelpCircle className="h-3 w-3" />
+                                1일 1회 기준가 갱신
+                              </span>
+                            )}
+                          </>
+                        }
                       />
                     </div>
                     <div className="self-stretch w-px bg-foreground shrink-0" />
                     <div className="space-y-3 flex-1 min-w-0">
                       <SummaryBar assets={grouped[type]} />
                       <div className="h-[360px] bg-card rounded-2xl border border-border p-4">
-                        <AssetGroupChart assets={grouped[type]} sparklines={sparklines} monthlyData={monthlyByType[type] ?? []} annualData={annualByType[type] ?? []} />
+                        <AssetGroupChart assets={grouped[type]} sparklines={sparklines} monthlyData={monthlyByType[type] ?? []} annualData={annualByType[type] ?? []} dailyData={dailyByType[type] ?? []} />
                       </div>
                     </div>
                   </div>
@@ -481,6 +500,7 @@ export function AssetsPageClient({ performances, sparklines, monthlyData = [], a
                     sparklines={sparklines}
                     monthlyData={monthlyByType[type] ?? []}
                     annualData={annualByType[type] ?? []}
+                    dailyData={dailyByType[type] ?? []}
                   />
                 </div>
               </div>

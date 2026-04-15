@@ -8,7 +8,7 @@ export interface AssetHoldingInput {
   assetId: string
   name: string
   ticker: string | null
-  assetType: 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'fund' | 'savings' | 'real_estate'
+  assetType: 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'fund' | 'savings' | 'real_estate' | 'insurance'
   priceType: 'live' | 'manual'
   currency: 'KRW' | 'USD'
   accountType: 'isa' | 'irp' | 'pension' | 'dc' | 'brokerage' | null
@@ -24,6 +24,7 @@ export interface AssetPerformance extends AssetHoldingInput {
   returnPct: number         // (currentValue - totalCostKrw) / totalCostKrw × 100
   isStale: boolean
   cachedAt: Date | null
+  dailyChangeBps: number | null
   /** true when priceType==='manual' but no valuation row exists — UI should flag this asset */
   missingValuation: boolean
 }
@@ -45,8 +46,9 @@ export interface TypeAllocation {
 /**
  * Computes per-asset performance from holdings data + price info.
  * D-15: currentValueKrw = (totalQuantity / 1e8) × currentPriceKrw (LIVE)
- * D-16: fund: currentValueKrw = (qty/1e8) × latestManualValuationKrw (기준가)
+ * D-16: fund(manual)/real_estate: currentValueKrw = (qty/1e8) × latestManualValuationKrw (기준가/단가)
  *        other manual: currentValueKrw = latestManualValuationKrw (총값 그대로)
+ *        fund(live): uses priceCache like stocks — (qty/1e8) × currentPriceKrw
  */
 export function computeAssetPerformance(params: {
   holding: AssetHoldingInput
@@ -54,13 +56,16 @@ export function computeAssetPerformance(params: {
   isStale: boolean
   cachedAt: Date | null
   latestManualValuationKrw: number | null
+  dailyChangeBps?: number | null
 }): AssetPerformance {
-  const { holding, currentPriceKrw, isStale, cachedAt, latestManualValuationKrw } = params
+  const { holding, currentPriceKrw, isStale, cachedAt, latestManualValuationKrw, dailyChangeBps = null } = params
 
-  // D-16: Fund/real_estate assets store latestManualValuationKrw as NAV per unit (기준가/단가).
+  // D-16: real_estate and fund(no live price) store latestManualValuationKrw as NAV per unit (단가).
+  // fund with a live price in cache uses currentPriceKrw like stocks.
   // Other manual assets store latestManualValuationKrw as total value.
   // missingValuation=true when valuation-based but no valuation row exists — caller should surface warning
-  const usesUnitPrice = holding.assetType === 'fund' || holding.assetType === 'real_estate'
+  const fundHasLivePrice = holding.assetType === 'fund' && currentPriceKrw > 0
+  const usesUnitPrice = (!fundHasLivePrice && holding.assetType === 'fund') || holding.assetType === 'real_estate'
   const isOtherManual = !usesUnitPrice && holding.priceType === 'manual'
   const usesManualValuation = usesUnitPrice || isOtherManual
   const missingValuation = usesManualValuation && latestManualValuationKrw === null
@@ -88,6 +93,7 @@ export function computeAssetPerformance(params: {
     returnPct,
     isStale,
     cachedAt,
+    dailyChangeBps,
     missingValuation,
   }
 }
