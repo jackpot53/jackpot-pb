@@ -36,7 +36,7 @@ export default async function AssetsPage() {
   const monthlyData = toMonthlyData(snapshots)
   const annualData = toAnnualData(snapshots)
 
-  const assetTypes = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance'] as const
+  const assetTypes = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal'] as const
   const monthlyByType: Record<string, ReturnType<typeof toMonthlyData>> = {}
   const annualByType: Record<string, ReturnType<typeof toAnnualData>> = {}
   const dailyByType: Record<string, ReturnType<typeof toDailyData>> = {}

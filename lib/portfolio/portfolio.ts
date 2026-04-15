@@ -8,7 +8,7 @@ export interface AssetHoldingInput {
   assetId: string
   name: string
   ticker: string | null
-  assetType: 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'fund' | 'savings' | 'real_estate' | 'insurance'
+  assetType: 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'fund' | 'savings' | 'real_estate' | 'insurance' | 'precious_metal'
   priceType: 'live' | 'manual'
   currency: 'KRW' | 'USD'
   accountType: 'isa' | 'irp' | 'pension' | 'dc' | 'brokerage' | null

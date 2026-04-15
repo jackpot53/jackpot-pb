@@ -7,7 +7,7 @@ import {
   Loader2, Save, ArrowLeft, ArrowRight, SkipForward,
   TrendingUp, Globe, BarChart2, BarChart3, Bitcoin, Briefcase, Landmark, Building2,
   Layers, Tag, Hash, Wallet, MessageSquare, Package, Receipt, Calendar,
-  Coins, Info, Shield, PiggyBank, Heart, Store, Banknote, DollarSign, ArrowLeftRight, CreditCard, ShieldCheck,
+  Coins, Info, Shield, PiggyBank, Heart, Store, Banknote, DollarSign, ArrowLeftRight, CreditCard, ShieldCheck, Gem,
   type LucideIcon,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -116,22 +116,23 @@ function DomainLogo({ value, size = 28 }: { value: string; size?: number }) {
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
   stock_kr: '주식 (국내)', stock_us: '주식 (미국)', etf_kr: 'ETF (국내)', etf_us: 'ETF (미국)',
-  crypto: '코인', fund: '펀드', savings: '예적금', real_estate: '부동산', insurance: '보험',
+  crypto: '코인', fund: '펀드', savings: '예적금', real_estate: '부동산', insurance: '보험', precious_metal: '금/은',
 }
 const ASSET_TYPE_ICONS: Record<string, LucideIcon> = {
   stock_kr: TrendingUp, stock_us: Globe, etf_kr: BarChart2, etf_us: BarChart3,
-  crypto: Bitcoin, fund: Briefcase, savings: Landmark, real_estate: Building2, insurance: ShieldCheck,
+  crypto: Bitcoin, fund: Briefcase, savings: Landmark, real_estate: Building2, insurance: ShieldCheck, precious_metal: Gem,
 }
 const ASSET_TYPE_COLORS: Record<string, { icon: string; bg: string }> = {
-  stock_kr:   { icon: 'text-blue-500',   bg: 'bg-blue-50' },
-  stock_us:   { icon: 'text-sky-500',    bg: 'bg-sky-50' },
-  etf_kr:     { icon: 'text-emerald-500',bg: 'bg-emerald-50' },
-  etf_us:     { icon: 'text-teal-500',   bg: 'bg-teal-50' },
-  crypto:     { icon: 'text-orange-500', bg: 'bg-orange-50' },
-  fund:       { icon: 'text-violet-500', bg: 'bg-violet-50' },
-  savings:    { icon: 'text-yellow-500', bg: 'bg-yellow-50' },
-  real_estate:{ icon: 'text-rose-500',   bg: 'bg-rose-50' },
-  insurance:  { icon: 'text-cyan-500',   bg: 'bg-cyan-50' },
+  stock_kr:      { icon: 'text-blue-500',   bg: 'bg-blue-50' },
+  stock_us:      { icon: 'text-sky-500',    bg: 'bg-sky-50' },
+  etf_kr:        { icon: 'text-emerald-500',bg: 'bg-emerald-50' },
+  etf_us:        { icon: 'text-teal-500',   bg: 'bg-teal-50' },
+  crypto:        { icon: 'text-orange-500', bg: 'bg-orange-50' },
+  fund:          { icon: 'text-violet-500', bg: 'bg-violet-50' },
+  savings:       { icon: 'text-yellow-500', bg: 'bg-yellow-50' },
+  real_estate:   { icon: 'text-rose-500',   bg: 'bg-rose-50' },
+  insurance:     { icon: 'text-cyan-500',   bg: 'bg-cyan-50' },
+  precious_metal:{ icon: 'text-amber-500',  bg: 'bg-amber-50' },
 }
 const TICKER_HINTS: Record<string, { placeholder: string; hint: string }> = {
   stock_kr: { placeholder: '예: 005930.KS', hint: 'KOSPI는 {종목코드}.KS, KOSDAQ는 {종목코드}.KQ\n예) 삼성전자 005930.KS · 카카오 035720.KQ' },
@@ -146,7 +147,7 @@ const TICKER_HINTS: Record<string, { placeholder: string; hint: string }> = {
 
 const assetSchema = z.object({
   name: z.string().min(1, '종목명을 입력해주세요.').max(255),
-  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance']),
+  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
   accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju']).optional().nullable(),
@@ -207,7 +208,7 @@ export function NewAssetForm({ onSubmit }: {
       const current = form.getValues('accountType')
       if (current === 'spot') form.setValue('accountType', null)
     }
-    form.setValue('priceType', ['savings', 'real_estate'].includes(assetType) ? 'manual' : 'live')
+    form.setValue('priceType', ['savings', 'real_estate', 'insurance', 'precious_metal'].includes(assetType) ? 'manual' : 'live')
   }, [assetType])
 
   // ── Ticker search ────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Layers, LayoutGrid, TrendingUp, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown, HelpCircle, ShieldCheck } from 'lucide-react'
+import { Layers, LayoutGrid, TrendingUp, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown, HelpCircle, ShieldCheck, Gem } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
@@ -15,7 +15,7 @@ import type { AssetPerformance } from '@/lib/portfolio'
 import type { MonthlyDataPoint, AnnualDataPoint, DailyDataPoint } from '@/lib/snapshot/aggregation'
 
 const ASSET_TYPE_ORDER = [
-  'stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance',
+  'stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal',
 ] as const
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -37,6 +37,7 @@ const ASSET_TYPE_LABELS: Record<string, string> = {
   savings: '예적금',
   real_estate: '부동산',
   insurance: '보험',
+  precious_metal: '금/은',
 }
 
 const ASSET_TYPE_ICONS: Record<string, React.ElementType> = {
@@ -49,9 +50,10 @@ const ASSET_TYPE_ICONS: Record<string, React.ElementType> = {
   savings: PiggyBank,
   real_estate: Building2,
   insurance: ShieldCheck,
+  precious_metal: Gem,
 }
 
-const NO_SPARKLINE_TYPES = new Set(['fund', 'real_estate', 'savings', 'insurance'])
+const NO_SPARKLINE_TYPES = new Set(['fund', 'real_estate', 'savings', 'insurance', 'precious_metal'])
 
 type MergedAsset = AssetPerformance & { mergedCount: number }
 
