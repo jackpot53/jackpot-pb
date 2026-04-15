@@ -53,6 +53,29 @@ const EXCHANGE_GROUPS = [
   { label: '국내', items: ['upbit', 'bithumb', 'coinone', 'korbit'] },
   { label: '해외', items: ['binance', 'coinbase', 'kraken', 'okx'] },
 ]
+const EXCHANGE_DOMAINS: Record<string, string> = {
+  upbit: 'upbit.com', bithumb: 'bithumb.com', coinone: 'coinone.co.kr', korbit: 'korbit.co.kr',
+  binance: 'binance.com', coinbase: 'coinbase.com', kraken: 'kraken.com', okx: 'okx.com',
+}
+
+function ExchangeLogo({ exchange, size = 32 }: { exchange: string; size?: number }) {
+  const [failed, setFailed] = useState(false)
+  const token = process.env.NEXT_PUBLIC_LOGO_DEV_TOKEN
+  const domain = EXCHANGE_DOMAINS[exchange]
+  const url = token && domain ? `https://img.logo.dev/${domain}?token=${token}` : null
+
+  const cls = 'inline-flex shrink-0 items-center justify-center rounded-full bg-muted overflow-hidden ring-1 ring-border'
+  if (!url || failed) {
+    return <span className={cls} style={{ width: size, height: size }}><Coins className="text-muted-foreground" style={{ width: size * 0.6, height: size * 0.6 }} /></span>
+  }
+  return (
+    <span className={cls} style={{ width: size, height: size }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt="" width={size} height={size} onError={() => setFailed(true)} className="object-cover w-full h-full" />
+    </span>
+  )
+}
+
 const ASSET_TYPE_LABELS: Record<string, string> = {
   stock_kr: '주식 (국내)', stock_us: '주식 (미국)', etf_kr: 'ETF (국내)', etf_us: 'ETF (미국)',
   crypto: '코인', fund: '펀드', savings: '예적금', real_estate: '부동산', insurance: '보험',
@@ -332,7 +355,7 @@ export function NewAssetForm({ onSubmit }: {
                                       : 'border-border bg-card text-foreground/60 hover:border-foreground/40 hover:text-foreground hover:bg-muted/30'
                                   )}
                                 >
-                                  <Icon className="h-5 w-5 shrink-0" />
+                                  <ExchangeLogo exchange={val} size={28} />
                                   <span className="text-sm font-medium">{ACCOUNT_TYPE_LABELS[val]}</span>
                                 </button>
                               )
