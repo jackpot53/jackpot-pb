@@ -28,13 +28,17 @@ import { AssetLogo } from '@/components/app/asset-logo'
 
 const TRADEABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'real_estate', 'savings']
 const SEARCHABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us']
-const ACCOUNT_TYPE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'fund', 'real_estate']
+const ACCOUNT_TYPE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'fund', 'real_estate', 'crypto']
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   isa: 'ISA', irp: 'IRP', pension: '연금저축', dc: 'DC', brokerage: '위탁', spot: '현물', cma: 'CMA', insurance: '보험',
+  upbit: '업비트', bithumb: '빗썸', coinone: '코인원', korbit: '코빗',
+  binance: '바이낸스', coinbase: '코인베이스', kraken: '크라켄', okx: 'OKX',
 }
 const ACCOUNT_TYPE_ICONS: Record<string, LucideIcon> = {
   isa: Shield, irp: PiggyBank, pension: Heart, dc: Building2, brokerage: Store, spot: Banknote, cma: CreditCard, insurance: ShieldCheck,
+  upbit: Coins, bithumb: Coins, coinone: Coins, korbit: Coins,
+  binance: Globe, coinbase: Globe, kraken: Globe, okx: Globe,
 }
 const ACCOUNT_TYPE_BY_ASSET: Record<string, string[]> = {
   real_estate: ['spot'],
@@ -43,7 +47,12 @@ const ACCOUNT_TYPE_BY_ASSET: Record<string, string[]> = {
   etf_kr: ['isa', 'irp', 'pension', 'dc', 'brokerage', 'cma'],
   etf_us: ['isa', 'irp', 'pension', 'dc', 'brokerage', 'cma'],
   fund: ['isa', 'irp', 'pension', 'dc', 'brokerage', 'cma', 'insurance'],
+  crypto: ['upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx'],
 }
+const EXCHANGE_GROUPS = [
+  { label: '국내', items: ['upbit', 'bithumb', 'coinone', 'korbit'] },
+  { label: '해외', items: ['binance', 'coinbase', 'kraken', 'okx'] },
+]
 const ASSET_TYPE_LABELS: Record<string, string> = {
   stock_kr: '주식 (국내)', stock_us: '주식 (미국)', etf_kr: 'ETF (국내)', etf_us: 'ETF (미국)',
   crypto: '코인', fund: '펀드', savings: '예적금', real_estate: '부동산', insurance: '보험',
@@ -68,7 +77,7 @@ const assetSchema = z.object({
   assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
-  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance']).optional().nullable(),
+  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx']).optional().nullable(),
   ticker: z.string().max(20).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
   initialQuantity: z.string().optional().nullable(),
@@ -294,7 +303,7 @@ export function NewAssetForm({ onSubmit }: {
               render={({ field }) => (
                 <FormItem className="flex-1 min-w-0 self-start">
                   <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground mb-3">
-                    <Wallet className="h-4 w-4" />계좌 유형
+                    <Wallet className="h-4 w-4" />{assetType === 'crypto' ? '거래소' : '계좌 유형'}
                     <span className="text-xs font-normal text-muted-foreground/60">(선택)</span>
                   </FormLabel>
                   <FormControl>
@@ -302,26 +311,56 @@ export function NewAssetForm({ onSubmit }: {
                       'space-y-1.5 rounded-xl border border-border bg-muted/20 p-2',
                       !isAccountTypeable && 'opacity-40 pointer-events-none'
                     )}>
-                      {availableAccountTypes.map((val) => {
-                        const Icon = ACCOUNT_TYPE_ICONS[val]
-                        const active = field.value === val
-                        return (
-                          <button
-                            key={val}
-                            type="button"
-                            onClick={() => field.onChange(active ? null : val)}
-                            className={cn(
-                              'w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-150 cursor-pointer text-left',
-                              active
-                                ? 'border-foreground bg-foreground text-background shadow-sm'
-                                : 'border-border bg-card text-foreground/60 hover:border-foreground/40 hover:text-foreground hover:bg-muted/30'
-                            )}
-                          >
-                            <Icon className="h-5 w-5 shrink-0" />
-                            <span className="text-sm font-medium">{ACCOUNT_TYPE_LABELS[val]}</span>
-                          </button>
-                        )
-                      })}
+                      {assetType === 'crypto' ? (
+                        EXCHANGE_GROUPS.map((group) => (
+                          <div key={group.label}>
+                            <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                              {group.label}
+                            </p>
+                            {group.items.map((val) => {
+                              const Icon = ACCOUNT_TYPE_ICONS[val]
+                              const active = field.value === val
+                              return (
+                                <button
+                                  key={val}
+                                  type="button"
+                                  onClick={() => field.onChange(active ? null : val)}
+                                  className={cn(
+                                    'w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-150 cursor-pointer text-left',
+                                    active
+                                      ? 'border-foreground bg-foreground text-background shadow-sm'
+                                      : 'border-border bg-card text-foreground/60 hover:border-foreground/40 hover:text-foreground hover:bg-muted/30'
+                                  )}
+                                >
+                                  <Icon className="h-5 w-5 shrink-0" />
+                                  <span className="text-sm font-medium">{ACCOUNT_TYPE_LABELS[val]}</span>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        ))
+                      ) : (
+                        availableAccountTypes.map((val) => {
+                          const Icon = ACCOUNT_TYPE_ICONS[val]
+                          const active = field.value === val
+                          return (
+                            <button
+                              key={val}
+                              type="button"
+                              onClick={() => field.onChange(active ? null : val)}
+                              className={cn(
+                                'w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-150 cursor-pointer text-left',
+                                active
+                                  ? 'border-foreground bg-foreground text-background shadow-sm'
+                                  : 'border-border bg-card text-foreground/60 hover:border-foreground/40 hover:text-foreground hover:bg-muted/30'
+                              )}
+                            >
+                              <Icon className="h-5 w-5 shrink-0" />
+                              <span className="text-sm font-medium">{ACCOUNT_TYPE_LABELS[val]}</span>
+                            </button>
+                          )
+                        })
+                      )}
                     </div>
                   </FormControl>
                   <FormMessage />

@@ -8,7 +8,10 @@ export const priceTypeEnum = pgEnum('price_type', ['live', 'manual'])
 
 export const currencyEnum = pgEnum('currency', ['KRW', 'USD'])
 
-export const accountTypeEnum = pgEnum('account_type', ['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance'])
+export const accountTypeEnum = pgEnum('account_type', [
+  'isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance',
+  'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx',
+])
 
 export const assets = pgTable('assets', {
   id: uuid('id').primaryKey().defaultRandom(),
