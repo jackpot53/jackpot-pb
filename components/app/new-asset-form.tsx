@@ -28,7 +28,7 @@ import { AssetLogo } from '@/components/app/asset-logo'
 
 const TRADEABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'real_estate', 'savings']
 const SEARCHABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us']
-const ACCOUNT_TYPE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'fund', 'real_estate', 'crypto']
+const ACCOUNT_TYPE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'fund', 'real_estate', 'crypto', 'savings']
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   isa: 'ISA', irp: 'IRP', pension: '연금저축', dc: 'DC', brokerage: '위탁', spot: '현물', cma: 'CMA', insurance: '보험',
@@ -37,6 +37,10 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   fund_mirae: '미래에셋', fund_samsung: '삼성', fund_kb: 'KB', fund_shinhan: '신한', fund_hanwha: '한화',
   fund_nh: 'NH아문디', fund_korea: '한국투자', fund_kiwoom: '키움', fund_hana: '하나', fund_woori: '우리',
   fund_ibk: 'IBK', fund_daishin: '대신', fund_timefolio: '타임폴리오', fund_truston: '트러스톤',
+  bank_kb: 'KB국민', bank_shinhan: '신한', bank_woori: '우리', bank_hana: '하나', bank_nh: 'NH농협',
+  bank_kakao: '카카오', bank_toss: '토스', bank_k: '케이뱅크',
+  bank_ibk: 'IBK기업', bank_kdb: 'KDB산업',
+  bank_busan: '부산', bank_daegu: '대구', bank_gwangju: '광주', bank_jeonbuk: '전북', bank_jeju: '제주',
 }
 const ACCOUNT_TYPE_ICONS: Record<string, LucideIcon> = {
   isa: Shield, irp: PiggyBank, pension: Heart, dc: Building2, brokerage: Store, spot: Banknote, cma: CreditCard, insurance: ShieldCheck,
@@ -45,6 +49,10 @@ const ACCOUNT_TYPE_ICONS: Record<string, LucideIcon> = {
   fund_mirae: Briefcase, fund_samsung: Briefcase, fund_kb: Briefcase, fund_shinhan: Briefcase, fund_hanwha: Briefcase,
   fund_nh: Briefcase, fund_korea: Briefcase, fund_kiwoom: Briefcase, fund_hana: Briefcase, fund_woori: Briefcase,
   fund_ibk: Briefcase, fund_daishin: Briefcase, fund_timefolio: Briefcase, fund_truston: Briefcase,
+  bank_kb: Landmark, bank_shinhan: Landmark, bank_woori: Landmark, bank_hana: Landmark, bank_nh: Landmark,
+  bank_kakao: Landmark, bank_toss: Landmark, bank_k: Landmark,
+  bank_ibk: Landmark, bank_kdb: Landmark,
+  bank_busan: Landmark, bank_daegu: Landmark, bank_gwangju: Landmark, bank_jeonbuk: Landmark, bank_jeju: Landmark,
 }
 const ACCOUNT_TYPE_BY_ASSET: Record<string, string[]> = {
   real_estate: ['spot'],
@@ -54,6 +62,7 @@ const ACCOUNT_TYPE_BY_ASSET: Record<string, string[]> = {
   etf_us: ['isa', 'irp', 'pension', 'dc', 'brokerage', 'cma'],
   fund: ['fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston'],
   crypto: ['upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx'],
+  savings: ['bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju'],
 }
 const EXCHANGE_GROUPS = [
   { label: '국내', items: ['upbit', 'bithumb', 'coinone', 'korbit'] },
@@ -64,6 +73,12 @@ const FUND_COMPANY_GROUPS = [
   { label: '중형사', items: ['fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin'] },
   { label: '부티크', items: ['fund_timefolio', 'fund_truston'] },
 ]
+const BANK_GROUPS = [
+  { label: '시중은행', items: ['bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh'] },
+  { label: '인터넷은행', items: ['bank_kakao', 'bank_toss', 'bank_k'] },
+  { label: '특수은행', items: ['bank_ibk', 'bank_kdb'] },
+  { label: '지방은행', items: ['bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju'] },
+]
 const DOMAIN_LOGO_MAP: Record<string, string> = {
   upbit: 'upbit.com', bithumb: 'bithumb.com', coinone: 'coinone.co.kr', korbit: 'korbit.co.kr',
   binance: 'binance.com', coinbase: 'coinbase.com', kraken: 'kraken.com', okx: 'okx.com',
@@ -72,6 +87,12 @@ const DOMAIN_LOGO_MAP: Record<string, string> = {
   fund_korea: 'koreainvestment.com', fund_kiwoom: 'kiwoom.com', fund_hana: 'hanamutual.com',
   fund_woori: 'wooriasset.com', fund_ibk: 'ibkfund.co.kr', fund_daishin: 'daishinam.com',
   fund_timefolio: 'timefolio.co.kr', fund_truston: 'truston.co.kr',
+  bank_kb: 'kbstar.com', bank_shinhan: 'shinhanbank.com', bank_woori: 'wooribank.com',
+  bank_hana: 'hanabank.com', bank_nh: 'nonghyup.com',
+  bank_kakao: 'kakaobank.com', bank_toss: 'tossbank.com', bank_k: 'kbanknow.com',
+  bank_ibk: 'ibk.co.kr', bank_kdb: 'kdb.co.kr',
+  bank_busan: 'busanbank.co.kr', bank_daegu: 'dgb.co.kr', bank_gwangju: 'kjbank.com',
+  bank_jeonbuk: 'jbbank.co.kr', bank_jeju: 'jejubank.co.kr',
 }
 
 function DomainLogo({ value, size = 28 }: { value: string; size?: number }) {
@@ -128,7 +149,7 @@ const assetSchema = z.object({
   assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
-  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston']).optional().nullable(),
+  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju']).optional().nullable(),
   ticker: z.string().max(20).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
   initialQuantity: z.string().optional().nullable(),
@@ -357,7 +378,7 @@ export function NewAssetForm({ onSubmit }: {
               render={({ field }) => (
                 <FormItem className="flex-1 min-w-0 self-start">
                   <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground mb-3">
-                    <Wallet className="h-4 w-4" />{assetType === 'crypto' ? '거래소' : assetType === 'fund' ? '운용사' : '계좌 유형'}
+                    <Wallet className="h-4 w-4" />{assetType === 'crypto' ? '거래소' : assetType === 'fund' ? '운용사' : assetType === 'savings' ? '은행' : '계좌 유형'}
                     <span className="text-xs font-normal text-muted-foreground/60">(선택)</span>
                   </FormLabel>
                   <FormControl>
@@ -365,8 +386,8 @@ export function NewAssetForm({ onSubmit }: {
                       'space-y-1.5 rounded-xl border border-border bg-muted/20 p-2',
                       !isAccountTypeable && 'opacity-40 pointer-events-none'
                     )}>
-                      {(assetType === 'crypto' || assetType === 'fund') ? (
-                        (assetType === 'crypto' ? EXCHANGE_GROUPS : FUND_COMPANY_GROUPS).map((group) => (
+                      {(assetType === 'crypto' || assetType === 'fund' || assetType === 'savings') ? (
+                        (assetType === 'crypto' ? EXCHANGE_GROUPS : assetType === 'fund' ? FUND_COMPANY_GROUPS : BANK_GROUPS).map((group) => (
                           <div key={group.label}>
                             <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
                               {group.label}

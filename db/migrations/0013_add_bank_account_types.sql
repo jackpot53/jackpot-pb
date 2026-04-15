@@ -1,0 +1,15 @@
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'bank_kb';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'bank_shinhan';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'bank_woori';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'bank_hana';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'bank_nh';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'bank_kakao';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'bank_toss';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'bank_k';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'bank_ibk';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'bank_kdb';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'bank_busan';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'bank_daegu';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'bank_gwangju';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'bank_jeonbuk';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'bank_jeju';

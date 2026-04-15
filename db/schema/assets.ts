@@ -14,6 +14,9 @@ export const accountTypeEnum = pgEnum('account_type', [
   'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha',
   'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori',
   'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston',
+  'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh',
+  'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb',
+  'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju',
 ])
 
 export const assets = pgTable('assets', {
