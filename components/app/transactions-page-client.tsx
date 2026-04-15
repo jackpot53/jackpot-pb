@@ -2,25 +2,20 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table'
-import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { PlusCircle, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ArrowRightLeft } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
-} from '@/components/ui/dialog'
-import { TransactionForm } from '@/components/app/transaction-form'
-import { createTransaction } from '@/app/actions/transactions'
 import { DeleteTransactionDialog } from '@/components/app/delete-transaction-dialog'
 import { EditTransactionDialog } from '@/components/app/edit-transaction-dialog'
+import { AssetLogo } from '@/components/app/asset-logo'
+import { SparklineChart } from '@/components/app/sparkline-chart'
+import { cn } from '@/lib/utils'
 import type { TransactionWithAsset } from '@/db/queries/transactions'
 
-type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund'
+type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal'
 type Currency = 'KRW' | 'USD'
 
 interface AssetOption {
@@ -33,6 +28,7 @@ interface AssetOption {
 interface Props {
   transactions: TransactionWithAsset[]
   assetOptions: AssetOption[]
+  sparklines: Record<string, number[]>
 }
 
 function formatKrw(value: number): string {
@@ -47,28 +43,71 @@ function decodeQuantity(stored: number): string {
   return `${formattedInt}.${fracPart.toString().padStart(8, '0').replace(/0+$/, '')}`
 }
 
-export function TransactionsPageClient({ transactions, assetOptions }: Props) {
+function TransactionCard({ tx, sparklineData }: { tx: TransactionWithAsset; sparklineData?: number[] }) {
+  const total = Math.round((tx.quantity / 1e8) * tx.pricePerUnit)
+  return (
+    <div className={cn(
+      'flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-border hover:bg-muted/30 transition-colors',
+      tx.isVoided && 'opacity-50',
+    )}>
+      <AssetLogo ticker={tx.ticker} name={tx.assetName} assetType={tx.assetType as Parameters<typeof AssetLogo>[0]['assetType']} size={40} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <Link
+            href={`/assets/${tx.assetId}`}
+            className={cn('font-medium text-sm truncate hover:underline', tx.isVoided && 'line-through')}
+          >
+            {tx.assetName}
+          </Link>
+          <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${
+            tx.type === 'buy' ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-600'
+          }`}>
+            {tx.type === 'buy'
+              ? <><TrendingUp className="h-3 w-3" />매수</>
+              : <><TrendingDown className="h-3 w-3" />매도</>}
+          </span>
+        </div>
+        <div className={cn('flex items-center gap-2 text-xs text-muted-foreground mt-0.5', tx.isVoided && 'line-through')}>
+          <span>{tx.transactionDate}</span>
+          <span className="opacity-30">·</span>
+          <span>수량 {decodeQuantity(tx.quantity)}</span>
+          <span className="opacity-30">·</span>
+          <span>단가 {formatKrw(tx.pricePerUnit)}</span>
+          {tx.fee > 0 && (
+            <><span className="opacity-30">·</span><span>수수료 {formatKrw(tx.fee)}</span></>
+          )}
+          {tx.notes && (
+            <><span className="opacity-30">·</span><span className="truncate max-w-[160px]">{tx.notes}</span></>
+          )}
+        </div>
+      </div>
+      {sparklineData && (
+        <div className="shrink-0 w-20 flex items-center justify-center">
+          <SparklineChart data={sparklineData} width={80} height={36} />
+        </div>
+      )}
+      <div className={cn('text-sm font-semibold tabular-nums shrink-0', tx.isVoided && 'line-through', tx.type === 'buy' ? 'text-red-500' : 'text-blue-600')}>
+        {tx.type === 'sell' ? '+' : ''}{formatKrw(total)}
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        <EditTransactionDialog tx={tx} />
+        <DeleteTransactionDialog
+          transactionId={tx.id}
+          assetId={tx.assetId}
+          label={`${tx.transactionDate} ${tx.assetName} ${tx.type === 'buy' ? '매수' : '매도'}`}
+        />
+      </div>
+    </div>
+  )
+}
+
+export function TransactionsPageClient({ transactions, assetOptions, sparklines }: Props) {
   const [assetFilter, setAssetFilter] = useState<string>('전체')
   const [typeFilter, setTypeFilter] = useState<string>('전체')
   const [showVoided, setShowVoided] = useState(false)
 
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 10
-
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [selectedAssetId, setSelectedAssetId] = useState<string>('')
-
-  const selectedAsset = assetOptions.find((a) => a.id === selectedAssetId) ?? null
-
-  function openDialog() {
-    setSelectedAssetId(assetOptions[0]?.id ?? '')
-    setDialogOpen(true)
-  }
-
-  function closeDialog() {
-    setDialogOpen(false)
-    setSelectedAssetId('')
-  }
 
   const filtered = useMemo(() => {
     setPage(1)
@@ -93,6 +132,7 @@ export function TransactionsPageClient({ transactions, assetOptions }: Props) {
           {filtered.length}
         </span>
       </div>
+      <Separator className="bg-foreground" />
       {/* Filters + add button */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2">
@@ -137,60 +177,14 @@ export function TransactionsPageClient({ transactions, assetOptions }: Props) {
           </Label>
         </div>
 
-        <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else openDialog() }}>
-          <DialogTrigger
-            render={
-              <Button className="ml-auto" disabled={assetOptions.length === 0}>
-                <PlusCircle className="h-4 w-4 mr-1.5" />거래 추가
-              </Button>
-            }
-          />
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>새 거래 추가</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground shrink-0">자산 선택</Label>
-                <Select value={selectedAssetId} onValueChange={(v) => setSelectedAssetId(v ?? '')}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue>{selectedAsset ? selectedAsset.name : '자산을 선택하세요'}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {assetOptions.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {selectedAsset && (
-                <>
-                  <Separator />
-                  <TransactionForm
-                    assetId={selectedAsset.id}
-                    assetType={selectedAsset.assetType}
-                    currency={selectedAsset.currency}
-                    onSubmit={async (data) => {
-                      const result = await createTransaction(selectedAsset.id, data)
-                      if (!result?.error) closeDialog()
-                      return result
-                    }}
-                    submitLabel="거래 저장"
-                    onCancel={closeDialog}
-                  />
-                </>
-              )}
-              {!selectedAsset && (
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" onClick={closeDialog}>취소</Button>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Link href="/assets/new" className="ml-auto">
+          <Button>
+            <PlusCircle className="h-4 w-4 mr-1.5" />거래 추가
+          </Button>
+        </Link>
       </div>
 
-      {/* Table */}
+      {/* Card list */}
       {filtered.length === 0 ? (
         <div className="text-center py-16 space-y-2">
           <p className="text-sm font-semibold text-foreground">거래 내역이 없습니다</p>
@@ -199,66 +193,11 @@ export function TransactionsPageClient({ transactions, assetOptions }: Props) {
           </p>
         </div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="whitespace-nowrap">날짜</TableHead>
-              <TableHead className="whitespace-nowrap">자산</TableHead>
-              <TableHead className="whitespace-nowrap text-center">유형</TableHead>
-              <TableHead className="whitespace-nowrap text-right">수량</TableHead>
-              <TableHead className="whitespace-nowrap text-right">단가 (₩)</TableHead>
-              <TableHead className="whitespace-nowrap text-right">수수료 (₩)</TableHead>
-              <TableHead className="whitespace-nowrap">메모</TableHead>
-              <TableHead className="w-12" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginated.map((tx, i) => (
-              <TableRow key={tx.id} className={[i % 2 === 0 ? 'bg-muted/10' : undefined, tx.isVoided ? 'opacity-50' : undefined].filter(Boolean).join(' ') || undefined}>
-                <TableCell className={`text-sm${tx.isVoided ? ' line-through' : ''}`}>
-                  {tx.transactionDate}
-                </TableCell>
-                <TableCell className="text-sm">
-                  <Link
-                    href={`/assets/${tx.assetId}`}
-                    className="hover:underline text-gray-900"
-                  >
-                    {tx.assetName}
-                  </Link>
-                </TableCell>
-                <TableCell className="text-center">
-                  <span className={`inline-flex items-center gap-1 text-sm font-medium${tx.isVoided ? ' line-through opacity-50' : ''} ${tx.type === 'buy' ? 'text-blue-600' : 'text-red-500'}`}>
-                    {tx.type === 'buy'
-                      ? <><TrendingUp className="h-3.5 w-3.5" />매수</>
-                      : <><TrendingDown className="h-3.5 w-3.5" />매도</>}
-                  </span>
-                </TableCell>
-                <TableCell className={`text-sm text-right font-mono${tx.isVoided ? ' line-through' : ''}`}>
-                  {decodeQuantity(tx.quantity)}
-                </TableCell>
-                <TableCell className={`text-sm text-right${tx.isVoided ? ' line-through' : ''}`}>
-                  {formatKrw(tx.pricePerUnit)}
-                </TableCell>
-                <TableCell className={`text-sm text-right${tx.isVoided ? ' line-through' : ''}`}>
-                  {formatKrw(tx.fee)}
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
-                  {tx.notes ?? '—'}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    <EditTransactionDialog tx={tx} />
-                    <DeleteTransactionDialog
-                      transactionId={tx.id}
-                      assetId={tx.assetId}
-                      label={`${tx.transactionDate} ${tx.assetName} ${tx.type === 'buy' ? '매수' : '매도'}`}
-                    />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <div className="grid grid-cols-2 gap-1.5">
+          {paginated.map((tx) => (
+            <TransactionCard key={tx.id} tx={tx} sparklineData={tx.ticker ? sparklines[tx.ticker] : undefined} />
+          ))}
+        </div>
       )}
 
       <div className="flex flex-col items-center gap-2">

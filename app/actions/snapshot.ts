@@ -21,13 +21,27 @@ export async function takeSnapshot(): Promise<{ ok: boolean; snapshotDate?: stri
     const snapshotDate = new Date().toISOString().slice(0, 10)
     const returnBps = Math.round((summary.returnPct / 100) * 10000)
 
+    const breakdownMap = new Map<string, { totalValueKrw: number; totalCostKrw: number }>()
+    for (const p of performances) {
+      const existing = breakdownMap.get(p.assetType) ?? { totalValueKrw: 0, totalCostKrw: 0 }
+      breakdownMap.set(p.assetType, {
+        totalValueKrw: existing.totalValueKrw + p.currentValueKrw,
+        totalCostKrw: existing.totalCostKrw + p.totalCostKrw,
+      })
+    }
+    const breakdowns = Array.from(breakdownMap.entries()).map(([assetType, v]) => ({
+      assetType: assetType as 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal',
+      totalValueKrw: v.totalValueKrw,
+      totalCostKrw: v.totalCostKrw,
+    }))
+
     await writePortfolioSnapshot({
       snapshotDate,
       totalValueKrw: summary.totalValueKrw,
       totalCostKrw: summary.totalCostKrw,
       returnBps,
       userId: user.id,
-    })
+    }, breakdowns)
 
     revalidatePath('/goals')
     return { ok: true, snapshotDate }

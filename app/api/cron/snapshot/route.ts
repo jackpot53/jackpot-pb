@@ -10,7 +10,7 @@ import {
 import { writePortfolioSnapshot } from '@/lib/snapshot/writer'
 import { db } from '@/db'
 import { assets } from '@/db/schema/assets'
-import { and, eq, isNotNull } from 'drizzle-orm'
+import { and, eq, isNotNull, or } from 'drizzle-orm'
 
 const PRICE_TTL_MS = 5 * 60 * 1000
 
@@ -58,7 +58,10 @@ export async function GET(request: NextRequest) {
     const liveAssets = await db
       .select({ ticker: assets.ticker, assetType: assets.assetType })
       .from(assets)
-      .where(and(eq(assets.priceType, 'live'), isNotNull(assets.ticker)))
+      .where(and(
+        isNotNull(assets.ticker),
+        or(eq(assets.priceType, 'live'), eq(assets.assetType, 'fund'))
+      ))
 
     await Promise.allSettled(
       liveAssets.map((a) => refreshPriceIfStale(a.ticker!, a.assetType))
@@ -73,7 +76,7 @@ export async function GET(request: NextRequest) {
         const assetsWithHoldings = await getAssetsWithHoldings(userId)
 
         const liveTickers = assetsWithHoldings
-          .filter((a) => a.priceType === 'live' && a.ticker)
+          .filter((a) => (a.priceType === 'live' || a.assetType === 'fund') && a.ticker)
           .map((a) => a.ticker!)
         const priceMap = await getPriceCacheByTickers([...liveTickers, 'USD_KRW'])
         const fxCache = priceMap.get('USD_KRW')
@@ -85,7 +88,7 @@ export async function GET(request: NextRequest) {
           let cachedAt: Date | null = null
           let stale = false
 
-          if (asset.priceType === 'live' && asset.ticker) {
+          if ((asset.priceType === 'live' || asset.assetType === 'fund') && asset.ticker) {
             const priceRow = priceMap.get(asset.ticker)
             currentPriceKrw = priceRow?.priceKrw ?? 0
             cachedAt = priceRow?.cachedAt ?? null
@@ -111,13 +114,28 @@ export async function GET(request: NextRequest) {
         const summary = computePortfolio(performances, fxRateInt)
         const returnBps = Math.round((summary.returnPct / 100) * 10000)
 
+        // Compute per-asset-type breakdowns from individual performances
+        const breakdownMap = new Map<string, { totalValueKrw: number; totalCostKrw: number }>()
+        for (const p of performances) {
+          const existing = breakdownMap.get(p.assetType) ?? { totalValueKrw: 0, totalCostKrw: 0 }
+          breakdownMap.set(p.assetType, {
+            totalValueKrw: existing.totalValueKrw + p.currentValueKrw,
+            totalCostKrw: existing.totalCostKrw + p.totalCostKrw,
+          })
+        }
+        const breakdowns = Array.from(breakdownMap.entries()).map(([assetType, v]) => ({
+          assetType: assetType as 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal',
+          totalValueKrw: v.totalValueKrw,
+          totalCostKrw: v.totalCostKrw,
+        }))
+
         await writePortfolioSnapshot({
           snapshotDate,
           totalValueKrw: summary.totalValueKrw,
           totalCostKrw: summary.totalCostKrw,
           returnBps,
           userId,
-        })
+        }, breakdowns)
 
         results[userId] = 'ok'
       } catch (userError) {
