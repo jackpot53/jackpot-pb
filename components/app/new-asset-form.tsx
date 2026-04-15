@@ -246,7 +246,7 @@ export function NewAssetForm({ onSubmit }: {
       >
         {/* ── Step 1: 자산 유형 ────────────────────────────────────────── */}
         {step === 0 && (
-          <div className="flex gap-4 items-start">
+          <div className="flex gap-4 items-stretch">
             {/* 자산 유형 카드 */}
             <FormField
               control={form.control}
@@ -284,6 +284,8 @@ export function NewAssetForm({ onSubmit }: {
                 </FormItem>
               )}
             />
+
+            <div className="w-px bg-border self-stretch" />
 
             {/* 계좌 유형 카드 */}
             <FormField
