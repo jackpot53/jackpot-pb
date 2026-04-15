@@ -14,7 +14,6 @@ import { AssetLogo } from '@/components/app/asset-logo'
 import { formatKrw, formatReturn, formatQty } from '@/lib/portfolio'
 import type { AssetPerformance } from '@/lib/portfolio'
 import type { MonthlyDataPoint, AnnualDataPoint } from '@/lib/snapshot/aggregation'
-import type { OhlcPoint } from '@/lib/price/sparkline'
 
 const ASSET_TYPE_ORDER = [
   'stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate',
@@ -270,10 +269,9 @@ function AssetCardList({ assets, title, sparklines }: {
   )
 }
 
-function CollapsibleChart({ assets, sparklines, ohlcData, monthlyData, annualData }: {
+function CollapsibleChart({ assets, sparklines, monthlyData, annualData }: {
   assets: AssetPerformance[]
   sparklines?: Record<string, number[]>
-  ohlcData?: Record<string, OhlcPoint[]>
   monthlyData: MonthlyDataPoint[]
   annualData: AnnualDataPoint[]
 }) {
@@ -289,7 +287,7 @@ function CollapsibleChart({ assets, sparklines, ohlcData, monthlyData, annualDat
       </button>
       {open && (
         <div className="h-[360px] px-4 pb-4">
-          <AssetGroupChart assets={assets} sparklines={sparklines} ohlcData={ohlcData} monthlyData={monthlyData} annualData={annualData} />
+          <AssetGroupChart assets={assets} sparklines={sparklines} monthlyData={monthlyData} annualData={annualData} />
         </div>
       )}
     </div>
@@ -389,14 +387,13 @@ function SummaryCards({ grouped, performances }: { grouped: Record<string, Asset
 interface AssetsPageClientProps {
   performances: AssetPerformance[]
   sparklines?: Record<string, number[]>
-  ohlcData?: Record<string, OhlcPoint[]>
   monthlyData?: MonthlyDataPoint[]
   annualData?: AnnualDataPoint[]
   monthlyByType?: Record<string, MonthlyDataPoint[]>
   annualByType?: Record<string, AnnualDataPoint[]>
 }
 
-export function AssetsPageClient({ performances, sparklines, ohlcData = {}, monthlyData = [], annualData = [], monthlyByType = {}, annualByType = {} }: AssetsPageClientProps) {
+export function AssetsPageClient({ performances, sparklines, monthlyData = [], annualData = [], monthlyByType = {}, annualByType = {} }: AssetsPageClientProps) {
   const grouped = ASSET_TYPE_ORDER.reduce<Record<string, AssetPerformance[]>>((acc, type) => {
     const items = performances.filter((a) => a.assetType === type)
     if (items.length > 0) acc[type] = items
@@ -459,7 +456,7 @@ export function AssetsPageClient({ performances, sparklines, ohlcData = {}, mont
                     <div className="space-y-3 flex-1 min-w-0">
                       <SummaryBar assets={grouped[type]} />
                       <div className="h-[360px] bg-card rounded-2xl border border-border p-4">
-                        <AssetGroupChart assets={grouped[type]} sparklines={sparklines} ohlcData={ohlcData} monthlyData={monthlyByType[type] ?? []} annualData={annualByType[type] ?? []} />
+                        <AssetGroupChart assets={grouped[type]} sparklines={sparklines} monthlyData={monthlyByType[type] ?? []} annualData={annualByType[type] ?? []} />
                       </div>
                     </div>
                   </div>
@@ -482,7 +479,6 @@ export function AssetsPageClient({ performances, sparklines, ohlcData = {}, mont
                   <AssetGroupChart
                     assets={grouped[type]}
                     sparklines={sparklines}
-                    ohlcData={ohlcData}
                     monthlyData={monthlyByType[type] ?? []}
                     annualData={annualByType[type] ?? []}
                   />

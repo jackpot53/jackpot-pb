@@ -3,7 +3,7 @@ import { Wallet } from 'lucide-react'
 import { createClient } from '@/utils/supabase/server'
 import { refreshAllPrices } from '@/app/actions/prices'
 import { loadPerformances } from '@/lib/server/load-performances'
-import { fetchSparklinesForTickers, fetchOhlcForTickers } from '@/lib/price/sparkline'
+import { fetchSparklinesForTickers } from '@/lib/price/sparkline'
 import { getAllSnapshotsWithBreakdowns } from '@/db/queries/portfolio-snapshots'
 import { toMonthlyData, toAnnualData, snapshotsForType } from '@/lib/snapshot/aggregation'
 import { Separator } from '@/components/ui/separator'
@@ -28,12 +28,8 @@ export default async function AssetsPage() {
         .map((p) => p.ticker!)
     ),
   ]
-  const [sparklines, ohlcMap] = await Promise.all([
-    fetchSparklinesForTickers(liveTickers),
-    fetchOhlcForTickers(liveTickers),
-  ])
+  const sparklines = await fetchSparklinesForTickers(liveTickers)
   const sparklinesObj = Object.fromEntries(sparklines)
-  const ohlcObj = Object.fromEntries(ohlcMap)
 
   const monthlyData = toMonthlyData(snapshots)
   const annualData = toAnnualData(snapshots)
@@ -60,7 +56,6 @@ export default async function AssetsPage() {
       <AssetsPageClient
         performances={performances}
         sparklines={sparklinesObj}
-        ohlcData={ohlcObj}
         monthlyData={monthlyData}
         annualData={annualData}
         monthlyByType={monthlyByType}

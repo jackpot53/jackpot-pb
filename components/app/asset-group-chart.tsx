@@ -2,31 +2,94 @@
 import { useState, useMemo } from 'react'
 import { CandlestickChart } from './candlestick-chart'
 import type { CandlestickPoint } from './candlestick-chart'
-import type { OhlcPoint } from '@/lib/price/sparkline'
 import type { AssetPerformance } from '@/lib/portfolio'
 import type { MonthlyDataPoint, AnnualDataPoint } from '@/lib/snapshot/aggregation'
 
-type Tab = '30일' | '월별' | '연간'
+type Tab = '일별' | '월별' | '연간'
 
 interface AssetGroupChartProps {
   assets: AssetPerformance[]
   sparklines?: Record<string, number[]>
-  ohlcData?: Record<string, OhlcPoint[]>
   monthlyData?: MonthlyDataPoint[]
   annualData?: AnnualDataPoint[]
 }
 
-function formatAxisKrw(v: number): string {
-  const abs = Math.abs(v)
-  if (abs >= 100_000_000) return `${(v / 100_000_000).toFixed(1)}억`
-  if (abs >= 10_000) return `${(v / 10_000).toFixed(0)}만`
-  return v.toLocaleString()
+interface DayProfit {
+  profit: number
+  totalValue: number
+  totalCost: number
+  label: string
 }
 
-function monthlyToCandlestick(data: MonthlyDataPoint[]): CandlestickPoint[] {
+/**
+ * 그룹 내 전체 자산의 일별 누적 수익금 시계열을 계산한다.
+ * 라이브 자산: currentValueKrw × (price[i] / price[last]) 로 과거 가치를 역추정
+ * 수동/비라이브 자산: currentValueKrw 상수로 근사
+ * 라이브 종목이 하나도 없으면 null 반환
+ */
+function computeDailyGroupProfitSeries(
+  assets: AssetPerformance[],
+  sparklines: Record<string, number[]>
+): DayProfit[] | null {
+  const liveAssets = assets.filter(
+    a => a.priceType === 'live' && a.ticker && sparklines[a.ticker] && sparklines[a.ticker].length >= 2
+  )
+
+  if (liveAssets.length === 0) return null
+
+  const minLen = Math.min(...liveAssets.map(a => sparklines[a.ticker!].length))
+  const totalCost = assets.reduce((s, a) => s + a.totalCostKrw, 0)
+  const manualValue = assets
+    .filter(a => !(a.priceType === 'live' && a.ticker && sparklines[a.ticker]))
+    .reduce((s, a) => s + a.currentValueKrw, 0)
+
+  const today = new Date()
+
+  return Array.from({ length: minLen }, (_, i) => {
+    const liveValue = liveAssets.reduce((s, a) => {
+      const prices = sparklines[a.ticker!]
+      const lastPrice = prices[prices.length - 1]
+      if (!lastPrice) return s
+      return s + a.currentValueKrw * (prices[i] / lastPrice)
+    }, 0)
+
+    const totalValue = liveValue + manualValue
+    const profit = totalValue - totalCost
+
+    // index 0 = (minLen - 1)일 전, 마지막 index = 오늘
+    const daysAgo = minLen - 1 - i
+    const d = new Date(today)
+    d.setDate(d.getDate() - daysAgo)
+    const label = `${d.getMonth() + 1}/${d.getDate()}`
+
+    return { profit, totalValue, totalCost, label }
+  })
+}
+
+function dailyToCandlesticks(series: DayProfit[]): CandlestickPoint[] {
+  return series.map((d, i) => {
+    const open = i > 0 ? series[i - 1].profit : d.profit
+    const close = d.profit
+    const returnPct = d.totalCost > 0 ? (d.profit / d.totalCost) * 100 : 0
+    return {
+      date: `d${i}`,
+      label: d.label,
+      open,
+      close,
+      high: Math.max(open, close),
+      low: Math.min(open, close),
+      returnPct,
+      delta: close - open,
+    }
+  })
+}
+
+function monthlyToCandlesticks(data: MonthlyDataPoint[]): CandlestickPoint[] {
   return data.map((d, i) => {
-    const open = i > 0 ? data[i - 1].totalValueKrw : d.totalValueKrw
-    const close = d.totalValueKrw
+    const open = i > 0 ? data[i - 1].profitKrw : d.profitKrw
+    const close = d.profitKrw
+    const totalCost = d.totalValueKrw - d.profitKrw
+    const returnPct = totalCost > 0 ? (d.profitKrw / totalCost) * 100 : 0
     return {
       date: `${d.label}-01`,
       label: `${parseInt(d.label.slice(5), 10)}월`,
@@ -34,14 +97,18 @@ function monthlyToCandlestick(data: MonthlyDataPoint[]): CandlestickPoint[] {
       close,
       high: Math.max(open, close),
       low: Math.min(open, close),
+      returnPct,
+      delta: close - open,
     }
   })
 }
 
-function annualToCandlestick(data: AnnualDataPoint[]): CandlestickPoint[] {
+function annualToCandlesticks(data: AnnualDataPoint[]): CandlestickPoint[] {
   return data.map((d, i) => {
-    const open = i > 0 ? data[i - 1].totalValueKrw : d.totalValueKrw
-    const close = d.totalValueKrw
+    const open = i > 0 ? data[i - 1].profitKrw : d.profitKrw
+    const close = d.profitKrw
+    const totalCost = d.totalValueKrw - d.profitKrw
+    const returnPct = totalCost > 0 ? (d.profitKrw / totalCost) * 100 : 0
     return {
       date: `${d.year}-01-01`,
       label: String(d.year),
@@ -49,90 +116,63 @@ function annualToCandlestick(data: AnnualDataPoint[]): CandlestickPoint[] {
       close,
       high: Math.max(open, close),
       low: Math.min(open, close),
+      returnPct,
+      delta: close - open,
     }
   })
 }
 
-const TABS: Tab[] = ['30일', '월별', '연간']
+const TABS: Tab[] = ['일별', '월별', '연간']
 
-export function AssetGroupChart({ assets, ohlcData = {}, monthlyData = [], annualData = [] }: AssetGroupChartProps) {
-  const [tab, setTab] = useState<Tab>('30일')
+export function AssetGroupChart({ assets, sparklines = {}, monthlyData = [], annualData = [] }: AssetGroupChartProps) {
+  const [tab, setTab] = useState<Tab>('일별')
 
-  const tickerOptions = useMemo(() => {
-    return assets
-      .filter(a => a.priceType === 'live' && a.ticker && ohlcData[a.ticker])
-      .sort((a, b) => b.currentValueKrw - a.currentValueKrw)
-      .map(a => ({ ticker: a.ticker!, name: a.name, valueKrw: a.currentValueKrw }))
-  }, [assets, ohlcData])
+  const dailySeries = useMemo(
+    () => computeDailyGroupProfitSeries(assets, sparklines),
+    [assets, sparklines]
+  )
 
-  const [selectedTicker, setSelectedTicker] = useState<string>('')
-  const effectiveTicker = selectedTicker && ohlcData[selectedTicker] ? selectedTicker : tickerOptions[0]?.ticker ?? ''
+  const dailyCandlesticks = useMemo(
+    () => (dailySeries ? dailyToCandlesticks(dailySeries) : []),
+    [dailySeries]
+  )
 
-  const dailyCandlestick = useMemo((): CandlestickPoint[] => {
-    const ohlc = ohlcData[effectiveTicker]
-    if (!ohlc) return []
-    return ohlc.map(d => ({
-      date: d.date,
-      label: d.date.slice(5).replace('-', '/'),
-      open: d.open,
-      high: d.high,
-      low: d.low,
-      close: d.close,
-    }))
-  }, [ohlcData, effectiveTicker])
-
-  const monthlyCandlestick = useMemo(() => monthlyToCandlestick(monthlyData), [monthlyData])
-  const annualCandlestick = useMemo(() => annualToCandlestick(annualData), [annualData])
+  const monthlyCandlesticks = useMemo(() => monthlyToCandlesticks(monthlyData), [monthlyData])
+  const annualCandlesticks = useMemo(() => annualToCandlesticks(annualData), [annualData])
 
   const isEmpty =
-    (tab === '30일' && dailyCandlestick.length === 0) ||
-    (tab === '월별' && monthlyCandlestick.length < 2) ||
-    (tab === '연간' && annualCandlestick.length < 2)
+    (tab === '일별' && dailyCandlesticks.length === 0) ||
+    (tab === '월별' && monthlyCandlesticks.length < 2) ||
+    (tab === '연간' && annualCandlesticks.length < 2)
 
   const currentData =
-    tab === '30일' ? dailyCandlestick
-    : tab === '월별' ? monthlyCandlestick
-    : annualCandlestick
+    tab === '일별' ? dailyCandlesticks
+    : tab === '월별' ? monthlyCandlesticks
+    : annualCandlesticks
 
   return (
     <div className="flex flex-col gap-3 h-full">
-      <div className="flex items-center gap-2 flex-wrap">
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
-          {TABS.map(t => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${
-                tab === t ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-        {tab === '30일' && tickerOptions.length > 1 && (
-          <select
-            value={effectiveTicker}
-            onChange={e => setSelectedTicker(e.target.value)}
-            className="text-xs border border-border rounded px-2 py-1 bg-background"
+      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+        {TABS.map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${
+              tab === t ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'
+            }`}
           >
-            {tickerOptions.map(t => (
-              <option key={t.ticker} value={t.ticker}>{t.name} ({t.ticker})</option>
-            ))}
-          </select>
-        )}
+            {t}
+          </button>
+        ))}
       </div>
 
       <div className="flex-1 min-h-0">
         {isEmpty ? (
           <div className="h-full flex items-center justify-center text-xs text-gray-400 text-center px-4">
-            {tab === '30일' ? '시세 데이터 없음' : '스냅샷 데이터 부족'}
+            {tab === '일별' ? '시세 데이터 없음' : '스냅샷 데이터 부족'}
           </div>
         ) : (
-          <CandlestickChart
-            data={currentData}
-            formatPrice={tab === '30일' ? undefined : formatAxisKrw}
-          />
+          <CandlestickChart data={currentData} />
         )}
       </div>
     </div>

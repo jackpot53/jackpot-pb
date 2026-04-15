@@ -1,11 +1,3 @@
-export interface OhlcPoint {
-  date: string   // 'YYYY-MM-DD'
-  open: number
-  high: number
-  low: number
-  close: number
-}
-
 /**
  * Fetches 30-day daily closing prices from Yahoo Finance for sparkline rendering.
  * Works for KR stocks (.KS / .KQ), US stocks, and most ETFs.
@@ -48,55 +40,6 @@ export async function fetchSparklinesForTickers(
   )
 
   const map = new Map<string, number[]>()
-  for (const result of results) {
-    if (result.status === 'fulfilled' && result.value.data) {
-      map.set(result.value.ticker, result.value.data)
-    }
-  }
-  return map
-}
-
-export async function fetchOhlcData(ticker: string): Promise<OhlcPoint[] | null> {
-  try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1mo`
-    const res = await fetch(url, {
-      next: { revalidate: 3600 },
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-      signal: AbortSignal.timeout(5000),
-    })
-    if (!res.ok) return null
-
-    const data = await res.json()
-    const result = data?.chart?.result?.[0]
-    if (!result) return null
-
-    const timestamps: number[] | undefined = result.timestamp
-    const quote = result.indicators?.quote?.[0]
-    if (!timestamps || !quote) return null
-
-    const { open, high, low, close } = quote as Record<string, (number | null)[]>
-    const points: OhlcPoint[] = []
-
-    for (let i = 0; i < timestamps.length; i++) {
-      if (open[i] == null || high[i] == null || low[i] == null || close[i] == null) continue
-      const date = new Date(timestamps[i] * 1000).toISOString().slice(0, 10)
-      points.push({ date, open: open[i]!, high: high[i]!, low: low[i]!, close: close[i]! })
-    }
-
-    return points.length >= 2 ? points : null
-  } catch {
-    return null
-  }
-}
-
-export async function fetchOhlcForTickers(tickers: string[]): Promise<Map<string, OhlcPoint[]>> {
-  const results = await Promise.allSettled(
-    tickers.map(async (ticker) => {
-      const data = await fetchOhlcData(ticker)
-      return { ticker, data }
-    })
-  )
-  const map = new Map<string, OhlcPoint[]>()
   for (const result of results) {
     if (result.status === 'fulfilled' && result.value.data) {
       map.set(result.value.ticker, result.value.data)

@@ -9,6 +9,8 @@ export interface CandlestickPoint {
   high: number
   low: number
   close: number
+  returnPct?: number  // 누적 수익률 %
+  delta?: number      // close − open (전기 대비 변화)
 }
 
 interface CandlestickChartProps {
@@ -18,8 +20,17 @@ interface CandlestickChartProps {
 
 function defaultFormatPrice(v: number): string {
   const abs = Math.abs(v)
-  if (abs >= 100_000_000) return `${(v / 100_000_000).toFixed(1)}억`
-  if (abs >= 10_000) return `${(v / 10_000).toFixed(0)}만`
+  const sign = v >= 0 ? '+' : '−'
+  if (abs >= 100_000_000) return `${sign}${(abs / 100_000_000).toFixed(1)}억`
+  if (abs >= 10_000) return `${sign}${(abs / 10_000).toFixed(0)}만`
+  return (v >= 0 ? '+' : '') + v.toLocaleString()
+}
+
+function axisFormatPrice(v: number): string {
+  const abs = Math.abs(v)
+  const sign = v < 0 ? '−' : ''
+  if (abs >= 100_000_000) return `${sign}${(abs / 100_000_000).toFixed(1)}억`
+  if (abs >= 10_000) return `${sign}${(abs / 10_000).toFixed(0)}만`
   return v.toLocaleString()
 }
 
@@ -54,7 +65,7 @@ export function CandlestickChart({ data, formatPrice = defaultFormatPrice }: Can
     if (!svgRef.current || dims.width === 0 || dims.height === 0 || data.length === 0) return
 
     const { width, height } = dims
-    const margin = { top: 10, right: 8, bottom: 24, left: 56 }
+    const margin = { top: 10, right: 8, bottom: 24, left: 60 }
     const W = width - margin.left - margin.right
     const H = height - margin.top - margin.bottom
 
@@ -67,18 +78,21 @@ export function CandlestickChart({ data, formatPrice = defaultFormatPrice }: Can
       .range([0, W])
       .padding(0.2)
 
-    const yMin = d3.min(data, d => d.low) ?? 0
-    const yMax = d3.max(data, d => d.high) ?? 1
-    const yPad = (yMax - yMin) * 0.05 || yMin * 0.01
+    const rawMin = d3.min(data, d => d.low) ?? 0
+    const rawMax = d3.max(data, d => d.high) ?? 1
+    const yPad = (rawMax - rawMin) * 0.05 || Math.abs(rawMin) * 0.02 || 1
+    // Always include 0 in the domain (수익/손실 기준선)
+    const yMin = Math.min(rawMin - yPad, 0)
+    const yMax = Math.max(rawMax + yPad, 0)
 
     const yScale = d3.scaleLinear()
-      .domain([yMin - yPad, yMax + yPad])
+      .domain([yMin, yMax])
       .range([H, 0])
       .nice()
 
     const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`)
 
-    // Grid
+    // Grid lines
     const ticks = yScale.ticks(4)
     g.append('g')
       .selectAll('line.grid')
@@ -90,12 +104,21 @@ export function CandlestickChart({ data, formatPrice = defaultFormatPrice }: Can
       .attr('stroke', '#f0f0f0')
       .attr('stroke-dasharray', '3 3')
 
+    // 0 기준선 (수익/손실 구분)
+    if (yMin < 0 && yMax > 0) {
+      g.append('line')
+        .attr('x1', 0).attr('x2', W)
+        .attr('y1', yScale(0)).attr('y2', yScale(0))
+        .attr('stroke', '#d1d5db')
+        .attr('stroke-width', 1)
+    }
+
     // Y axis
     g.append('g')
       .call(
         d3.axisLeft(yScale)
           .tickValues(ticks)
-          .tickFormat(v => formatPrice(v as number))
+          .tickFormat(v => axisFormatPrice(v as number))
       )
       .call(sel => sel.select('.domain').remove())
       .call(sel => sel.selectAll('.tick line').remove())
@@ -132,12 +155,14 @@ export function CandlestickChart({ data, formatPrice = defaultFormatPrice }: Can
       const bodyTop = yScale(Math.max(d.open, d.close))
       const bodyH = Math.max(1, Math.abs(yScale(d.open) - yScale(d.close)))
 
+      // Wick
       g.append('line')
         .attr('x1', cx).attr('x2', cx)
         .attr('y1', yScale(d.high)).attr('y2', yScale(d.low))
         .attr('stroke', color)
         .attr('stroke-width', 1)
 
+      // Body
       g.append('rect')
         .attr('x', xScale(i)!)
         .attr('y', bodyTop)
@@ -171,28 +196,37 @@ export function CandlestickChart({ data, formatPrice = defaultFormatPrice }: Can
     })
 
     overlay.on('mouseleave', () => setTooltip(null))
-  }, [data, dims, formatPrice])
+  }, [data, dims])
 
   if (data.length === 0) return null
+
+  const isTooltipUp = tooltip ? tooltip.point.close >= tooltip.point.open : true
 
   return (
     <div ref={containerRef} className="relative w-full h-full">
       <svg ref={svgRef} />
       {tooltip && (
         <div
-          className="pointer-events-none absolute z-10 rounded-lg border border-gray-100 bg-white px-3 py-2 shadow text-xs"
+          className="pointer-events-none absolute z-10 rounded-lg border border-gray-100 bg-white px-3 py-2 shadow text-xs min-w-[120px]"
           style={{
             left: tooltip.x + 12,
-            top: Math.max(0, tooltip.y - 60),
+            top: Math.max(0, tooltip.y - 80),
           }}
         >
-          <p className="text-gray-400 mb-1">{tooltip.point.label ?? tooltip.point.date}</p>
-          <div className={`font-semibold ${tooltip.point.close >= tooltip.point.open ? 'text-red-500' : 'text-blue-500'}`}>
-            <div>시가 {formatPrice(tooltip.point.open)}</div>
-            <div>고가 {formatPrice(tooltip.point.high)}</div>
-            <div>저가 {formatPrice(tooltip.point.low)}</div>
-            <div>종가 {formatPrice(tooltip.point.close)}</div>
+          <p className="text-gray-400 mb-1.5 font-medium">{tooltip.point.label ?? tooltip.point.date}</p>
+          <div className={`font-semibold ${isTooltipUp ? 'text-red-500' : 'text-blue-500'}`}>
+            <div className="text-sm">{formatPrice(tooltip.point.close)}</div>
           </div>
+          {tooltip.point.returnPct !== undefined && (
+            <div className={`mt-0.5 ${isTooltipUp ? 'text-red-400' : 'text-blue-400'}`}>
+              누적 {tooltip.point.returnPct >= 0 ? '+' : ''}{tooltip.point.returnPct.toFixed(2)}%
+            </div>
+          )}
+          {tooltip.point.delta !== undefined && (
+            <div className="text-gray-400 mt-0.5">
+              전기 대비 {formatPrice(tooltip.point.delta)}
+            </div>
+          )}
         </div>
       )}
     </div>
