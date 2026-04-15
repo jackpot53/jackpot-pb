@@ -2,6 +2,7 @@ import { getPriceCacheByTicker, upsertPriceCache } from '@/db/queries/price-cach
 import { fetchFinnhubQuote } from '@/lib/price/finnhub'
 import { fetchYahooQuote } from '@/lib/price/yahoo'
 import { fetchBokFxRate } from '@/lib/price/bok-fx'
+import { fetchFunetfNav } from '@/lib/price/funetf'
 
 const KR_ASSET_TYPES = ['stock_kr', 'etf_kr']
 
@@ -25,6 +26,15 @@ export async function refreshPriceIfStale(ticker: string, assetType: string): Pr
   // If cache exists and is fresh, skip API call
   if (cached && !isStale(cached.cachedAt, PRICE_TTL_MS)) return
 
+  // Korean funds → FunETF (returns KRW NAV directly, no FX needed)
+  if (assetType === 'fund') {
+    const result = await fetchFunetfNav(ticker)
+    if (result === null || result.price <= 0) return
+    const changeBps = result.changePercent !== null ? Math.round(result.changePercent * 100) : null
+    await upsertPriceCache({ ticker, priceKrw: result.price, priceOriginal: result.price, currency: 'KRW', changeBps })
+    return
+  }
+
   // Korean stocks/ETFs → Yahoo Finance (returns KRW directly, no FX needed)
   if (KR_ASSET_TYPES.includes(assetType)) {
     const result = await fetchYahooQuote(ticker)
@@ -34,20 +44,16 @@ export async function refreshPriceIfStale(ticker: string, assetType: string): Pr
     const priceKrw = Math.round(result.price)
     if (priceKrw <= 0) return
 
-    await upsertPriceCache({
-      ticker,
-      priceKrw,
-      priceOriginal: priceKrw,
-      currency: 'KRW',
-    })
+    const changeBps = result.changePercent !== null ? Math.round(result.changePercent * 100) : null
+    await upsertPriceCache({ ticker, priceKrw, priceOriginal: priceKrw, currency: 'KRW', changeBps })
     return
   }
 
   // US stocks/ETFs/crypto → Finnhub (returns USD cents, convert via FX rate)
-  const priceUsdCents = await fetchFinnhubQuote(ticker)
+  const finnhubResult = await fetchFinnhubQuote(ticker)
 
   // D-02: If API fails/returns null, do NOT write zero — preserve existing cache
-  if (priceUsdCents === null) return
+  if (finnhubResult === null) return
 
   // Need FX rate to convert USD → KRW
   const fxCache = await getPriceCacheByTicker('USD_KRW')
@@ -55,14 +61,16 @@ export async function refreshPriceIfStale(ticker: string, assetType: string): Pr
   if (!fxCache || fxCache.priceKrw === 0) return
 
   const fxRate = fxCache.priceKrw / 10000  // e.g. 13565000 → 1356.5
-  const priceUsd = priceUsdCents / 100      // cents → dollars
+  const priceUsd = finnhubResult.priceUsdCents / 100
   const priceKrw = Math.round(priceUsd * fxRate)
+  const changeBps = finnhubResult.changePercent !== null ? Math.round(finnhubResult.changePercent * 100) : null
 
   await upsertPriceCache({
     ticker,
     priceKrw,
-    priceOriginal: priceUsdCents,
+    priceOriginal: finnhubResult.priceUsdCents,
     currency: 'USD',
+    changeBps,
   })
 }
 

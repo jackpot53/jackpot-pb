@@ -5,7 +5,7 @@
  * Critical: Finnhub returns c=0 for unknown/uncovered tickers (including KRX on free tier).
  * Treat c=0 as null — never write 0 to priceCache.priceKrw.
  */
-export async function fetchFinnhubQuote(ticker: string): Promise<number | null> {
+export async function fetchFinnhubQuote(ticker: string): Promise<{ priceUsdCents: number; changePercent: number | null } | null> {
   const apiKey = process.env.FINNHUB_API_KEY
   if (!apiKey) return null
 
@@ -19,7 +19,7 @@ export async function fetchFinnhubQuote(ticker: string): Promise<number | null> 
     // data.c is the current price in USD. 0 means no data.
     if (!data.c || data.c <= 0) return null
     // Convert to cents (integer) for storage
-    return Math.round(data.c * 100)
+    return { priceUsdCents: Math.round(data.c * 100), changePercent: typeof data.dp === 'number' ? data.dp : null }
   } catch {
     return null
   }

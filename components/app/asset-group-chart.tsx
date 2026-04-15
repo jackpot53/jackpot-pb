@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react'
 import { CandlestickChart } from './candlestick-chart'
 import type { CandlestickPoint } from './candlestick-chart'
 import type { AssetPerformance } from '@/lib/portfolio'
-import type { MonthlyDataPoint, AnnualDataPoint } from '@/lib/snapshot/aggregation'
+import type { MonthlyDataPoint, AnnualDataPoint, DailyDataPoint } from '@/lib/snapshot/aggregation'
 
 type Tab = '일별' | '월별' | '연간'
 
@@ -12,6 +12,7 @@ interface AssetGroupChartProps {
   sparklines?: Record<string, number[]>
   monthlyData?: MonthlyDataPoint[]
   annualData?: AnnualDataPoint[]
+  dailyData?: DailyDataPoint[]
 }
 
 interface DayProfit {
@@ -124,26 +125,52 @@ function annualToCandlesticks(data: AnnualDataPoint[]): CandlestickPoint[] {
 
 const TABS: Tab[] = ['일별', '월별', '연간']
 
-export function AssetGroupChart({ assets, sparklines = {}, monthlyData = [], annualData = [] }: AssetGroupChartProps) {
-  const [tab, setTab] = useState<Tab>('일별')
+function snapshotDailyToCandlesticks(data: DailyDataPoint[]): CandlestickPoint[] {
+  return data.map((d, i) => {
+    const open = i > 0 ? data[i - 1].profitKrw : d.profitKrw
+    const close = d.profitKrw
+    const returnPct = d.totalCostKrw > 0 ? (d.profitKrw / d.totalCostKrw) * 100 : 0
+    return {
+      date: `d${i}`,
+      label: d.label,
+      open,
+      close,
+      high: Math.max(open, close),
+      low: Math.min(open, close),
+      returnPct,
+      delta: close - open,
+    }
+  })
+}
+
+export function AssetGroupChart({ assets, sparklines = {}, monthlyData = [], annualData = [], dailyData = [] }: AssetGroupChartProps) {
+  const [tab, setTab] = useState<Tab>(() => {
+    const live = assets.filter(a => a.priceType === 'live' && a.ticker && sparklines[a.ticker]?.length >= 2)
+    if (live.length > 0) return '일별'
+    if (dailyData.length >= 2) return '일별'
+    if (monthlyData.length >= 1) return '월별'
+    if (annualData.length >= 1) return '연간'
+    return '일별'
+  })
 
   const dailySeries = useMemo(
     () => computeDailyGroupProfitSeries(assets, sparklines),
     [assets, sparklines]
   )
 
-  const dailyCandlesticks = useMemo(
-    () => (dailySeries ? dailyToCandlesticks(dailySeries) : []),
-    [dailySeries]
-  )
+  const dailyCandlesticks = useMemo(() => {
+    if (dailySeries) return dailyToCandlesticks(dailySeries)
+    if (dailyData.length >= 2) return snapshotDailyToCandlesticks(dailyData)
+    return []
+  }, [dailySeries, dailyData])
 
   const monthlyCandlesticks = useMemo(() => monthlyToCandlesticks(monthlyData), [monthlyData])
   const annualCandlesticks = useMemo(() => annualToCandlesticks(annualData), [annualData])
 
   const isEmpty =
     (tab === '일별' && dailyCandlesticks.length === 0) ||
-    (tab === '월별' && monthlyCandlesticks.length < 2) ||
-    (tab === '연간' && annualCandlesticks.length < 2)
+    (tab === '월별' && monthlyCandlesticks.length < 1) ||
+    (tab === '연간' && annualCandlesticks.length < 1)
 
   const currentData =
     tab === '일별' ? dailyCandlesticks

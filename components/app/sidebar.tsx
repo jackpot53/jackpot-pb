@@ -26,7 +26,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'h-screen bg-sidebar border-r border-border flex flex-col shrink-0 transition-all duration-300 overflow-hidden',
+        'h-screen bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transition-all duration-300 overflow-hidden',
         collapsed ? 'w-14' : 'w-60'
       )}
     >
@@ -37,13 +37,13 @@ export function Sidebar() {
         )}
       >
         {!collapsed && (
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
+          <span className="text-xs font-semibold text-sidebar-foreground/40 uppercase tracking-wider whitespace-nowrap">
             투자 관리
           </span>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1 rounded-md text-muted-foreground hover:bg-muted transition-colors shrink-0"
+          className="p-1 text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors shrink-0 rounded"
           title={collapsed ? '펼치기' : '접기'}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -62,11 +62,11 @@ export function Sidebar() {
               href={item.href}
               title={collapsed ? item.label : undefined}
               className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
+                'flex items-center gap-3 px-3 py-2 text-sm transition-colors rounded-md',
                 collapsed && 'justify-center px-0',
                 isActive
-                  ? 'bg-primary text-primary-foreground font-semibold'
-                  : 'text-foreground hover:bg-muted'
+                  ? 'bg-sidebar-primary text-sidebar-primary-foreground font-semibold'
+                  : 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
               )}
             >
               <Icon size={18} className="shrink-0" />

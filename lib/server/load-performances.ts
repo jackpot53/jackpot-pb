@@ -16,8 +16,9 @@ export async function loadPerformances(userId: string): Promise<{
 }> {
   const assetsWithHoldings = await getAssetsWithHoldings(userId)
 
+  // Include live assets AND fund assets with a ticker (may have priceType='manual' in legacy data)
   const liveTickers = assetsWithHoldings
-    .filter((a) => a.priceType === 'live' && a.ticker)
+    .filter((a) => (a.priceType === 'live' || a.assetType === 'fund') && a.ticker)
     .map((a) => a.ticker!)
   const priceMap = await getPriceCacheByTickers([...liveTickers, 'USD_KRW'])
 
@@ -27,11 +28,13 @@ export async function loadPerformances(userId: string): Promise<{
     let cachedAt: Date | null = null
     let stale = false
 
-    if (asset.priceType === 'live' && asset.ticker) {
+    let dailyChangeBps: number | null = null
+    if ((asset.priceType === 'live' || asset.assetType === 'fund') && asset.ticker) {
       const priceRow = priceMap.get(asset.ticker)
       currentPriceKrw = priceRow?.priceKrw ?? 0
       cachedAt = priceRow?.cachedAt ?? null
       stale = isStalePrice(cachedAt)
+      dailyChangeBps = priceRow?.changeBps ?? null
     }
 
     // DB bigint columns returned as strings when coming from raw SQL subqueries —
@@ -47,6 +50,7 @@ export async function loadPerformances(userId: string): Promise<{
         currentPriceKrw,
         isStale: stale,
         cachedAt,
+        dailyChangeBps,
         latestManualValuationKrw: asset.latestManualValuationKrw !== null
           ? Number(asset.latestManualValuationKrw)
           : null,

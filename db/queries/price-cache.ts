@@ -25,6 +25,7 @@ export async function upsertPriceCache(values: {
   priceKrw: number
   priceOriginal: number
   currency: 'KRW' | 'USD'
+  changeBps?: number | null
 }): Promise<void> {
   const now = new Date()
   await db
@@ -36,6 +37,7 @@ export async function upsertPriceCache(values: {
         priceKrw: values.priceKrw,
         priceOriginal: values.priceOriginal,
         currency: values.currency,
+        changeBps: values.changeBps ?? null,
         cachedAt: now,
       },
     })

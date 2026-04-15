@@ -10,6 +10,7 @@ import { StalePriceBadge } from '@/components/app/stale-price-badge'
 import { SparklineChart } from '@/components/app/sparkline-chart'
 import { AssetGroupChart } from '@/components/app/asset-group-chart'
 import { AssetLogo } from '@/components/app/asset-logo'
+import { CandlestickChart, type CandlestickPoint } from '@/components/app/candlestick-chart'
 import { formatKrw, formatReturn, formatQty } from '@/lib/portfolio'
 import type { AssetPerformance } from '@/lib/portfolio'
 import type { MonthlyDataPoint, AnnualDataPoint, DailyDataPoint } from '@/lib/snapshot/aggregation'
@@ -304,7 +305,7 @@ function CollapsibleChart({ assets, sparklines, monthlyData, annualData }: {
   )
 }
 
-function SummaryCards({ grouped, performances }: { grouped: Record<string, AssetPerformance[]>; performances: AssetPerformance[] }) {
+export function SummaryCards({ grouped, performances, valueCandles }: { grouped: Record<string, AssetPerformance[]>; performances: AssetPerformance[]; valueCandles?: CandlestickPoint[] }) {
   const types = Object.keys(grouped)
 
   const grandTotalCost = performances.reduce((s, a) => s + Number(a.totalCostKrw), 0)
@@ -340,7 +341,7 @@ function SummaryCards({ grouped, performances }: { grouped: Record<string, Asset
                 </span>
               </div>
               <div className="w-px bg-zinc-200 self-stretch" />
-              <div className="ml-auto text-right">
+              <div className="text-right">
                 <p className="text-[11px] font-medium text-zinc-400 uppercase tracking-widest mb-2">평가손익</p>
                 <p className={`text-3xl font-bold tabular-nums ${grandProfit >= 0 ? 'text-red-500' : 'text-blue-600'}`}>
                   {grandProfit >= 0 ? '+' : ''}{formatKrw(grandProfit)}
@@ -354,6 +355,17 @@ function SummaryCards({ grouped, performances }: { grouped: Record<string, Asset
                   <TrendingUp className="h-3 w-3" />원금 대비 수익금
                 </span>
               </div>
+              {valueCandles && valueCandles.length > 0 && (
+                <>
+                  <div className="w-px bg-zinc-200 self-stretch" />
+                  <div className="ml-auto flex flex-col justify-between min-w-0">
+                    <p className="text-[11px] font-medium text-zinc-400 uppercase tracking-widest mb-1">총 자산 추이</p>
+                    <div className="w-[220px] h-[100px]">
+                      <CandlestickChart data={valueCandles} />
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>

@@ -1,0 +1,16 @@
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_samsung_life';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_hanwha_life';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_kyobo';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_shinhan_life';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_nh_life';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_kb_life';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_aia';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_metlife';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_prudential';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_samsung_fire';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_hyundai';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_db_fire';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_kb_fire';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_meritz';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_hanwha_fire';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'ins_lotte_fire';

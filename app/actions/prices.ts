@@ -3,12 +3,13 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { db } from '@/db'
 import { assets } from '@/db/schema/assets'
-import { and, eq, isNotNull } from 'drizzle-orm'
+import { and, eq, isNotNull, or } from 'drizzle-orm'
 import { getPriceCacheByTickers, upsertPriceCache } from '@/db/queries/price-cache'
 import { fetchYahooQuote } from '@/lib/price/yahoo'
 import { fetchFinnhubQuote } from '@/lib/price/finnhub'
 import { fetchBokFxRate } from '@/lib/price/bok-fx'
 import { refreshFxIfStale } from '@/lib/price/cache'
+import { fetchFunetfNav } from '@/lib/price/funetf'
 
 const PRICE_TTL_MS = 5 * 60 * 1000
 const KR_ASSET_TYPES = ['stock_kr', 'etf_kr']
@@ -31,11 +32,16 @@ export async function refreshAllPrices(): Promise<void> {
   // Step 1: Refresh FX rate (TTL 1 hour)
   await refreshFxIfStale()
 
-  // Step 2: Fetch all live assets with a ticker (one query)
+  // Step 2: Fetch all priceable assets with a ticker (one query).
+  // Includes: all priceType='live' assets AND fund assets with a ticker regardless of priceType
+  // (existing fund assets may still have priceType='manual' from before live pricing was supported)
   const liveAssets = await db
     .select({ ticker: assets.ticker, assetType: assets.assetType })
     .from(assets)
-    .where(and(eq(assets.priceType, 'live'), isNotNull(assets.ticker)))
+    .where(and(
+      isNotNull(assets.ticker),
+      or(eq(assets.priceType, 'live'), eq(assets.assetType, 'fund'))
+    ))
 
   const tickers = liveAssets.filter((a) => a.ticker).map((a) => a.ticker!)
   if (tickers.length === 0) return
@@ -60,15 +66,23 @@ export async function refreshAllPrices(): Promise<void> {
   await Promise.allSettled(
     staleAssets.map(async ({ ticker, assetType }) => {
       try {
-        if (KR_ASSET_TYPES.includes(assetType)) {
+        if (assetType === 'fund') {
+          const result = await fetchFunetfNav(ticker)
+          if (!result || result.price <= 0) return
+          const changeBps = result.changePercent !== null ? Math.round(result.changePercent * 100) : null
+          await upsertPriceCache({ ticker, priceKrw: result.price, priceOriginal: result.price, currency: 'KRW', changeBps })
+        } else if (KR_ASSET_TYPES.includes(assetType)) {
           const result = await fetchYahooQuote(ticker)
           if (!result || result.price <= 0) return
-          await upsertPriceCache({ ticker, priceKrw: Math.round(result.price), priceOriginal: Math.round(result.price), currency: 'KRW' })
+          const priceKrw = Math.round(result.price)
+          const changeBps = result.changePercent !== null ? Math.round(result.changePercent * 100) : null
+          await upsertPriceCache({ ticker, priceKrw, priceOriginal: priceKrw, currency: 'KRW', changeBps })
         } else {
-          const priceUsdCents = await fetchFinnhubQuote(ticker)
-          if (priceUsdCents === null || !fxRate) return
-          const priceKrw = Math.round((priceUsdCents / 100) * fxRate)
-          await upsertPriceCache({ ticker, priceKrw, priceOriginal: priceUsdCents, currency: 'USD' })
+          const finnhubResult = await fetchFinnhubQuote(ticker)
+          if (finnhubResult === null || !fxRate) return
+          const priceKrw = Math.round((finnhubResult.priceUsdCents / 100) * fxRate)
+          const changeBps = finnhubResult.changePercent !== null ? Math.round(finnhubResult.changePercent * 100) : null
+          await upsertPriceCache({ ticker, priceKrw, priceOriginal: finnhubResult.priceUsdCents, currency: 'USD', changeBps })
         }
       } catch {
         // stale fallback: skip on error, existing cache preserved

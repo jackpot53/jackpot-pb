@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useTransition, useState, useRef, useEffect } from 'react'
 import {
-  Loader2, Save, ArrowLeft, ArrowRight, SkipForward,
+  Loader2, Save, ArrowLeft, ArrowRight, SkipForward, Search,
   TrendingUp, Globe, BarChart2, BarChart3, Bitcoin, Briefcase, Landmark, Building2,
   Layers, Tag, Hash, Wallet, MessageSquare, Package, Receipt, Calendar,
   Coins, Info, Shield, PiggyBank, Heart, Store, Banknote, DollarSign, ArrowLeftRight, CreditCard, ShieldCheck, Gem,
@@ -27,8 +27,8 @@ import { AssetLogo } from '@/components/app/asset-logo'
 // ── Constants ──────────────────────────────────────────────────────────────
 
 const TRADEABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'real_estate', 'savings']
-const SEARCHABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us']
-const ACCOUNT_TYPE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'fund', 'real_estate', 'crypto', 'savings']
+const SEARCHABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'fund']
+const ACCOUNT_TYPE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'fund', 'real_estate', 'crypto', 'savings', 'insurance']
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   isa: 'ISA', irp: 'IRP', pension: '연금저축', dc: 'DC', brokerage: '위탁', spot: '현물', cma: 'CMA', insurance: '보험',
@@ -41,6 +41,12 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   bank_kakao: '카카오', bank_toss: '토스', bank_k: '케이뱅크',
   bank_ibk: 'IBK기업', bank_kdb: 'KDB산업',
   bank_busan: '부산', bank_daegu: '대구', bank_gwangju: '광주', bank_jeonbuk: '전북', bank_jeju: '제주',
+  ins_samsung_life: '삼성생명', ins_hanwha_life: '한화생명', ins_kyobo: '교보생명',
+  ins_shinhan_life: '신한라이프', ins_nh_life: 'NH농협생명', ins_kb_life: 'KB라이프',
+  ins_aia: 'AIA생명', ins_metlife: '메트라이프', ins_prudential: '푸르덴셜',
+  ins_samsung_fire: '삼성화재', ins_hyundai: '현대해상', ins_db_fire: 'DB손보',
+  ins_kb_fire: 'KB손보', ins_meritz: '메리츠화재', ins_hanwha_fire: '한화손보',
+  ins_lotte_fire: '롯데손보',
 }
 const ACCOUNT_TYPE_ICONS: Record<string, LucideIcon> = {
   isa: Shield, irp: PiggyBank, pension: Heart, dc: Building2, brokerage: Store, spot: Banknote, cma: CreditCard, insurance: ShieldCheck,
@@ -53,6 +59,22 @@ const ACCOUNT_TYPE_ICONS: Record<string, LucideIcon> = {
   bank_kakao: Landmark, bank_toss: Landmark, bank_k: Landmark,
   bank_ibk: Landmark, bank_kdb: Landmark,
   bank_busan: Landmark, bank_daegu: Landmark, bank_gwangju: Landmark, bank_jeonbuk: Landmark, bank_jeju: Landmark,
+  ins_samsung_life: Heart, ins_hanwha_life: Heart, ins_kyobo: Heart,
+  ins_shinhan_life: Heart, ins_nh_life: Heart, ins_kb_life: Heart,
+  ins_aia: Heart, ins_metlife: Heart, ins_prudential: Heart,
+  ins_samsung_fire: ShieldCheck, ins_hyundai: ShieldCheck, ins_db_fire: ShieldCheck,
+  ins_kb_fire: ShieldCheck, ins_meritz: ShieldCheck, ins_hanwha_fire: ShieldCheck,
+  ins_lotte_fire: ShieldCheck,
+}
+const ACCOUNT_TYPE_COLORS: Record<string, { icon: string; bg: string }> = {
+  isa:       { icon: 'text-blue-500',    bg: 'bg-blue-50' },
+  irp:       { icon: 'text-violet-500',  bg: 'bg-violet-50' },
+  pension:   { icon: 'text-rose-500',    bg: 'bg-rose-50' },
+  dc:        { icon: 'text-slate-500',   bg: 'bg-slate-100' },
+  brokerage: { icon: 'text-emerald-500', bg: 'bg-emerald-50' },
+  spot:      { icon: 'text-amber-500',   bg: 'bg-amber-50' },
+  cma:       { icon: 'text-teal-500',    bg: 'bg-teal-50' },
+  insurance: { icon: 'text-cyan-500',    bg: 'bg-cyan-50' },
 }
 const ACCOUNT_TYPE_BY_ASSET: Record<string, string[]> = {
   real_estate: ['spot'],
@@ -63,6 +85,7 @@ const ACCOUNT_TYPE_BY_ASSET: Record<string, string[]> = {
   fund: ['fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston'],
   crypto: ['upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx'],
   savings: ['bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju'],
+  insurance: ['ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire'],
 }
 const EXCHANGE_GROUPS = [
   { label: '국내', items: ['upbit', 'bithumb', 'coinone', 'korbit'] },
@@ -79,6 +102,10 @@ const BANK_GROUPS = [
   { label: '특수은행', items: ['bank_ibk', 'bank_kdb'] },
   { label: '지방은행', items: ['bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju'] },
 ]
+const INSURANCE_GROUPS = [
+  { label: '생명보험', items: ['ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential'] },
+  { label: '손해보험', items: ['ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire'] },
+]
 const DOMAIN_LOGO_MAP: Record<string, string> = {
   upbit: 'upbit.com', bithumb: 'bithumb.com', coinone: 'coinone.co.kr', korbit: 'korbit.co.kr',
   binance: 'binance.com', coinbase: 'coinbase.com', kraken: 'kraken.com', okx: 'okx.com',
@@ -93,6 +120,12 @@ const DOMAIN_LOGO_MAP: Record<string, string> = {
   bank_ibk: 'ibk.co.kr', bank_kdb: 'kdb.co.kr',
   bank_busan: 'busanbank.co.kr', bank_daegu: 'dgb.co.kr', bank_gwangju: 'kjbank.com',
   bank_jeonbuk: 'jbbank.co.kr', bank_jeju: 'jejubank.co.kr',
+  ins_samsung_life: 'samsunglife.com', ins_hanwha_life: 'hanwhalife.com', ins_kyobo: 'kyobo.co.kr',
+  ins_shinhan_life: 'shinhanlife.co.kr', ins_nh_life: 'nhlife.co.kr', ins_kb_life: 'kblife.co.kr',
+  ins_aia: 'aia.co.kr', ins_metlife: 'metlife.co.kr', ins_prudential: 'prudential.co.kr',
+  ins_samsung_fire: 'samsungfire.com', ins_hyundai: 'hi.co.kr', ins_db_fire: 'db-ins.com',
+  ins_kb_fire: 'kbinsure.co.kr', ins_meritz: 'meritzfire.com', ins_hanwha_fire: 'hanwhainsurance.com',
+  ins_lotte_fire: 'lotteins.co.kr',
 }
 
 function DomainLogo({ value, size = 28 }: { value: string; size?: number }) {
@@ -150,7 +183,7 @@ const assetSchema = z.object({
   assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
-  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju']).optional().nullable(),
+  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire']).optional().nullable(),
   ticker: z.string().max(20).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
   initialQuantity: z.string().optional().nullable(),
@@ -243,7 +276,6 @@ export function NewAssetForm({ onSubmit }: {
   function selectSuggestion(s: TickerSuggestion) {
     form.setValue('name', s.name, { shouldValidate: true })
     form.setValue('ticker', s.ticker, { shouldValidate: true })
-    setSuggestions([])
   }
 
   // ── Step navigation ──────────────────────────────────────────────────────
@@ -379,7 +411,7 @@ export function NewAssetForm({ onSubmit }: {
               render={({ field }) => (
                 <FormItem className="flex-1 min-w-0 self-start">
                   <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground mb-3">
-                    <Wallet className="h-4 w-4" />{assetType === 'crypto' ? '거래소' : assetType === 'fund' ? '운용사' : assetType === 'savings' ? '은행' : '계좌 유형'}
+                    <Wallet className="h-4 w-4" />{assetType === 'crypto' ? '거래소' : assetType === 'fund' ? '운용사' : assetType === 'savings' ? '은행' : assetType === 'insurance' ? '보험사' : '계좌 유형'}
                     <span className="text-xs font-normal text-muted-foreground/60">(선택)</span>
                   </FormLabel>
                   <FormControl>
@@ -387,8 +419,8 @@ export function NewAssetForm({ onSubmit }: {
                       'rounded-xl border border-border bg-muted/20 p-2',
                       !isAccountTypeable && 'opacity-40 pointer-events-none'
                     )}>
-                      {(assetType === 'crypto' || assetType === 'fund' || assetType === 'savings') ? (
-                        (assetType === 'crypto' ? EXCHANGE_GROUPS : assetType === 'fund' ? FUND_COMPANY_GROUPS : BANK_GROUPS).map((group) => (
+                      {(assetType === 'crypto' || assetType === 'fund' || assetType === 'savings' || assetType === 'insurance') ? (
+                        (assetType === 'crypto' ? EXCHANGE_GROUPS : assetType === 'fund' ? FUND_COMPANY_GROUPS : assetType === 'insurance' ? INSURANCE_GROUPS : BANK_GROUPS).map((group) => (
                           <div key={group.label} className="mb-1.5 last:mb-0">
                             <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
                               {group.label}
@@ -420,6 +452,7 @@ export function NewAssetForm({ onSubmit }: {
                         <div className="grid grid-cols-3 gap-1.5">
                           {availableAccountTypes.map((val) => {
                             const Icon = ACCOUNT_TYPE_ICONS[val]
+                            const color = ACCOUNT_TYPE_COLORS[val]
                             const active = field.value === val
                             return (
                               <button
@@ -433,7 +466,9 @@ export function NewAssetForm({ onSubmit }: {
                                     : 'border-border bg-card text-foreground/60 hover:border-foreground/40 hover:text-foreground hover:bg-muted/30'
                                 )}
                               >
-                                <Icon className="h-5 w-5 shrink-0" />
+                                <span className={cn('flex items-center justify-center rounded-lg p-1.5', active ? 'bg-background/20' : color?.bg)}>
+                                  <Icon className={cn('h-4 w-4 shrink-0', active ? 'text-background' : color?.icon)} />
+                                </span>
                                 <span className="text-[11px] font-medium leading-tight text-center">{ACCOUNT_TYPE_LABELS[val]}</span>
                               </button>
                             )
@@ -461,24 +496,31 @@ export function NewAssetForm({ onSubmit }: {
                 <FormItem className="rounded-xl border border-border bg-card p-4 space-y-3 row-span-2">
                   <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
                     <Tag className="h-4 w-4 shrink-0" />종목명
-                    {isSearching && <Loader2 className="h-3.5 w-3.5 animate-spin ml-auto text-muted-foreground" />}
                   </FormLabel>
                   <FormControl>
-                    <Input
-                      {...restField}
-                      value={value ?? ''}
-                      autoComplete="off"
-                      onChange={(e) => handleNameInput(e.target.value, fieldOnChange)}
-                      onKeyDown={handleKeyDown}
-                      onCompositionStart={() => { isComposingRef.current = true }}
-                      onCompositionEnd={() => { isComposingRef.current = false }}
-                    />
+                    <div className="relative">
+                      <Input
+                        {...restField}
+                        value={value ?? ''}
+                        autoComplete="off"
+                        className="pr-8"
+                        onChange={(e) => handleNameInput(e.target.value, fieldOnChange)}
+                        onKeyDown={handleKeyDown}
+                        onCompositionStart={() => { isComposingRef.current = true }}
+                        onCompositionEnd={() => { isComposingRef.current = false }}
+                      />
+                      <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        {isSearching
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <Search className="h-4 w-4" />}
+                      </span>
+                    </div>
                   </FormControl>
                   <FormMessage />
 
                   {/* 검색 결과 리스트 */}
                   {suggestions.length > 0 && (
-                    <div className="flex flex-col gap-1.5 pt-1">
+                    <div className="mt-2 flex flex-col gap-1.5">
                       {suggestions.map((s) => {
                         const isSelected = value === s.name
                         return (
@@ -487,10 +529,10 @@ export function NewAssetForm({ onSubmit }: {
                             type="button"
                             onClick={() => selectSuggestion(s)}
                             className={cn(
-                              'flex items-center gap-3 rounded-xl border-2 px-3 py-2.5 text-left transition-all duration-150 cursor-pointer',
+                              'flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all duration-100 cursor-pointer shadow-sm',
                               isSelected
                                 ? 'border-foreground bg-foreground text-background'
-                                : 'border-border bg-background hover:border-foreground/40 hover:bg-muted/50'
+                                : 'border-border bg-white hover:border-foreground/30 hover:bg-muted/30'
                             )}
                           >
                             <AssetLogo
@@ -559,20 +601,21 @@ export function NewAssetForm({ onSubmit }: {
 
         {/* ── Step 3: 초기 매수 내역 ──────────────────────────────────── */}
         {step === 2 && (
-          <div className="rounded-xl border border-border overflow-hidden">
-            <div className="px-4 pt-3 pb-1 flex items-center gap-3">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-border" />
               <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                 초기 매수 내역 · 선택
               </span>
               <div className="h-px flex-1 bg-border" />
             </div>
-            <div className="px-4 pb-4 grid grid-cols-[1fr_2fr_1.5fr] gap-3">
+
+            <div className="grid grid-cols-[1fr_2fr_1.5fr] gap-3">
               <FormField
                 control={form.control}
                 name="initialQuantity"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col gap-1.5">
+                  <FormItem className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2">
                     <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
                       <Package className="h-3.5 w-3.5 shrink-0" />수량
                     </FormLabel>
@@ -587,7 +630,7 @@ export function NewAssetForm({ onSubmit }: {
                 control={form.control}
                 name="initialPricePerUnit"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col gap-1.5">
+                  <FormItem className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2">
                     <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
                       <Receipt className="h-3.5 w-3.5 shrink-0" />매수 단가
                     </FormLabel>
@@ -614,7 +657,7 @@ export function NewAssetForm({ onSubmit }: {
                 control={form.control}
                 name="initialTransactionDate"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col gap-1.5">
+                  <FormItem className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2">
                     <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
                       <Calendar className="h-3.5 w-3.5 shrink-0" />매수일
                     </FormLabel>
@@ -629,23 +672,21 @@ export function NewAssetForm({ onSubmit }: {
 
             {/* 환율 (USD인 경우만) */}
             {isUSD && (
-              <div className="px-4 pb-4">
-                <FormField
-                  control={form.control}
-                  name="initialExchangeRate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col gap-1.5">
-                      <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-                        <ArrowLeftRight className="h-3.5 w-3.5 shrink-0" />환율 (원/달러)
-                      </FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 1350" className="max-w-48" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="initialExchangeRate"
+                render={({ field }) => (
+                  <FormItem className="rounded-xl border border-border bg-card p-4 flex flex-col gap-2">
+                    <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+                      <ArrowLeftRight className="h-3.5 w-3.5 shrink-0" />환율 (원/달러)
+                    </FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 1350" className="max-w-48" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
 
             {/* hidden fields */}

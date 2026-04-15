@@ -14,7 +14,7 @@
  */
 export async function fetchYahooQuote(
   ticker: string
-): Promise<{ price: number; currency: string } | null> {
+): Promise<{ price: number; currency: string; changePercent: number | null } | null> {
   try {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`
     const res = await fetch(url, {
@@ -36,7 +36,18 @@ export async function fetchYahooQuote(
 
     if (!price || price <= 0) return null
 
-    return { price, currency }
+    const prevClose: number | null =
+      typeof meta.chartPreviousClose === 'number' && meta.chartPreviousClose > 0
+        ? meta.chartPreviousClose
+        : null
+    const changePercent: number | null =
+      typeof meta.regularMarketChangePercent === 'number'
+        ? meta.regularMarketChangePercent
+        : prevClose !== null
+        ? ((price - prevClose) / prevClose) * 100
+        : null
+
+    return { price, currency, changePercent }
   } catch {
     return null
   }

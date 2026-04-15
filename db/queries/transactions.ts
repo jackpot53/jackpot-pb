@@ -9,6 +9,7 @@ export type Transaction = InferSelectModel<typeof transactions>
 export interface TransactionWithAsset extends Transaction {
   assetName: string
   assetType: string
+  ticker: string | null
 }
 
 export async function getTransactionsByAsset(assetId: string): Promise<Transaction[]> {
@@ -37,6 +38,7 @@ export async function getAllTransactionsWithAsset(userId: string): Promise<Trans
       createdAt: transactions.createdAt,
       assetName: assets.name,
       assetType: assets.assetType,
+      ticker: assets.ticker,
     })
     .from(transactions)
     .innerJoin(assets, and(eq(transactions.assetId, assets.id), eq(assets.userId, userId)))

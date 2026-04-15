@@ -1,16 +1,59 @@
-import type { SnapshotRow } from '@/db/queries/portfolio-snapshots'
+import type { SnapshotRow, SnapshotWithBreakdowns } from '@/db/queries/portfolio-snapshots'
+import type { CandlestickPoint } from '@/components/app/candlestick-chart'
+
+/**
+ * Extracts per-asset-type SnapshotRow[] from SnapshotWithBreakdowns[].
+ * Only includes dates that have a breakdown entry for the given type
+ * (dates written before the migration have empty byType and are skipped).
+ */
+export function snapshotsForType(snapshots: SnapshotWithBreakdowns[], assetType: string): SnapshotRow[] {
+  return snapshots
+    .filter((s) => s.byType[assetType] !== undefined)
+    .map((s) => ({
+      snapshotDate: s.snapshotDate,
+      totalValueKrw: s.byType[assetType].totalValueKrw,
+      totalCostKrw: s.byType[assetType].totalCostKrw,
+      returnBps: 0, // not used by toMonthlyData / toAnnualData
+    }))
+}
+
+export interface DailyDataPoint {
+  label: string          // 'M/D' e.g. '4/15'
+  totalValueKrw: number
+  profitKrw: number
+  totalCostKrw: number
+}
+
+/**
+ * Returns last 30 daily snapshots as-is for the daily chart.
+ */
+export function toDailyData(snapshots: SnapshotRow[]): DailyDataPoint[] {
+  if (snapshots.length === 0) return []
+  const recent = snapshots.slice(-30)
+  return recent.map((s) => {
+    const d = new Date(s.snapshotDate)
+    const label = `${d.getMonth() + 1}/${d.getDate()}`
+    return {
+      label,
+      totalValueKrw: s.totalValueKrw,
+      profitKrw: s.totalValueKrw - s.totalCostKrw,
+      totalCostKrw: s.totalCostKrw,
+    }
+  })
+}
 
 export interface AnnualDataPoint {
   year: number
-  returnPct: number      // YoY: (thisYearEnd - lastYearEnd) / lastYearEnd * 100
-                         // First year: (totalValueKrw - totalCostKrw) / totalCostKrw * 100
-  totalValueKrw: number  // year-end total (tooltip only)
+  returnPct: number      // YoY return %
+  totalValueKrw: number  // year-end total value
+  profitKrw: number      // year-end profit = totalValueKrw - totalCostKrw
 }
 
 export interface MonthlyDataPoint {
   label: string          // 'YYYY-MM' e.g. '2025-04'
   totalValueKrw: number  // month-end snapshot totalValueKrw
-  returnPct?: number     // optional: MoM return % (tooltip only)
+  returnPct?: number     // MoM return % (tooltip)
+  profitKrw: number      // month-end profit = totalValueKrw - totalCostKrw
 }
 
 /**
@@ -41,7 +84,7 @@ export function toAnnualData(snapshots: SnapshotRow[]): AnnualDataPoint[] {
     const returnPct = prev
       ? ((snap.totalValueKrw - prev.totalValueKrw) / prev.totalValueKrw) * 100
       : ((snap.totalValueKrw - snap.totalCostKrw) / snap.totalCostKrw) * 100
-    return { year, returnPct, totalValueKrw: snap.totalValueKrw }
+    return { year, returnPct, totalValueKrw: snap.totalValueKrw, profitKrw: snap.totalValueKrw - snap.totalCostKrw }
   })
 }
 
@@ -82,6 +125,123 @@ export function toMonthlyData(snapshots: SnapshotRow[]): MonthlyDataPoint[] {
     const returnPct = prev
       ? ((snap.totalValueKrw - prev.totalValueKrw) / prev.totalValueKrw) * 100
       : undefined
-    return { label, totalValueKrw: snap.totalValueKrw, returnPct }
+    return { label, totalValueKrw: snap.totalValueKrw, returnPct, profitKrw: snap.totalValueKrw - snap.totalCostKrw }
+  })
+}
+
+/**
+ * Converts daily snapshots into daily candlestick data (last 60 days).
+ * Since each day has one data point, O = prev day's close, C = current close.
+ * H = max(O, C), L = min(O, C).
+ */
+export function toDailyCandlestick(snapshots: SnapshotRow[]): CandlestickPoint[] {
+  const recent = snapshots.slice(-60)
+  if (recent.length === 0) return []
+  return recent.map((s, i) => {
+    const profit = s.totalValueKrw - s.totalCostKrw
+    const prevProfit = i > 0 ? recent[i - 1].totalValueKrw - recent[i - 1].totalCostKrw : profit
+    const open = prevProfit
+    const close = profit
+    const high = Math.max(open, close)
+    const low = Math.min(open, close)
+    const d = new Date(s.snapshotDate)
+    const label = `${d.getMonth() + 1}/${d.getDate()}`
+    const returnPct = s.totalCostKrw > 0 ? (profit / s.totalCostKrw) * 100 : 0
+    return { date: s.snapshotDate, label, open, high, low, close, returnPct, delta: close - open }
+  })
+}
+
+/**
+ * Converts daily snapshots into monthly candlestick data.
+ * Each candle = one calendar month.
+ * O = previous month's close (continuity), H/L = max/min profit across all days in the month.
+ */
+export function toMonthlyCandlestick(snapshots: SnapshotRow[]): CandlestickPoint[] {
+  if (snapshots.length === 0) return []
+
+  const byMonth = new Map<string, SnapshotRow[]>()
+  for (const s of snapshots) {
+    const month = s.snapshotDate.slice(0, 7)
+    if (!byMonth.has(month)) byMonth.set(month, [])
+    byMonth.get(month)!.push(s)
+  }
+
+  const sortedMonths = [...byMonth.entries()].sort(([a], [b]) => a.localeCompare(b))
+
+  return sortedMonths.map(([month, snaps], i) => {
+    const profits = snaps.map(s => s.totalValueKrw - s.totalCostKrw)
+    const lastSnap = snaps[snaps.length - 1]
+    const prevLastSnap = i > 0 ? sortedMonths[i - 1][1].at(-1)! : snaps[0]
+    const open = prevLastSnap.totalValueKrw - prevLastSnap.totalCostKrw
+    const close = profits[profits.length - 1]
+    const high = Math.max(open, ...profits)
+    const low = Math.min(open, ...profits)
+    const returnPct = lastSnap.totalCostKrw > 0
+      ? ((lastSnap.totalValueKrw - lastSnap.totalCostKrw) / lastSnap.totalCostKrw) * 100
+      : 0
+    return { date: month, label: month.slice(5), open, high, low, close, returnPct, delta: close - open }
+  })
+}
+
+/**
+ * Converts daily snapshots into annual candlestick data.
+ * Each candle = one calendar year.
+ * O = previous year's close (continuity), H/L = max/min profit across all days in the year.
+ */
+export function toAnnualCandlestick(snapshots: SnapshotRow[]): CandlestickPoint[] {
+  if (snapshots.length === 0) return []
+
+  const byYear = new Map<string, SnapshotRow[]>()
+  for (const s of snapshots) {
+    const year = s.snapshotDate.slice(0, 4)
+    if (!byYear.has(year)) byYear.set(year, [])
+    byYear.get(year)!.push(s)
+  }
+
+  const sortedYears = [...byYear.entries()].sort(([a], [b]) => a.localeCompare(b))
+
+  return sortedYears.map(([year, snaps], i) => {
+    const profits = snaps.map(s => s.totalValueKrw - s.totalCostKrw)
+    const lastSnap = snaps[snaps.length - 1]
+    const prevLastSnap = i > 0 ? sortedYears[i - 1][1].at(-1)! : snaps[0]
+    const open = prevLastSnap.totalValueKrw - prevLastSnap.totalCostKrw
+    const close = profits[profits.length - 1]
+    const high = Math.max(open, ...profits)
+    const low = Math.min(open, ...profits)
+    const returnPct = lastSnap.totalCostKrw > 0
+      ? ((lastSnap.totalValueKrw - lastSnap.totalCostKrw) / lastSnap.totalCostKrw) * 100
+      : 0
+    return { date: year, label: `${year}년`, open, high, low, close, returnPct, delta: close - open }
+  })
+}
+
+/**
+ * Converts daily snapshots into monthly candlestick data tracking totalValueKrw (total asset value).
+ * Used for the hero summary card chart.
+ */
+export function toMonthlyValueCandlestick(snapshots: SnapshotRow[]): CandlestickPoint[] {
+  if (snapshots.length === 0) return []
+
+  const byMonth = new Map<string, SnapshotRow[]>()
+  for (const s of snapshots) {
+    const month = s.snapshotDate.slice(0, 7)
+    if (!byMonth.has(month)) byMonth.set(month, [])
+    byMonth.get(month)!.push(s)
+  }
+
+  const sortedMonths = [...byMonth.entries()].sort(([a], [b]) => a.localeCompare(b))
+
+  return sortedMonths.map(([month, snaps], i) => {
+    const values = snaps.map(s => s.totalValueKrw)
+    const lastSnap = snaps[snaps.length - 1]
+    const prevLastSnap = i > 0 ? sortedMonths[i - 1][1].at(-1)! : snaps[0]
+    const open = prevLastSnap.totalValueKrw
+    const close = values[values.length - 1]
+    const high = Math.max(open, ...values)
+    const low = Math.min(open, ...values)
+    const returnPct = lastSnap.totalCostKrw > 0
+      ? ((lastSnap.totalValueKrw - lastSnap.totalCostKrw) / lastSnap.totalCostKrw) * 100
+      : 0
+    return { date: month, label: month.slice(5), open, high, low, close, returnPct, delta: close - open }
   })
 }

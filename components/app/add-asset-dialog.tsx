@@ -1,10 +1,11 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { PlusCircle } from 'lucide-react'
+import { PlusCircle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -26,9 +27,12 @@ export function AddAssetDialog() {
       >
         <PlusCircle className="h-4 w-4 mr-1.5" />자산 추가
       </DialogTrigger>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>자산 추가</DialogTitle>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" showCloseButton={false}>
+        <DialogHeader className="-mx-4 -mt-4 px-4 py-4 rounded-t-xl bg-foreground text-center border-b relative">
+          <DialogTitle className="text-background">자산 추가</DialogTitle>
+          <DialogClose render={<button className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-white/10 transition-colors text-background" />}>
+            <X className="h-4 w-4" />
+          </DialogClose>
         </DialogHeader>
         <AssetForm
           onSubmit={async (data) => {
