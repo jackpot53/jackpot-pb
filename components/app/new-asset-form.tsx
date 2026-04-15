@@ -306,7 +306,7 @@ export function NewAssetForm({ onSubmit }: {
                     <Layers className="h-4 w-4" />자산 유형
                   </FormLabel>
                   <FormControl>
-                    <div className="space-y-1.5 rounded-xl border border-border bg-muted/20 p-2">
+                    <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-border bg-muted/20 p-2">
                       {Object.entries(ASSET_TYPE_LABELS).map(([val, label]) => {
                         const Icon = ASSET_TYPE_ICONS[val]
                         const active = field.value === val
@@ -316,14 +316,14 @@ export function NewAssetForm({ onSubmit }: {
                             type="button"
                             onClick={() => field.onChange(val)}
                             className={cn(
-                              'w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-150 cursor-pointer text-left',
+                              'flex items-center gap-2 px-3 py-3 rounded-xl border transition-all duration-150 cursor-pointer text-left',
                               active
                                 ? 'border-foreground bg-foreground text-background shadow-sm'
                                 : 'border-border bg-card text-foreground/60 hover:border-foreground/40 hover:text-foreground hover:bg-muted/30'
                             )}
                           >
-                            <Icon className="h-5 w-5 shrink-0" />
-                            <span className="text-sm font-medium">{label}</span>
+                            <Icon className="h-4 w-4 shrink-0" />
+                            <span className="text-xs font-medium leading-tight">{label}</span>
                           </button>
                         )
                       })}
