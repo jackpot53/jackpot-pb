@@ -7,7 +7,7 @@ import {
   Loader2, Save, ArrowLeft, ArrowRight, SkipForward,
   TrendingUp, Globe, BarChart2, BarChart3, Bitcoin, Briefcase, Landmark, Building2,
   Layers, Tag, Hash, Wallet, MessageSquare, Package, Receipt, Calendar,
-  Coins, Info, Shield, PiggyBank, Heart, Store, Banknote, DollarSign, ArrowLeftRight,
+  Coins, Info, Shield, PiggyBank, Heart, Store, Banknote, DollarSign, ArrowLeftRight, CreditCard,
   type LucideIcon,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -31,18 +31,18 @@ const SEARCHABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us']
 const ACCOUNT_TYPE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'fund', 'real_estate']
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
-  isa: 'ISA', irp: 'IRP', pension: '연금저축', dc: 'DC', brokerage: '위탁', spot: '현물',
+  isa: 'ISA', irp: 'IRP', pension: '연금저축', dc: 'DC', brokerage: '위탁', spot: '현물', cma: 'CMA',
 }
 const ACCOUNT_TYPE_ICONS: Record<string, LucideIcon> = {
-  isa: Shield, irp: PiggyBank, pension: Heart, dc: Building2, brokerage: Store, spot: Banknote,
+  isa: Shield, irp: PiggyBank, pension: Heart, dc: Building2, brokerage: Store, spot: Banknote, cma: CreditCard,
 }
 const ACCOUNT_TYPE_BY_ASSET: Record<string, string[]> = {
   real_estate: ['spot'],
-  stock_kr: ['isa', 'irp', 'pension', 'dc', 'brokerage'],
-  stock_us: ['isa', 'irp', 'pension', 'dc', 'brokerage'],
-  etf_kr: ['isa', 'irp', 'pension', 'dc', 'brokerage'],
-  etf_us: ['isa', 'irp', 'pension', 'dc', 'brokerage'],
-  fund: ['isa', 'irp', 'pension', 'dc', 'brokerage'],
+  stock_kr: ['isa', 'irp', 'pension', 'dc', 'brokerage', 'cma'],
+  stock_us: ['isa', 'irp', 'pension', 'dc', 'brokerage', 'cma'],
+  etf_kr: ['isa', 'irp', 'pension', 'dc', 'brokerage', 'cma'],
+  etf_us: ['isa', 'irp', 'pension', 'dc', 'brokerage', 'cma'],
+  fund: ['isa', 'irp', 'pension', 'dc', 'brokerage', 'cma'],
 }
 const ASSET_TYPE_LABELS: Record<string, string> = {
   stock_kr: '주식 (국내)', stock_us: '주식 (미국)', etf_kr: 'ETF (국내)', etf_us: 'ETF (미국)',
@@ -68,7 +68,7 @@ const assetSchema = z.object({
   assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
-  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot']).optional().nullable(),
+  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma']).optional().nullable(),
   ticker: z.string().max(20).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
   initialQuantity: z.string().optional().nullable(),
