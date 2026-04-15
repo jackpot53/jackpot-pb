@@ -11,6 +11,9 @@ export const currencyEnum = pgEnum('currency', ['KRW', 'USD'])
 export const accountTypeEnum = pgEnum('account_type', [
   'isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance',
   'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx',
+  'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha',
+  'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori',
+  'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston',
 ])
 
 export const assets = pgTable('assets', {

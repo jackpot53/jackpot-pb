@@ -1,0 +1,14 @@
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'fund_mirae';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'fund_samsung';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'fund_kb';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'fund_shinhan';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'fund_hanwha';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'fund_nh';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'fund_korea';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'fund_kiwoom';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'fund_hana';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'fund_woori';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'fund_ibk';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'fund_daishin';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'fund_timefolio';
+ALTER TYPE "public"."account_type" ADD VALUE IF NOT EXISTS 'fund_truston';

@@ -34,11 +34,17 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   isa: 'ISA', irp: 'IRP', pension: '연금저축', dc: 'DC', brokerage: '위탁', spot: '현물', cma: 'CMA', insurance: '보험',
   upbit: '업비트', bithumb: '빗썸', coinone: '코인원', korbit: '코빗',
   binance: '바이낸스', coinbase: '코인베이스', kraken: '크라켄', okx: 'OKX',
+  fund_mirae: '미래에셋', fund_samsung: '삼성', fund_kb: 'KB', fund_shinhan: '신한', fund_hanwha: '한화',
+  fund_nh: 'NH아문디', fund_korea: '한국투자', fund_kiwoom: '키움', fund_hana: '하나', fund_woori: '우리',
+  fund_ibk: 'IBK', fund_daishin: '대신', fund_timefolio: '타임폴리오', fund_truston: '트러스톤',
 }
 const ACCOUNT_TYPE_ICONS: Record<string, LucideIcon> = {
   isa: Shield, irp: PiggyBank, pension: Heart, dc: Building2, brokerage: Store, spot: Banknote, cma: CreditCard, insurance: ShieldCheck,
   upbit: Coins, bithumb: Coins, coinone: Coins, korbit: Coins,
   binance: Globe, coinbase: Globe, kraken: Globe, okx: Globe,
+  fund_mirae: Briefcase, fund_samsung: Briefcase, fund_kb: Briefcase, fund_shinhan: Briefcase, fund_hanwha: Briefcase,
+  fund_nh: Briefcase, fund_korea: Briefcase, fund_kiwoom: Briefcase, fund_hana: Briefcase, fund_woori: Briefcase,
+  fund_ibk: Briefcase, fund_daishin: Briefcase, fund_timefolio: Briefcase, fund_truston: Briefcase,
 }
 const ACCOUNT_TYPE_BY_ASSET: Record<string, string[]> = {
   real_estate: ['spot'],
@@ -46,27 +52,38 @@ const ACCOUNT_TYPE_BY_ASSET: Record<string, string[]> = {
   stock_us: ['isa', 'irp', 'pension', 'dc', 'brokerage', 'cma'],
   etf_kr: ['isa', 'irp', 'pension', 'dc', 'brokerage', 'cma'],
   etf_us: ['isa', 'irp', 'pension', 'dc', 'brokerage', 'cma'],
-  fund: ['isa', 'irp', 'pension', 'dc', 'brokerage', 'cma', 'insurance'],
+  fund: ['fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston'],
   crypto: ['upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx'],
 }
 const EXCHANGE_GROUPS = [
   { label: '국내', items: ['upbit', 'bithumb', 'coinone', 'korbit'] },
   { label: '해외', items: ['binance', 'coinbase', 'kraken', 'okx'] },
 ]
-const EXCHANGE_DOMAINS: Record<string, string> = {
+const FUND_COMPANY_GROUPS = [
+  { label: '대형사', items: ['fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha'] },
+  { label: '중형사', items: ['fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin'] },
+  { label: '부티크', items: ['fund_timefolio', 'fund_truston'] },
+]
+const DOMAIN_LOGO_MAP: Record<string, string> = {
   upbit: 'upbit.com', bithumb: 'bithumb.com', coinone: 'coinone.co.kr', korbit: 'korbit.co.kr',
   binance: 'binance.com', coinbase: 'coinbase.com', kraken: 'kraken.com', okx: 'okx.com',
+  fund_mirae: 'miraeasset.com', fund_samsung: 'samsungfund.com', fund_kb: 'kbam.co.kr',
+  fund_shinhan: 'shinhan.com', fund_hanwha: 'hanwhafund.co.kr', fund_nh: 'nhca.com',
+  fund_korea: 'koreainvestment.com', fund_kiwoom: 'kiwoom.com', fund_hana: 'hanamutual.com',
+  fund_woori: 'wooriasset.com', fund_ibk: 'ibkfund.co.kr', fund_daishin: 'daishinam.com',
+  fund_timefolio: 'timefolio.co.kr', fund_truston: 'truston.co.kr',
 }
 
-function ExchangeLogo({ exchange, size = 32 }: { exchange: string; size?: number }) {
+function DomainLogo({ value, size = 28 }: { value: string; size?: number }) {
   const [failed, setFailed] = useState(false)
   const token = process.env.NEXT_PUBLIC_LOGO_DEV_TOKEN
-  const domain = EXCHANGE_DOMAINS[exchange]
+  const domain = DOMAIN_LOGO_MAP[value]
   const url = token && domain ? `https://img.logo.dev/${domain}?token=${token}` : null
+  const FallbackIcon = ACCOUNT_TYPE_ICONS[value] ?? Briefcase
 
   const cls = 'inline-flex shrink-0 items-center justify-center rounded-full bg-muted overflow-hidden ring-1 ring-border'
   if (!url || failed) {
-    return <span className={cls} style={{ width: size, height: size }}><Coins className="text-muted-foreground" style={{ width: size * 0.6, height: size * 0.6 }} /></span>
+    return <span className={cls} style={{ width: size, height: size }}><FallbackIcon className="text-muted-foreground" style={{ width: size * 0.6, height: size * 0.6 }} /></span>
   }
   return (
     <span className={cls} style={{ width: size, height: size }}>
@@ -100,7 +117,7 @@ const assetSchema = z.object({
   assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
-  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx']).optional().nullable(),
+  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston']).optional().nullable(),
   ticker: z.string().max(20).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
   initialQuantity: z.string().optional().nullable(),
@@ -326,7 +343,7 @@ export function NewAssetForm({ onSubmit }: {
               render={({ field }) => (
                 <FormItem className="flex-1 min-w-0 self-start">
                   <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground mb-3">
-                    <Wallet className="h-4 w-4" />{assetType === 'crypto' ? '거래소' : '계좌 유형'}
+                    <Wallet className="h-4 w-4" />{assetType === 'crypto' ? '거래소' : assetType === 'fund' ? '운용사' : '계좌 유형'}
                     <span className="text-xs font-normal text-muted-foreground/60">(선택)</span>
                   </FormLabel>
                   <FormControl>
@@ -334,14 +351,13 @@ export function NewAssetForm({ onSubmit }: {
                       'space-y-1.5 rounded-xl border border-border bg-muted/20 p-2',
                       !isAccountTypeable && 'opacity-40 pointer-events-none'
                     )}>
-                      {assetType === 'crypto' ? (
-                        EXCHANGE_GROUPS.map((group) => (
+                      {(assetType === 'crypto' || assetType === 'fund') ? (
+                        (assetType === 'crypto' ? EXCHANGE_GROUPS : FUND_COMPANY_GROUPS).map((group) => (
                           <div key={group.label}>
                             <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
                               {group.label}
                             </p>
                             {group.items.map((val) => {
-                              const Icon = ACCOUNT_TYPE_ICONS[val]
                               const active = field.value === val
                               return (
                                 <button
@@ -355,7 +371,7 @@ export function NewAssetForm({ onSubmit }: {
                                       : 'border-border bg-card text-foreground/60 hover:border-foreground/40 hover:text-foreground hover:bg-muted/30'
                                   )}
                                 >
-                                  <ExchangeLogo exchange={val} size={28} />
+                                  <DomainLogo value={val} size={28} />
                                   <span className="text-sm font-medium">{ACCOUNT_TYPE_LABELS[val]}</span>
                                 </button>
                               )
