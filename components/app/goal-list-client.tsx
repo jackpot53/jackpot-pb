@@ -1,8 +1,8 @@
 'use client'
 import { useState } from 'react'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatKrw } from '@/lib/portfolio'
 import { GoalDialog } from '@/components/app/goal-dialog'
 import { DeleteGoalDialog } from '@/components/app/delete-goal-dialog'
@@ -20,15 +20,13 @@ export function GoalListClient({ goals }: GoalListClientProps) {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">목표</h1>
-        <Button variant="default" onClick={() => setDialogMode('create')}>
-          목표 추가
-        </Button>
-      </div>
-
-      <Card>
-        <CardContent className="pt-6">
+      <Card className="ring-border">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-4 w-4 text-blue-500" />나의 목표
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           {goals.length === 0 ? (
             <p className="text-sm text-muted-foreground">등록된 목표가 없습니다.</p>
           ) : (

@@ -14,8 +14,8 @@ const ML = 128  // left margin: goal name labels
 const MR = 88   // right margin: target amount labels
 const MT = 26   // top margin: current value label
 const MB = 8    // bottom margin
-const ROW_H = 64
-const BAR_H = 28
+const ROW_H = 48
+const BAR_H = 22
 
 interface TooltipState {
   x: number
