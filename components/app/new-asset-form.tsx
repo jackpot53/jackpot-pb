@@ -301,7 +301,7 @@ export function NewAssetForm({ onSubmit }: {
               control={form.control}
               name="assetType"
               render={({ field }) => (
-                <FormItem className="flex-1 min-w-0">
+                <FormItem className="flex-1 min-w-0 self-start">
                   <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground mb-3">
                     <Layers className="h-4 w-4" />자산 유형
                   </FormLabel>
@@ -316,14 +316,14 @@ export function NewAssetForm({ onSubmit }: {
                             type="button"
                             onClick={() => field.onChange(val)}
                             className={cn(
-                              'flex items-center gap-2 px-3 py-3 rounded-xl border transition-all duration-150 cursor-pointer text-left',
+                              'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border transition-all duration-150 cursor-pointer',
                               active
                                 ? 'border-foreground bg-foreground text-background shadow-sm'
                                 : 'border-border bg-card text-foreground/60 hover:border-foreground/40 hover:text-foreground hover:bg-muted/30'
                             )}
                           >
-                            <Icon className="h-4 w-4 shrink-0" />
-                            <span className="text-xs font-medium leading-tight">{label}</span>
+                            <Icon className="h-5 w-5 shrink-0" />
+                            <span className="text-[11px] font-medium leading-tight text-center">{label}</span>
                           </button>
                         )
                       })}
