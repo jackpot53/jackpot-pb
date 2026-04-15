@@ -101,6 +101,17 @@ const ASSET_TYPE_ICONS: Record<string, LucideIcon> = {
   stock_kr: TrendingUp, stock_us: Globe, etf_kr: BarChart2, etf_us: BarChart3,
   crypto: Bitcoin, fund: Briefcase, savings: Landmark, real_estate: Building2, insurance: ShieldCheck,
 }
+const ASSET_TYPE_COLORS: Record<string, { icon: string; bg: string }> = {
+  stock_kr:   { icon: 'text-blue-500',   bg: 'bg-blue-50' },
+  stock_us:   { icon: 'text-sky-500',    bg: 'bg-sky-50' },
+  etf_kr:     { icon: 'text-emerald-500',bg: 'bg-emerald-50' },
+  etf_us:     { icon: 'text-teal-500',   bg: 'bg-teal-50' },
+  crypto:     { icon: 'text-orange-500', bg: 'bg-orange-50' },
+  fund:       { icon: 'text-violet-500', bg: 'bg-violet-50' },
+  savings:    { icon: 'text-yellow-500', bg: 'bg-yellow-50' },
+  real_estate:{ icon: 'text-rose-500',   bg: 'bg-rose-50' },
+  insurance:  { icon: 'text-cyan-500',   bg: 'bg-cyan-50' },
+}
 const TICKER_HINTS: Record<string, { placeholder: string; hint: string }> = {
   stock_kr: { placeholder: '예: 005930.KS', hint: 'KOSPI는 {종목코드}.KS, KOSDAQ는 {종목코드}.KQ\n예) 삼성전자 005930.KS · 카카오 035720.KQ' },
   etf_kr:   { placeholder: '예: 069500.KS', hint: 'KOSPI 상장 ETF는 {종목코드}.KS\n예) KODEX 200 069500.KS · TIGER 미국S&P500 360750.KS' },
@@ -309,6 +320,7 @@ export function NewAssetForm({ onSubmit }: {
                     <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-border bg-muted/20 p-2">
                       {Object.entries(ASSET_TYPE_LABELS).map(([val, label]) => {
                         const Icon = ASSET_TYPE_ICONS[val]
+                        const color = ASSET_TYPE_COLORS[val]
                         const active = field.value === val
                         return (
                           <button
@@ -319,11 +331,13 @@ export function NewAssetForm({ onSubmit }: {
                               'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border transition-all duration-150 cursor-pointer',
                               active
                                 ? 'border-foreground bg-foreground text-background shadow-sm'
-                                : 'border-border bg-card text-foreground/60 hover:border-foreground/40 hover:text-foreground hover:bg-muted/30'
+                                : 'border-border bg-card hover:border-foreground/40 hover:bg-muted/30'
                             )}
                           >
-                            <Icon className="h-5 w-5 shrink-0" />
-                            <span className="text-[11px] font-medium leading-tight text-center">{label}</span>
+                            <span className={cn('flex items-center justify-center rounded-lg p-1.5', active ? 'bg-background/20' : color?.bg)}>
+                              <Icon className={cn('h-4 w-4 shrink-0', active ? 'text-background' : color?.icon)} />
+                            </span>
+                            <span className={cn('text-[11px] font-medium leading-tight text-center', active ? 'text-background' : 'text-foreground/70')}>{label}</span>
                           </button>
                         )
                       })}
