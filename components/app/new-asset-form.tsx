@@ -383,57 +383,61 @@ export function NewAssetForm({ onSubmit }: {
                   </FormLabel>
                   <FormControl>
                     <div className={cn(
-                      'space-y-1.5 rounded-xl border border-border bg-muted/20 p-2',
+                      'rounded-xl border border-border bg-muted/20 p-2',
                       !isAccountTypeable && 'opacity-40 pointer-events-none'
                     )}>
                       {(assetType === 'crypto' || assetType === 'fund' || assetType === 'savings') ? (
                         (assetType === 'crypto' ? EXCHANGE_GROUPS : assetType === 'fund' ? FUND_COMPANY_GROUPS : BANK_GROUPS).map((group) => (
-                          <div key={group.label}>
+                          <div key={group.label} className="mb-1.5 last:mb-0">
                             <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
                               {group.label}
                             </p>
-                            {group.items.map((val) => {
-                              const active = field.value === val
-                              return (
-                                <button
-                                  key={val}
-                                  type="button"
-                                  onClick={() => field.onChange(active ? null : val)}
-                                  className={cn(
-                                    'w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-150 cursor-pointer text-left',
-                                    active
-                                      ? 'border-foreground bg-foreground text-background shadow-sm'
-                                      : 'border-border bg-card text-foreground/60 hover:border-foreground/40 hover:text-foreground hover:bg-muted/30'
-                                  )}
-                                >
-                                  <DomainLogo value={val} size={28} />
-                                  <span className="text-sm font-medium">{ACCOUNT_TYPE_LABELS[val]}</span>
-                                </button>
-                              )
-                            })}
+                            <div className="grid grid-cols-3 gap-1.5">
+                              {group.items.map((val) => {
+                                const active = field.value === val
+                                return (
+                                  <button
+                                    key={val}
+                                    type="button"
+                                    onClick={() => field.onChange(active ? null : val)}
+                                    className={cn(
+                                      'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border transition-all duration-150 cursor-pointer',
+                                      active
+                                        ? 'border-foreground bg-foreground text-background shadow-sm'
+                                        : 'border-border bg-card text-foreground/60 hover:border-foreground/40 hover:text-foreground hover:bg-muted/30'
+                                    )}
+                                  >
+                                    <DomainLogo value={val} size={28} />
+                                    <span className="text-[11px] font-medium leading-tight text-center">{ACCOUNT_TYPE_LABELS[val]}</span>
+                                  </button>
+                                )
+                              })}
+                            </div>
                           </div>
                         ))
                       ) : (
-                        availableAccountTypes.map((val) => {
-                          const Icon = ACCOUNT_TYPE_ICONS[val]
-                          const active = field.value === val
-                          return (
-                            <button
-                              key={val}
-                              type="button"
-                              onClick={() => field.onChange(active ? null : val)}
-                              className={cn(
-                                'w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-150 cursor-pointer text-left',
-                                active
-                                  ? 'border-foreground bg-foreground text-background shadow-sm'
-                                  : 'border-border bg-card text-foreground/60 hover:border-foreground/40 hover:text-foreground hover:bg-muted/30'
-                              )}
-                            >
-                              <Icon className="h-5 w-5 shrink-0" />
-                              <span className="text-sm font-medium">{ACCOUNT_TYPE_LABELS[val]}</span>
-                            </button>
-                          )
-                        })
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {availableAccountTypes.map((val) => {
+                            const Icon = ACCOUNT_TYPE_ICONS[val]
+                            const active = field.value === val
+                            return (
+                              <button
+                                key={val}
+                                type="button"
+                                onClick={() => field.onChange(active ? null : val)}
+                                className={cn(
+                                  'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border transition-all duration-150 cursor-pointer',
+                                  active
+                                    ? 'border-foreground bg-foreground text-background shadow-sm'
+                                    : 'border-border bg-card text-foreground/60 hover:border-foreground/40 hover:text-foreground hover:bg-muted/30'
+                                )}
+                              >
+                                <Icon className="h-5 w-5 shrink-0" />
+                                <span className="text-[11px] font-medium leading-tight text-center">{ACCOUNT_TYPE_LABELS[val]}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
                       )}
                     </div>
                   </FormControl>
