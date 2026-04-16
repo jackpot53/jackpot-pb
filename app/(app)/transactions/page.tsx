@@ -1,20 +1,21 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/utils/supabase/server'
+import { getAuthUser } from '@/utils/supabase/server'
 import { getAllTransactionsWithAsset } from '@/db/queries/transactions'
 import { getAssets } from '@/db/queries/assets'
 import { fetchSparklinesForTickers } from '@/lib/price/sparkline'
+import { getMarketFlow } from '@/lib/market-flow'
 import { TransactionsPageClient } from '@/components/app/transactions-page-client'
 
 const NO_SPARKLINE_TYPES = new Set(['fund', 'real_estate', 'savings'])
 
 export default async function TransactionsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
-  const [txns, assets] = await Promise.all([
+  const [txns, assets, marketFlow] = await Promise.all([
     getAllTransactionsWithAsset(user.id),
     getAssets(user.id),
+    getMarketFlow(),
   ])
 
   const uniqueTickers = [...new Set(
@@ -29,7 +30,7 @@ export default async function TransactionsPage() {
 
   return (
     <div className="space-y-4">
-      <TransactionsPageClient transactions={txns} assetOptions={assetOptions} sparklines={sparklines} />
+      <TransactionsPageClient transactions={txns} assetOptions={assetOptions} sparklines={sparklines} marketFlow={marketFlow} />
     </div>
   )
 }

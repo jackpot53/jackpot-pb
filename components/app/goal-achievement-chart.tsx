@@ -1,9 +1,9 @@
 'use client'
 import { useRef, useEffect, useCallback, useState } from 'react'
 import * as d3 from 'd3'
-import { CandlestickChart } from 'lucide-react'
+import { CandlestickChart, ChevronDown } from 'lucide-react'
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card'
-import { InsufficientDataMessage } from '@/components/app/annual-return-chart'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { SnapshotRow } from '@/db/queries/portfolio-snapshots'
 import type { GoalRow } from '@/db/queries/goals'
 
@@ -84,6 +84,7 @@ export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartP
   const svgRef = useRef<SVGSVGElement>(null)
   const [period, setPeriod] = useState<Period>('monthly')
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
+  const [open, setOpen] = useState(true)
 
   const draw = useCallback(() => {
     if (!svgRef.current || !wrapRef.current) return
@@ -234,30 +235,86 @@ export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartP
   const insufficient = snapshots.length < 2 || goals.length === 0
 
   return (
-    <Card className="ring-border">
-      <CardHeader className="flex flex-row items-center justify-between pb-4">
-        <CardTitle className="flex items-center gap-2">
-            <CandlestickChart className="h-4 w-4 text-amber-500" />날짜별 달성률
+    <Card className="border-l-4 border-l-amber-500 shadow-sm">
+      <CardHeader
+        className="flex flex-row items-center justify-between pb-4 cursor-pointer select-none bg-gradient-to-r from-amber-50/60 to-transparent dark:from-amber-950/20 rounded-tl-[calc(var(--radius)-1px)]"
+        onClick={() => setOpen(v => !v)}
+      >
+        <div>
+          <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+            <CandlestickChart className="h-4 w-4" />날짜별 달성률
           </CardTitle>
-        <div className="flex rounded-md border divide-x overflow-hidden text-xs">
-          {(['daily', 'monthly', 'yearly'] as Period[]).map(p => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 transition-colors ${
-                period === p
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-background text-muted-foreground hover:bg-muted'
-              }`}
+          <p className="text-xs text-muted-foreground mt-0.5">자산 추이와 목표 달성선을 캔들 차트로 비교합니다</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {open && (
+            <div
+              className="flex rounded-md border divide-x overflow-hidden text-xs"
+              onClick={e => e.stopPropagation()}
             >
-              {PERIOD_LABELS[p]}
-            </button>
-          ))}
+              {(['daily', 'monthly', 'yearly'] as Period[]).map(p => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`px-3 py-1.5 transition-colors ${
+                    period === p
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-background text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {PERIOD_LABELS[p]}
+                </button>
+              ))}
+            </div>
+          )}
+          <ChevronDown
+            className="h-4 w-4 text-muted-foreground transition-transform duration-300"
+            style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+          />
         </div>
       </CardHeader>
-      <CardContent>
+      {open && <CardContent>
         {insufficient ? (
-          <InsufficientDataMessage count={snapshots.length} />
+          <div className="space-y-3 py-2">
+            {/* 범례 스켈레톤 */}
+            <div className="flex gap-4 mb-2">
+              {[...Array(2)].map((_, i) => (
+                <div key={i} className="flex items-center gap-1.5">
+                  <Skeleton className="w-5 h-0.5 rounded-full" />
+                  <Skeleton className="h-3 w-12 rounded" />
+                </div>
+              ))}
+            </div>
+            {/* Y축 + 캔들 스켈레톤 */}
+            <div className="flex gap-3 items-end" style={{ height: 260 }}>
+              <div className="flex flex-col justify-between h-full py-1 shrink-0">
+                {[...Array(5)].map((_, i) => (
+                  <Skeleton key={i} className="h-3 w-10 rounded" style={{ opacity: 0.5 - i * 0.05 }} />
+                ))}
+              </div>
+              <div className="flex-1 flex items-end justify-around h-full pb-6 gap-1">
+                {[...Array(12)].map((_, i) => {
+                  const h = 40 + Math.sin(i * 0.8) * 30 + i * 8
+                  return (
+                    <Skeleton
+                      key={i}
+                      className="flex-1 rounded-sm"
+                      style={{ height: Math.min(h, 200), opacity: 0.4 + (i % 3) * 0.15 }}
+                    />
+                  )
+                })}
+              </div>
+            </div>
+            {/* X축 스켈레톤 */}
+            <div className="flex justify-around pl-14">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-3 w-8 rounded" style={{ opacity: 0.4 }} />
+              ))}
+            </div>
+            <p className="text-center text-xs text-muted-foreground pt-1">
+              스냅샷이 쌓이면 차트가 표시됩니다
+            </p>
+          </div>
         ) : (
           <>
             {/* Legend */}
@@ -295,7 +352,7 @@ export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartP
             </div>
           </>
         )}
-      </CardContent>
+      </CardContent>}
     </Card>
   )
 }

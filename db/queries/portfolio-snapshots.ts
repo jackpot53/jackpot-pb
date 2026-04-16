@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { db } from '@/db'
 import { portfolioSnapshots } from '@/db/schema/portfolio-snapshots'
 import { portfolioSnapshotBreakdowns } from '@/db/schema/portfolio-snapshot-breakdowns'
@@ -19,7 +20,7 @@ export interface SnapshotWithBreakdowns extends SnapshotRow {
  * Used by the charts page (Server Component) and aggregation functions.
  * No live API calls — reads only from pre-computed snapshot table.
  */
-export async function getAllSnapshots(userId: string): Promise<SnapshotRow[]> {
+export const getAllSnapshots = cache(async (userId: string): Promise<SnapshotRow[]> => {
   return db
     .select({
       snapshotDate: portfolioSnapshots.snapshotDate,
@@ -30,14 +31,14 @@ export async function getAllSnapshots(userId: string): Promise<SnapshotRow[]> {
     .from(portfolioSnapshots)
     .where(eq(portfolioSnapshots.userId, userId))
     .orderBy(asc(portfolioSnapshots.snapshotDate))
-}
+})
 
 /**
  * Returns all portfolio snapshots with per-asset-type breakdowns.
  * Snapshots without breakdowns (written before migration) have an empty byType map.
  * Used by the assets page for per-type monthly/annual charts.
  */
-export async function getAllSnapshotsWithBreakdowns(userId: string): Promise<SnapshotWithBreakdowns[]> {
+export const getAllSnapshotsWithBreakdowns = cache(async (userId: string): Promise<SnapshotWithBreakdowns[]> => {
   const snapshotRows = await getAllSnapshots(userId)
 
   // Gracefully handle missing table (migration not yet applied)
@@ -72,4 +73,4 @@ export async function getAllSnapshotsWithBreakdowns(userId: string): Promise<Sna
     ...s,
     byType: byDateType.get(s.snapshotDate) ?? {},
   }))
-}
+})

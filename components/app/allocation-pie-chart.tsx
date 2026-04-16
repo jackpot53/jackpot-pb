@@ -22,6 +22,16 @@ const ASSET_TYPE_LABELS: Record<string, string> = {
   savings: '예적금',
 }
 
+const KRW_FMT = new Intl.NumberFormat('ko-KR', {
+  style: 'currency',
+  currency: 'KRW',
+  maximumFractionDigits: 0,
+})
+
+function tooltipFormatter(value: unknown, name: unknown): [string, string] {
+  return [typeof value === 'number' ? KRW_FMT.format(value) : String(value), String(name)]
+}
+
 export interface AllocationSlice {
   assetType: string
   totalValueKrw: number
@@ -66,18 +76,7 @@ export function AllocationPieChart({ data }: AllocationPieChartProps) {
             />
           ))}
         </Pie>
-        <Tooltip
-          formatter={(value, name) => [
-            typeof value === 'number'
-              ? new Intl.NumberFormat('ko-KR', {
-                  style: 'currency',
-                  currency: 'KRW',
-                  maximumFractionDigits: 0,
-                }).format(value)
-              : String(value),
-            name,
-          ]}
-        />
+        <Tooltip formatter={tooltipFormatter} />
         <Legend />
       </PieChart>
     </ResponsiveContainer>

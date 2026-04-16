@@ -6,6 +6,7 @@ interface DashboardStatCardProps {
   primaryValue: string
   secondaryValue?: string
   secondarySign?: 'positive' | 'negative' | 'neutral'
+  accentColor?: string
 }
 
 export function DashboardStatCard({
@@ -13,9 +14,10 @@ export function DashboardStatCard({
   primaryValue,
   secondaryValue,
   secondarySign = 'neutral',
+  accentColor = 'border-l-indigo-400',
 }: DashboardStatCardProps) {
   return (
-    <Card>
+    <Card className={cn('border-l-4 shadow-sm', accentColor)}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-normal text-muted-foreground text-center">{label}</CardTitle>
       </CardHeader>

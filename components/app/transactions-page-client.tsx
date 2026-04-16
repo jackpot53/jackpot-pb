@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -14,8 +14,10 @@ import { AssetLogo } from '@/components/app/asset-logo'
 import { SparklineChart } from '@/components/app/sparkline-chart'
 import { cn } from '@/lib/utils'
 import type { TransactionWithAsset } from '@/db/queries/transactions'
+import { MarketFlowSection } from '@/components/app/market-flow-section'
+import type { MarketFlowData } from '@/lib/market-flow/types'
 
-type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal'
+type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal' | 'cma' | 'cma'
 type Currency = 'KRW' | 'USD'
 
 interface AssetOption {
@@ -29,10 +31,12 @@ interface Props {
   transactions: TransactionWithAsset[]
   assetOptions: AssetOption[]
   sparklines: Record<string, number[]>
+  marketFlow: MarketFlowData
 }
 
+const KRW_FMT = new Intl.NumberFormat('ko-KR')
 function formatKrw(value: number): string {
-  return new Intl.NumberFormat('ko-KR').format(value)
+  return KRW_FMT.format(value)
 }
 
 function decodeQuantity(stored: number): string {
@@ -43,8 +47,23 @@ function decodeQuantity(stored: number): string {
   return `${formattedInt}.${fracPart.toString().padStart(8, '0').replace(/0+$/, '')}`
 }
 
+const USD_FMT = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 })
+function formatUsd(v: number) { return USD_FMT.format(v) }
+
 function TransactionCard({ tx, sparklineData }: { tx: TransactionWithAsset; sparklineData?: number[] }) {
   const total = Math.round((tx.quantity / 1e8) * tx.pricePerUnit)
+
+  const isUsAsset = tx.assetType === 'stock_us' || tx.assetType === 'etf_us'
+  const isKrwPurchase = isUsAsset && tx.currency === 'KRW'
+  const isUsdPurchase = isUsAsset && tx.currency === 'USD'
+
+  // 달러매수: pricePerUnit은 KRW 환산값 — USD 원래 단가 역산
+  const fxRate = tx.exchangeRateAtTime != null ? tx.exchangeRateAtTime / 10000 : null
+  const priceUsd = isUsdPurchase && fxRate ? tx.pricePerUnit / fxRate : null
+  const totalUsd = priceUsd != null ? (tx.quantity / 1e8) * priceUsd : null
+
+  const hasSecondaryRow = isUsAsset || tx.fee > 0 || !!tx.notes
+
   return (
     <div className={cn(
       'flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-border hover:bg-muted/30 transition-colors',
@@ -52,6 +71,7 @@ function TransactionCard({ tx, sparklineData }: { tx: TransactionWithAsset; spar
     )}>
       <AssetLogo ticker={tx.ticker} name={tx.assetName} assetType={tx.assetType as Parameters<typeof AssetLogo>[0]['assetType']} size={40} />
       <div className="flex-1 min-w-0">
+        {/* Row1: 이름 + 매수/매도 배지 */}
         <div className="flex items-center gap-1.5">
           <Link
             href={`/assets/${tx.assetId}`}
@@ -67,27 +87,48 @@ function TransactionCard({ tx, sparklineData }: { tx: TransactionWithAsset; spar
               : <><TrendingDown className="h-3 w-3" />매도</>}
           </span>
         </div>
+        {/* Row2: 날짜 · 수량 · 단가 (핵심 정보) */}
         <div className={cn('flex items-center gap-2 text-xs text-muted-foreground mt-0.5', tx.isVoided && 'line-through')}>
           <span>{tx.transactionDate}</span>
           <span className="opacity-30">·</span>
           <span>수량 {decodeQuantity(tx.quantity)}</span>
           <span className="opacity-30">·</span>
-          <span>단가 {formatKrw(tx.pricePerUnit)}</span>
-          {tx.fee > 0 && (
-            <><span className="opacity-30">·</span><span>수수료 {formatKrw(tx.fee)}</span></>
-          )}
-          {tx.notes && (
-            <><span className="opacity-30">·</span><span className="truncate max-w-[160px]">{tx.notes}</span></>
-          )}
+          <span>단가 {priceUsd != null ? formatUsd(priceUsd) : `₩${formatKrw(tx.pricePerUnit)}`}</span>
         </div>
+        {/* Row3: 원화매수/달러매수 + 환율 · 수수료 · 메모 (보조 정보) */}
+        {hasSecondaryRow && (
+          <div className={cn('flex items-center gap-1.5 text-[10px] mt-0.5', tx.isVoided && 'line-through')}>
+            {isUsAsset && (
+              <span className={`font-medium shrink-0 ${isKrwPurchase ? 'text-amber-600' : 'text-sky-600'}`}>
+                {isKrwPurchase ? '원화매수' : '달러매수'}
+              </span>
+            )}
+            {isUsdPurchase && fxRate != null && (
+              <><span className="opacity-30">·</span><span className="text-muted-foreground/70">환율 ₩{formatKrw(Math.round(fxRate))}</span></>
+            )}
+            {tx.fee > 0 && (
+              <><span className="opacity-30">·</span><span className="text-muted-foreground/70">수수료 ₩{formatKrw(tx.fee)}</span></>
+            )}
+            {tx.notes && (
+              <><span className="opacity-30">·</span><span className="text-muted-foreground/70 truncate max-w-[140px]">{tx.notes}</span></>
+            )}
+          </div>
+        )}
       </div>
       {sparklineData && (
         <div className="shrink-0 w-20 flex items-center justify-center">
           <SparklineChart data={sparklineData} width={80} height={36} />
         </div>
       )}
-      <div className={cn('text-sm font-semibold tabular-nums shrink-0', tx.isVoided && 'line-through', tx.type === 'buy' ? 'text-red-500' : 'text-blue-600')}>
-        {tx.type === 'sell' ? '+' : ''}{formatKrw(total)}
+      <div className={cn('text-right shrink-0', tx.isVoided && 'line-through')}>
+        <div className={cn('text-sm font-semibold tabular-nums', tx.type === 'buy' ? 'text-red-500' : 'text-blue-600')}>
+          {tx.type === 'sell' ? '+' : ''}{totalUsd != null ? formatUsd(totalUsd) : `₩${formatKrw(total)}`}
+        </div>
+        {totalUsd != null && (
+          <div className="text-[10px] text-muted-foreground/60 tabular-nums">
+            ₩{formatKrw(total)}
+          </div>
+        )}
       </div>
       <div className="flex items-center gap-1 shrink-0">
         <EditTransactionDialog tx={tx} />
@@ -101,7 +142,7 @@ function TransactionCard({ tx, sparklineData }: { tx: TransactionWithAsset; spar
   )
 }
 
-export function TransactionsPageClient({ transactions, assetOptions, sparklines }: Props) {
+export function TransactionsPageClient({ transactions, assetOptions, sparklines, marketFlow }: Props) {
   const [assetFilter, setAssetFilter] = useState<string>('전체')
   const [typeFilter, setTypeFilter] = useState<string>('전체')
   const [showVoided, setShowVoided] = useState(false)
@@ -110,7 +151,6 @@ export function TransactionsPageClient({ transactions, assetOptions, sparklines 
   const PAGE_SIZE = 10
 
   const filtered = useMemo(() => {
-    setPage(1)
     return transactions.filter((tx) => {
       if (!showVoided && tx.isVoided) return false
       if (assetFilter !== '전체' && tx.assetId !== assetFilter) return false
@@ -119,20 +159,49 @@ export function TransactionsPageClient({ transactions, assetOptions, sparklines 
     })
   }, [transactions, assetFilter, typeFilter, showVoided])
 
+  useEffect(() => {
+    setPage(1)
+  }, [assetFilter, typeFilter, showVoided])
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <h1 className="flex items-center gap-2 text-xl font-semibold">
-          <ArrowRightLeft className="h-5 w-5" />거래내역
-        </h1>
-        <span className="text-xs font-semibold bg-primary text-primary-foreground rounded-full px-2 py-0.5">
-          {filtered.length}
-        </span>
+    <div className="space-y-6">
+      {/* 히어로 배너 */}
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-orange-500 via-rose-600 to-red-600 p-8 text-white shadow-xl">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+          <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
+          <div className="absolute bottom-0 left-1/3 w-80 h-48 rounded-full bg-red-900/40 blur-3xl" />
+          <div className="absolute top-6 right-20 w-28 h-28 rounded-full border border-white/10" />
+          <div className="absolute top-12 right-28 w-14 h-14 rounded-full border border-white/10" />
+          <div className="absolute top-16 right-24 w-6 h-6 rounded-full bg-white/10" />
+          <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full border border-white/10" />
+          <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
+        </div>
+        <div className="relative flex items-start justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5 text-orange-200 text-xs font-semibold tracking-widest uppercase">
+              <ArrowRightLeft className="h-3.5 w-3.5" />매수 · 매도
+            </div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold tracking-tight">거래내역</h1>
+              {filtered.length > 0 && (
+                <span className="text-sm font-semibold bg-white/20 rounded-full px-2.5 py-0.5 tabular-nums">
+                  {filtered.length}건
+                </span>
+              )}
+            </div>
+            <p className="text-orange-100/70 text-sm">
+              매수·매도 거래를 기록하고 <span className="text-orange-100/90 font-medium">투자 내역을 한눈에 관리</span>합니다
+            </p>
+          </div>
+          <Link href="/assets/new" className="group shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/25 text-white text-sm font-semibold transition-all duration-200 hover:shadow-lg active:scale-95">
+            <PlusCircle className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />
+            거래 추가
+          </Link>
+        </div>
       </div>
-      <Separator className="bg-foreground" />
       {/* Filters + add button */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2">
@@ -177,11 +246,6 @@ export function TransactionsPageClient({ transactions, assetOptions, sparklines 
           </Label>
         </div>
 
-        <Link href="/assets/new" className="ml-auto">
-          <Button>
-            <PlusCircle className="h-4 w-4 mr-1.5" />거래 추가
-          </Button>
-        </Link>
       </div>
 
       {/* Card list */}
@@ -233,6 +297,8 @@ export function TransactionsPageClient({ transactions, assetOptions, sparklines 
           </div>
         )}
       </div>
+
+      <MarketFlowSection data={marketFlow} />
     </div>
   )
 }

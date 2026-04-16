@@ -15,8 +15,15 @@ describe('computeAssetPerformance', () => {
     ticker: 'AAPL',
     assetType: 'stock_us' as const,
     priceType: 'live' as const,
+    currency: 'USD' as const,
+    accountType: null,
+    brokerageId: null,
+    owner: null,
+    notes: null,
     totalQuantity: 200_00000000, // 200.00000000 units (×10^8)
     avgCostPerUnit: 1_000_000,   // ₩1,000,000 per unit
+    avgCostPerUnitOriginal: null,
+    avgExchangeRateAtTime: null,
     totalCostKrw: 200_000_000,   // ₩200,000,000 total invested
   }
 

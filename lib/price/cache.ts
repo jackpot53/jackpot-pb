@@ -1,6 +1,6 @@
 import { getPriceCacheByTicker, upsertPriceCache } from '@/db/queries/price-cache'
 import { fetchFinnhubQuote } from '@/lib/price/finnhub'
-import { fetchYahooQuote } from '@/lib/price/yahoo'
+import { fetchYahooQuote, fetchYahooFxRate } from '@/lib/price/yahoo'
 import { fetchBokFxRate } from '@/lib/price/bok-fx'
 import { fetchFunetfNav } from '@/lib/price/funetf'
 
@@ -84,7 +84,7 @@ export async function refreshFxIfStale(): Promise<void> {
 
   if (cached && !isStale(cached.cachedAt, FX_TTL_MS)) return
 
-  const rateInt = await fetchBokFxRate()  // returns integer × 10000 or null
+  const rateInt = await fetchBokFxRate() ?? await fetchYahooFxRate()
   if (rateInt === null) return             // stale fallback: keep existing cache
 
   await upsertPriceCache({

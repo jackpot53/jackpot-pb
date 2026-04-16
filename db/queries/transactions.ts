@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { db } from '@/db'
 import { transactions } from '@/db/schema/transactions'
 import { assets } from '@/db/schema/assets'
@@ -20,7 +21,7 @@ export async function getTransactionsByAsset(assetId: string): Promise<Transacti
     .orderBy(desc(transactions.transactionDate), desc(transactions.createdAt))
 }
 
-export async function getAllTransactionsWithAsset(userId: string): Promise<TransactionWithAsset[]> {
+export const getAllTransactionsWithAsset = cache(async (userId: string): Promise<TransactionWithAsset[]> => {
   const rows = await db
     .select({
       id: transactions.id,
@@ -44,4 +45,4 @@ export async function getAllTransactionsWithAsset(userId: string): Promise<Trans
     .innerJoin(assets, and(eq(transactions.assetId, assets.id), eq(assets.userId, userId)))
     .orderBy(desc(transactions.transactionDate), desc(transactions.createdAt))
   return rows
-}
+})

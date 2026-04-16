@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
 export function StatCardSkeleton() {
   return (
-    <Card>
+    <Card className="border-l-4 border-l-slate-300 dark:border-l-slate-600">
       <CardHeader className="pb-2">
         <Skeleton className="h-4 w-24" />
       </CardHeader>

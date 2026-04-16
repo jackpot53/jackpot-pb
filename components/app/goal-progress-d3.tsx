@@ -1,6 +1,7 @@
 'use client'
 import { useRef, useEffect, useCallback, useState } from 'react'
 import * as d3 from 'd3'
+import { Skeleton } from '@/components/ui/skeleton'
 import type { GoalRow } from '@/db/queries/goals'
 import { formatKrw } from '@/lib/portfolio'
 import { formatKrwCompact } from '@/lib/snapshot/formatters'
@@ -192,8 +193,14 @@ export function GoalProgressD3({ goals, currentValueKrw }: GoalProgressD3Props) 
 
   if (goals.length === 0) {
     return (
-      <div className="flex items-center justify-center h-24 text-sm text-muted-foreground">
-        등록된 목표가 없습니다
+      <div className="w-full space-y-4 py-2">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="flex items-center gap-3">
+            <Skeleton className="h-4 shrink-0 rounded" style={{ width: 80, opacity: 1 - i * 0.2 }} />
+            <Skeleton className="h-[22px] flex-1 rounded-md" style={{ opacity: 1 - i * 0.25 }} />
+            <Skeleton className="h-4 shrink-0 rounded" style={{ width: 56, opacity: 1 - i * 0.2 }} />
+          </div>
+        ))}
       </div>
     )
   }

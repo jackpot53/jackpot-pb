@@ -52,3 +52,18 @@ export async function fetchYahooQuote(
     return null
   }
 }
+
+/**
+ * Fetches USD/KRW exchange rate from Yahoo Finance (ticker: KRW=X).
+ * Returns rate as integer × 10000 for lossless storage (same format as BOK).
+ * Example: 1356.5 → 13565000
+ */
+export async function fetchYahooFxRate(): Promise<number | null> {
+  try {
+    const result = await fetchYahooQuote('KRW=X')
+    if (!result || result.price <= 0) return null
+    return Math.round(result.price * 10000)
+  } catch {
+    return null
+  }
+}

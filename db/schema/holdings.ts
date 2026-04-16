@@ -13,5 +13,9 @@ export const holdings = pgTable('holdings', {
   avgCostPerUnit: bigint('avg_cost_per_unit', { mode: 'number' }).notNull().default(0),
   // totalCostKrw: total amount invested in KRW (sum of buy transactions)
   totalCostKrw: bigint('total_cost_krw', { mode: 'number' }).notNull().default(0),
+  // avgCostPerUnitOriginal: weighted average purchase price in original currency (USD cents for USD assets, null for KRW)
+  avgCostPerUnitOriginal: bigint('avg_cost_per_unit_original', { mode: 'number' }),
+  // avgExchangeRateAtTime: weighted average FX rate at purchase time (KRW per USD × 10000, null for KRW assets)
+  avgExchangeRateAtTime: bigint('avg_exchange_rate_at_time', { mode: 'number' }),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

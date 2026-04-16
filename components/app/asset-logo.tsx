@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { BarChart2, Bitcoin, BookOpen, Building2, PiggyBank, TrendingUp, ShieldCheck, Gem, type LucideIcon } from 'lucide-react';
+import { BarChart2, Bitcoin, BookOpen, Building2, PiggyBank, TrendingUp, ShieldCheck, Gem, CreditCard, type LucideIcon } from 'lucide-react';
 
-type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal';
+type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal' | 'cma';
 
 const TYPE_ICON: Record<AssetType, LucideIcon> = {
   stock_kr: TrendingUp, stock_us: TrendingUp,
@@ -15,6 +15,7 @@ const TYPE_ICON: Record<AssetType, LucideIcon> = {
   real_estate: Building2,
   insurance: ShieldCheck,
   precious_metal: Gem,
+  cma: CreditCard,
 };
 
 // 펀드명 접두사 → 운용사 도메인 매핑 (긴 접두사 우선 매칭)

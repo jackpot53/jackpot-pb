@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { db } from '@/db'
 import { assets } from '@/db/schema/assets'
 import { holdings } from '@/db/schema/holdings'
@@ -7,13 +8,17 @@ export interface AssetWithHolding {
   assetId: string
   name: string
   ticker: string | null
-  assetType: 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'fund' | 'savings' | 'real_estate'
+  assetType: 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'fund' | 'savings' | 'real_estate' | 'insurance' | 'precious_metal'
   priceType: 'live' | 'manual'
   currency: 'KRW' | 'USD'
   accountType: 'isa' | 'irp' | 'pension' | 'dc' | 'brokerage' | null
+  brokerageId: string | null
+  owner: string | null
   notes: string | null
   totalQuantity: number | null
   avgCostPerUnit: number | null
+  avgCostPerUnitOriginal: number | null
+  avgExchangeRateAtTime: number | null
   totalCostKrw: number | null
   latestManualValuationKrw: number | null
 }
@@ -22,7 +27,7 @@ export interface AssetWithHolding {
  * Returns ALL assets for the given user, left-joined with holdings and latest manual valuation.
  * Assets with no holdings have null quantity/cost fields.
  */
-export async function getAssetsWithHoldings(userId: string): Promise<AssetWithHolding[]> {
+export const getAssetsWithHoldings = cache(async (userId: string): Promise<AssetWithHolding[]> => {
   const rows = await db
     .select({
       assetId: assets.id,
@@ -32,9 +37,13 @@ export async function getAssetsWithHoldings(userId: string): Promise<AssetWithHo
       priceType: assets.priceType,
       currency: assets.currency,
       accountType: assets.accountType,
+      brokerageId: assets.brokerageId,
+      owner: assets.owner,
       notes: assets.notes,
       totalQuantity: holdings.totalQuantity,
       avgCostPerUnit: holdings.avgCostPerUnit,
+      avgCostPerUnitOriginal: holdings.avgCostPerUnitOriginal,
+      avgExchangeRateAtTime: holdings.avgExchangeRateAtTime,
       totalCostKrw: holdings.totalCostKrw,
       latestManualValuationKrw: sql<number | null>`(
         SELECT mv.value_krw
@@ -50,4 +59,4 @@ export async function getAssetsWithHoldings(userId: string): Promise<AssetWithHo
     .where(eq(assets.userId, userId))
     .orderBy(assets.createdAt)
   return rows as AssetWithHolding[]
-}
+})

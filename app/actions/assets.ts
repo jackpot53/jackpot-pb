@@ -6,6 +6,7 @@ import { assets } from '@/db/schema/assets'
 import { transactions } from '@/db/schema/transactions'
 import { holdings } from '@/db/schema/holdings'
 import { manualValuations } from '@/db/schema/manual-valuations'
+import { savingsDetails } from '@/db/schema/savings-details'
 import { eq, sql, and } from 'drizzle-orm'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
@@ -15,10 +16,13 @@ const TRADEABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', '
 
 const assetSchema = z.object({
   name: z.string().min(1, '종목명을 입력해주세요.').max(255),
-  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal']),
+  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal', 'cma']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
   accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire']).optional().nullable(),
+  brokerageId: z.string().max(50).optional().nullable(),
+  withdrawalBankId: z.string().max(50).optional().nullable(),
+  owner: z.string().max(20).optional().nullable(),
   ticker: z.string().max(20).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
   // Initial transaction fields (new asset only, optional)
@@ -28,6 +32,15 @@ const assetSchema = z.object({
   initialExchangeRate: z.string().optional().nullable(),
   // Insurance-specific fields
   initialSurrenderValue: z.string().optional().nullable(),
+  // Savings-specific fields
+  savingsKind: z.enum(['term', 'recurring', 'free']).optional().nullable(),
+  interestRatePct: z.string().optional().nullable(),  // e.g. "5.25"
+  depositStartDate: z.string().optional().nullable(),  // 'YYYY-MM-DD'
+  maturityDate: z.string().optional().nullable(),      // 'YYYY-MM-DD'
+  monthlyContributionKrw: z.string().optional().nullable(),
+  compoundType: z.enum(['simple', 'monthly']).optional().nullable(),
+  taxType: z.enum(['taxable', 'tax_free', 'preferential']).optional().nullable(),
+  autoRenew: z.boolean().optional().nullable(),
 })
 
 export type AssetFormValues = z.infer<typeof assetSchema>
@@ -45,9 +58,11 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
   const parsed = assetSchema.safeParse(data)
   if (!parsed.success) return { error: '입력 값을 확인해주세요.' }
   const {
-    ticker, notes,
+    ticker, notes, brokerageId, withdrawalBankId, owner,
     initialQuantity, initialPricePerUnit, initialTransactionDate, initialExchangeRate,
     initialSurrenderValue,
+    savingsKind, interestRatePct, depositStartDate, maturityDate,
+    monthlyContributionKrw, compoundType, taxType, autoRenew,
     ...rest
   } = parsed.data
 
@@ -56,10 +71,60 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
     userId: user.id,
     ticker: ticker ?? null,
     accountType: rest.accountType ?? null,
+    brokerageId: brokerageId ?? null,
+    withdrawalBankId: withdrawalBankId ?? null,
+    owner: owner ?? null,
     notes: notes ?? null,
   }).returning({ id: assets.id })
 
   const txDate = initialTransactionDate || new Date().toISOString().split('T')[0]
+
+  // Savings: 초기 원금/납입액 → buy tx (qty=1e8), 예적금 메타 → savings_details
+  if (rest.assetType === 'savings') {
+    if (initialPricePerUnit && !isNaN(parseFloat(initialPricePerUnit)) && parseFloat(initialPricePerUnit) > 0) {
+      const principalKrw = Math.round(parseFloat(initialPricePerUnit))
+      const txNotes = savingsKind === 'term' ? '초기예치' : '1차 납입'
+      // 가입일을 buy tx 날짜로 사용 (이자 기산점이 가입일이므로)
+      const savingsTxDate = depositStartDate ?? txDate
+      await db.insert(transactions).values({
+        assetId: newAsset.id,
+        userId: user.id,
+        type: 'buy',
+        quantity: 1e8,
+        pricePerUnit: principalKrw,
+        fee: 0,
+        currency: 'KRW',
+        exchangeRateAtTime: null,
+        transactionDate: savingsTxDate,
+        isVoided: false,
+        notes: txNotes,
+      })
+      await upsertHoldings(newAsset.id, user.id)
+    }
+    // savings_details 저장 (메타 필드 중 하나라도 있으면 생성)
+    if (savingsKind) {
+      const rateBp = interestRatePct && !isNaN(parseFloat(interestRatePct))
+        ? Math.round(parseFloat(interestRatePct) * 10000)
+        : null
+      const monthlyKrw = monthlyContributionKrw && !isNaN(parseFloat(monthlyContributionKrw))
+        ? Math.round(parseFloat(monthlyContributionKrw))
+        : null
+      await db.insert(savingsDetails).values({
+        assetId: newAsset.id,
+        userId: user.id,
+        kind: savingsKind,
+        interestRateBp: rateBp,
+        depositStartDate: depositStartDate ?? null,
+        maturityDate: maturityDate ?? null,
+        monthlyContributionKrw: monthlyKrw,
+        compoundType: compoundType ?? 'simple',
+        taxType: taxType ?? 'taxable',
+        autoRenew: autoRenew ?? false,
+      })
+    }
+    revalidatePath('/assets')
+    redirect('/assets')
+  }
 
   // Insurance: 총납입보험료 → buy tx (qty=1), 해지환급금 → manual valuation
   if (rest.assetType === 'insurance') {
@@ -108,6 +173,7 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
     let pricePerUnitKrw: number
     let exchangeRateEncoded: number | null = null
 
+    const isUsAsset = rest.assetType === 'stock_us' || rest.assetType === 'etf_us'
     if (rest.currency === 'USD') {
       if (!initialExchangeRate || isNaN(parseFloat(initialExchangeRate)) || parseFloat(initialExchangeRate) <= 0) {
         return { error: 'USD 자산의 초기 매수에는 환율이 필요합니다.' }
@@ -116,6 +182,10 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
       exchangeRateEncoded = Math.round(parseFloat(initialExchangeRate) * 10000)
     } else {
       pricePerUnitKrw = Math.round(parseFloat(initialPricePerUnit))
+      // 원화매수 US 자산: 환율 제공 시 저장 (FX 분해 계산에 필요)
+      if (isUsAsset && initialExchangeRate && !isNaN(parseFloat(initialExchangeRate)) && parseFloat(initialExchangeRate) > 0) {
+        exchangeRateEncoded = Math.round(parseFloat(initialExchangeRate) * 10000)
+      }
     }
 
     await db.insert(transactions).values({
@@ -157,8 +227,11 @@ export async function updateAsset(
   }
 
   const {
-    ticker, notes,
+    ticker, notes, brokerageId, withdrawalBankId, owner,
     initialQuantity, initialPricePerUnit, initialTransactionDate, initialExchangeRate,
+    initialSurrenderValue: _surrender,
+    savingsKind, interestRatePct, depositStartDate, maturityDate,
+    monthlyContributionKrw, compoundType, taxType, autoRenew,
     ...rest
   } = parsed.data
 
@@ -166,6 +239,9 @@ export async function updateAsset(
     ...rest,
     ticker: ticker ?? null,
     accountType: rest.accountType ?? null,
+    brokerageId: brokerageId ?? null,
+    withdrawalBankId: withdrawalBankId ?? null,
+    owner: owner ?? null,
     notes: notes ?? null,
   }).where(and(eq(assets.id, id), eq(assets.userId, user.id)))
 
@@ -183,6 +259,7 @@ export async function updateAsset(
     let pricePerUnitKrw: number
     let exchangeRateEncoded: number | null = null
 
+    const isUsAsset = rest.assetType === 'stock_us' || rest.assetType === 'etf_us'
     if (rest.currency === 'USD') {
       if (!initialExchangeRate || isNaN(parseFloat(initialExchangeRate)) || parseFloat(initialExchangeRate) <= 0) {
         return { error: 'USD 자산의 매수 추가에는 환율이 필요합니다.' }
@@ -191,6 +268,10 @@ export async function updateAsset(
       exchangeRateEncoded = Math.round(parseFloat(initialExchangeRate) * 10000)
     } else {
       pricePerUnitKrw = Math.round(parseFloat(initialPricePerUnit))
+      // 원화매수 US 자산: 환율 제공 시 저장 (FX 분해 계산에 필요)
+      if (isUsAsset && initialExchangeRate && !isNaN(parseFloat(initialExchangeRate)) && parseFloat(initialExchangeRate) > 0) {
+        exchangeRateEncoded = Math.round(parseFloat(initialExchangeRate) * 10000)
+      }
     }
 
     await db.insert(transactions).values({
@@ -207,6 +288,41 @@ export async function updateAsset(
       notes: null,
     })
     await upsertHoldings(id, user.id)
+  }
+
+  // savings_details upsert (메타 필드가 전달된 경우)
+  if (rest.assetType === 'savings' && savingsKind) {
+    const rateBp = interestRatePct && !isNaN(parseFloat(interestRatePct))
+      ? Math.round(parseFloat(interestRatePct) * 10000)
+      : null
+    const monthlyKrw = monthlyContributionKrw && !isNaN(parseFloat(monthlyContributionKrw))
+      ? Math.round(parseFloat(monthlyContributionKrw))
+      : null
+    await db.insert(savingsDetails).values({
+      assetId: id,
+      userId: user.id,
+      kind: savingsKind,
+      interestRateBp: rateBp,
+      depositStartDate: depositStartDate ?? null,
+      maturityDate: maturityDate ?? null,
+      monthlyContributionKrw: monthlyKrw,
+      compoundType: compoundType ?? 'simple',
+      taxType: taxType ?? 'taxable',
+      autoRenew: autoRenew ?? false,
+    }).onConflictDoUpdate({
+      target: savingsDetails.assetId,
+      set: {
+        kind: savingsKind,
+        interestRateBp: rateBp,
+        depositStartDate: depositStartDate ?? null,
+        maturityDate: maturityDate ?? null,
+        monthlyContributionKrw: monthlyKrw,
+        compoundType: compoundType ?? 'simple',
+        taxType: taxType ?? 'taxable',
+        autoRenew: autoRenew ?? false,
+        updatedAt: new Date(),
+      },
+    })
   }
 
   revalidatePath('/assets')

@@ -1,7 +1,7 @@
 import { pgTable, uuid, varchar, timestamp, pgEnum } from 'drizzle-orm/pg-core'
 
 export const assetTypeEnum = pgEnum('asset_type', [
-  'stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'savings', 'real_estate', 'fund', 'insurance', 'precious_metal'
+  'stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'savings', 'real_estate', 'fund', 'insurance', 'precious_metal', 'cma'
 ])
 
 export const priceTypeEnum = pgEnum('price_type', ['live', 'manual'])
@@ -31,6 +31,9 @@ export const assets = pgTable('assets', {
   priceType: priceTypeEnum('price_type').notNull(),
   currency: currencyEnum('currency').notNull(),
   accountType: accountTypeEnum('account_type'),
+  brokerageId: varchar('brokerage_id', { length: 50 }),
+  withdrawalBankId: varchar('withdrawal_bank_id', { length: 50 }),
+  owner: varchar('owner', { length: 20 }),
   notes: varchar('notes', { length: 1000 }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })

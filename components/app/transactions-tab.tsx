@@ -22,8 +22,9 @@ interface TransactionsTabProps {
   transactions: Transaction[]
 }
 
+const KRW_FMT = new Intl.NumberFormat('ko-KR')
 function formatKrw(value: number): string {
-  return new Intl.NumberFormat('ko-KR').format(value)
+  return KRW_FMT.format(value)
 }
 
 function decodeQuantity(stored: number): string {

@@ -24,6 +24,7 @@ interface NaverAcItem {
   name: string
   typeCode: string
   nationCode: string
+  url?: string
 }
 
 const KRX_HEADERS = {
@@ -70,7 +71,9 @@ function hasHangul(q: string): boolean {
   return /[\uAC00-\uD7AF]/.test(q)
 }
 
-async function searchNaverKr(q: string): Promise<{ name: string; ticker: string }[]> {
+const US_EXCHANGE_TYPES = new Set(['NASDAQ', 'NYSE', 'AMEX'])
+
+async function searchNaverAc(q: string, target: 'kr' | 'us', assetType?: string): Promise<{ name: string; ticker: string }[]> {
   try {
     const url = `https://ac.stock.naver.com/ac?q=${encodeURIComponent(q)}&target=stock,etf`
     const res = await fetch(url, {
@@ -84,13 +87,26 @@ async function searchNaverKr(q: string): Promise<{ name: string; ticker: string 
     if (!res.ok) return []
     const data = await res.json()
     const items: NaverAcItem[] = data?.items ?? []
+
+    if (target === 'kr') {
+      return items
+        .filter((item) =>
+          item.nationCode === 'KOR' &&
+          /^\d{6}$/.test(item.code) &&
+          (item.typeCode === 'KOSPI' || item.typeCode === 'KOSDAQ')
+        )
+        .map((item) => ({ name: item.name, ticker: item.code + krSuffix(item.typeCode) }))
+    }
+
+    // target === 'us'
+    const isEtf = assetType === 'etf_us'
     return items
       .filter((item) =>
-        item.nationCode === 'KOR' &&
-        /^\d{6}$/.test(item.code) &&
-        (item.typeCode === 'KOSPI' || item.typeCode === 'KOSDAQ')
+        item.nationCode === 'USA' &&
+        US_EXCHANGE_TYPES.has(item.typeCode) &&
+        (isEtf ? item.url?.includes('/etf/') : !item.url?.includes('/etf/'))
       )
-      .map((item) => ({ name: item.name, ticker: item.code + krSuffix(item.typeCode) }))
+      .map((item) => ({ name: item.name, ticker: item.code }))
   } catch {
     return []
   }
@@ -154,7 +170,7 @@ async function searchKoreanChain(q: string, type: string): Promise<{ name: strin
 
   if (hasHangul(q)) {
     // Hangul: Naver first (handles Korean name search reliably), then KRX, then Yahoo
-    const naver = await searchNaverKr(q)
+    const naver = await searchNaverAc(q, 'kr')
     if (naver.length > 0) return naver
     const krx = await krxRaw(q)
     if (krx.length > 0) return krx
@@ -162,7 +178,7 @@ async function searchKoreanChain(q: string, type: string): Promise<{ name: strin
     // Numeric / English: KRX first (precise code lookup), then Naver, then Yahoo
     const krx = await krxRaw(q)
     if (krx.length > 0) return krx
-    const naver = await searchNaverKr(q)
+    const naver = await searchNaverAc(q, 'kr')
     if (naver.length > 0) return naver
   }
 
@@ -324,6 +340,72 @@ async function searchFund(q: string): Promise<{ name: string; ticker: string }[]
   }
 }
 
+const CRYPTO_KR_MAP: { kr: string[]; en: string; ticker: string }[] = [
+  { kr: ['비트코인', '비트'], en: 'Bitcoin', ticker: 'BTC-USD' },
+  { kr: ['이더리움', '이더'], en: 'Ethereum', ticker: 'ETH-USD' },
+  { kr: ['리플', 'XRP'], en: 'XRP', ticker: 'XRP-USD' },
+  { kr: ['솔라나'], en: 'Solana', ticker: 'SOL-USD' },
+  { kr: ['도지코인', '도지'], en: 'Dogecoin', ticker: 'DOGE-USD' },
+  { kr: ['에이다', '카르다노'], en: 'Cardano', ticker: 'ADA-USD' },
+  { kr: ['에이브', 'AAVE'], en: 'Aave', ticker: 'AAVE-USD' },
+  { kr: ['아발란체'], en: 'Avalanche', ticker: 'AVAX-USD' },
+  { kr: ['폴리곤', '매틱'], en: 'Polygon', ticker: 'MATIC-USD' },
+  { kr: ['체인링크', '링크'], en: 'Chainlink', ticker: 'LINK-USD' },
+  { kr: ['유니스왑', '유니'], en: 'Uniswap', ticker: 'UNI-USD' },
+  { kr: ['스텔라루멘', '스텔라'], en: 'Stellar', ticker: 'XLM-USD' },
+  { kr: ['트론'], en: 'TRON', ticker: 'TRX-USD' },
+  { kr: ['라이트코인'], en: 'Litecoin', ticker: 'LTC-USD' },
+  { kr: ['비트코인캐시', '비캐'], en: 'Bitcoin Cash', ticker: 'BCH-USD' },
+  { kr: ['이오스'], en: 'EOS', ticker: 'EOS-USD' },
+  { kr: ['코스모스', '아톰'], en: 'Cosmos', ticker: 'ATOM-USD' },
+  { kr: ['폴카닷'], en: 'Polkadot', ticker: 'DOT-USD' },
+  { kr: ['니어프로토콜', '니어'], en: 'NEAR Protocol', ticker: 'NEAR-USD' },
+  { kr: ['아비트럼'], en: 'Arbitrum', ticker: 'ARB-USD' },
+  { kr: ['수이'], en: 'Sui', ticker: 'SUI20947-USD' },
+  { kr: ['앱토스'], en: 'Aptos', ticker: 'APT21794-USD' },
+  { kr: ['샌드박스'], en: 'The Sandbox', ticker: 'SAND-USD' },
+  { kr: ['디센트럴랜드', '마나'], en: 'Decentraland', ticker: 'MANA-USD' },
+  { kr: ['클레이튼', '클레이'], en: 'Klaytn', ticker: 'KLAY-USD' },
+  { kr: ['위믹스'], en: 'WEMIX', ticker: 'WEMIX-USD' },
+]
+
+function searchCryptoByKr(q: string): { name: string; ticker: string }[] {
+  const lower = q.toLowerCase()
+  return CRYPTO_KR_MAP
+    .filter(c => c.kr.some(k => k.includes(lower) || lower.includes(k)))
+    .map(c => ({ name: c.en, ticker: c.ticker }))
+}
+
+async function searchCrypto(q: string): Promise<{ name: string; ticker: string }[]> {
+  if (hasHangul(q)) {
+    return searchCryptoByKr(q)
+  }
+  const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=10&newsCount=0&enableFuzzyQuery=true`
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      signal: AbortSignal.timeout(4000),
+      cache: 'no-store',
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    const quotes: YahooQuote[] = data?.quotes ?? []
+    return quotes
+      .filter((q) => q.quoteType === 'CRYPTOCURRENCY')
+      .map((q) => ({ name: q.longname ?? q.shortname ?? q.symbol, ticker: q.symbol }))
+  } catch {
+    return []
+  }
+}
+
+async function searchUsChain(q: string, type: string): Promise<{ name: string; ticker: string }[]> {
+  if (hasHangul(q)) {
+    const naver = await searchNaverAc(q, 'us', type)
+    if (naver.length > 0) return naver
+  }
+  return searchYahoo(q, type)
+}
+
 async function searchYahoo(q: string, type: string): Promise<{ name: string; ticker: string }[]> {
   const url = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(q)}&quotesCount=10&newsCount=0&enableFuzzyQuery=true`
   const res = await fetch(url, {
@@ -418,7 +500,10 @@ export async function GET(req: NextRequest) {
     if (type === 'insurance') {
       return NextResponse.json({ results: searchInsurance(q) })
     }
-    return NextResponse.json({ results: await searchYahoo(q, type) })
+    if (type === 'crypto') {
+      return NextResponse.json({ results: await searchCrypto(q) })
+    }
+    return NextResponse.json({ results: await searchUsChain(q, type) })
   } catch {
     return NextResponse.json({ results: [] })
   }

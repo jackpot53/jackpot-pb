@@ -2,7 +2,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useTransition, useState } from 'react'
+import { useTransition, useState, useEffect, useRef } from 'react'
 import { Loader2, Save, X, ArrowLeftRight, CalendarDays, Hash, CircleDollarSign, BadgeDollarSign, Coins, StickyNote } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/select'
 import type { TransactionFormValues, TransactionActionError } from '@/app/actions/transactions'
 
-type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal'
+type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal' | 'cma'
 type Currency = 'KRW' | 'USD'
 
 const STOCK_ETF_TYPES: AssetType[] = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us']
@@ -86,7 +86,10 @@ export function TransactionForm({
 }: TransactionFormProps) {
   const [isPending, startTransition] = useTransition()
   const [krwPreview, setKrwPreview] = useState<string | null>(null)
+  const [isFetchingFx, setIsFetchingFx] = useState(false)
+  const fxFetchedDate = useRef<string | null>(null)
   const isUSD = currency === 'USD'
+  const isUsAsset = assetType === 'stock_us' || assetType === 'etf_us'
 
   const schema = buildSchema(assetType)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -104,6 +107,26 @@ export function TransactionForm({
     },
     mode: 'onBlur',
   })
+
+  const transactionDate = form.watch('transactionDate')
+  useEffect(() => {
+    if (!isUsAsset || !transactionDate) return
+    if (fxFetchedDate.current === transactionDate) return
+    setIsFetchingFx(true)
+    fetch(`/api/fx-rate?date=${transactionDate}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.rate) {
+          form.setValue('exchangeRate', String(data.rate))
+          fxFetchedDate.current = transactionDate
+          // KRW 프리뷰 재계산
+          setTimeout(() => computeKrwPreview(), 0)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsFetchingFx(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isUsAsset, transactionDate])
 
   function computeKrwPreview() {
     const qty = parseFloat(form.getValues('quantity') || '0')
@@ -192,35 +215,41 @@ export function TransactionForm({
           </FormItem>
         )} />
 
-        {isUSD && (
+        {isUsAsset && (
           <FormField control={form.control} name="exchangeRate" render={({ field }) => (
             <FormItem className="flex flex-row items-center gap-4 rounded-xl border border-border bg-muted/20 px-4 py-2.5">
               <FormLabel className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40"><BadgeDollarSign className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />환율 (₩/$)</FormLabel>
-              <div className="flex-1">
-                <FormControl>
-                  <Input
-                    className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-auto"
-                    {...field}
-                    inputMode="numeric"
-                    placeholder="예: 1350"
-                    onBlur={() => { field.onBlur(); computeKrwPreview() }}
-                  />
-                </FormControl>
-                <FormMessage />
+              <div className="flex-1 flex items-center gap-3 min-w-0">
+                <div className="relative flex-1 min-w-0">
+                  <FormControl>
+                    <Input
+                      className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-auto pr-6"
+                      {...field}
+                      inputMode="decimal"
+                      placeholder="예: 1356.50"
+                      onBlur={() => { field.onBlur(); computeKrwPreview() }}
+                    />
+                  </FormControl>
+                  {isFetchingFx && (
+                    <span className="absolute right-0 top-1/2 -translate-y-1/2">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                    </span>
+                  )}
+                  <FormMessage />
+                </div>
+                {krwPreview && (
+                  <span className="text-sm text-muted-foreground font-mono shrink-0">{krwPreview}</span>
+                )}
               </div>
             </FormItem>
           )} />
-        )}
-
-        {krwPreview && (
-          <div className="text-sm text-muted-foreground font-mono pl-28">{krwPreview}</div>
         )}
 
         <FormField control={form.control} name="fee" render={({ field }) => (
           <FormItem className="flex flex-row items-center gap-4 rounded-xl border border-border bg-muted/20 px-4 py-2.5">
             <FormLabel className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40"><Coins className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />수수료 (₩)</FormLabel>
             <div className="flex-1">
-              <FormControl><Input className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-auto" {...field} inputMode="numeric" /></FormControl>
+              <FormControl><Input className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-auto" {...field} inputMode="decimal" /></FormControl>
               <FormMessage />
             </div>
           </FormItem>

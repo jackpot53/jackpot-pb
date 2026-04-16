@@ -1,6 +1,6 @@
 'use client'
 import { useState, useTransition } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, PiggyBank, TrendingUp, Calendar, Banknote } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -14,9 +14,16 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
 import { createManualValuation } from '@/app/actions/manual-valuations'
+import { recordMonthlyContribution } from '@/app/actions/savings'
+import {
+  computeCurrentSavingsValueKrw, computeExpectedMaturityValueKrw,
+  remainingDays, annualizedReturnPct,
+  type SavingsBuy,
+} from '@/lib/savings'
 import type { Asset } from '@/db/queries/assets'
 import type { ManualValuation } from '@/db/queries/manual-valuations'
 import type { HoldingRow } from '@/db/queries/holdings'
+import type { SavingsDetailsRow } from '@/db/schema/savings-details'
 
 const valuationSchema = z.object({
   valueKrw: z.string()
@@ -47,6 +54,160 @@ interface OverviewTabProps {
   asset: Asset
   valuations: ManualValuation[]
   holding: HoldingRow | null
+  savingsDetails?: SavingsDetailsRow | null
+  savingsBuys?: SavingsBuy[]
+}
+
+function SavingsInfoSection({
+  assetId, details, buys, holding, latestManualKrw,
+}: {
+  assetId: string
+  details: SavingsDetailsRow
+  buys: SavingsBuy[]
+  holding: HoldingRow | null
+  latestManualKrw: number | null
+}) {
+  const [isPending, startTransition] = useTransition()
+  const [recordError, setRecordError] = useState<string | null>(null)
+  const [recorded, setRecorded] = useState(false)
+
+  const rateBp = details.interestRateBp
+  const hasRate = rateBp != null && rateBp > 0
+
+  const autoValueKrw = hasRate ? computeCurrentSavingsValueKrw({
+    buys,
+    interestRateBp: rateBp!,
+    maturityDate: details.maturityDate,
+    compoundType: (details.compoundType ?? 'simple') as 'simple' | 'monthly',
+    taxType: (details.taxType ?? 'taxable') as 'taxable' | 'tax_free' | 'preferential',
+    autoRenew: details.autoRenew,
+  }) : null
+
+  const currentValueKrw = latestManualKrw ?? autoValueKrw
+  const totalCostKrw = holding?.totalCostKrw ?? 0
+
+  const returnPct = totalCostKrw > 0 && currentValueKrw != null
+    ? ((currentValueKrw - totalCostKrw) / totalCostKrw) * 100
+    : null
+
+  const expectedMaturity = hasRate ? computeExpectedMaturityValueKrw({
+    buys,
+    interestRateBp: rateBp!,
+    maturityDate: details.maturityDate,
+    compoundType: (details.compoundType ?? 'simple') as 'simple' | 'monthly',
+    taxType: (details.taxType ?? 'taxable') as 'taxable' | 'tax_free' | 'preferential',
+  }) : null
+
+  const daysLeft = details.maturityDate ? remainingDays(details.maturityDate) : null
+
+  // 경과일수 (첫 납입일 → 오늘)
+  const firstBuy = buys.length > 0 ? buys.reduce((a, b) => a.transactionDate < b.transactionDate ? a : b) : null
+  const elapsedDays = firstBuy
+    ? Math.floor((Date.now() - new Date(firstBuy.transactionDate).getTime()) / 86400000)
+    : null
+  const annualized = returnPct != null && elapsedDays != null && elapsedDays > 0
+    ? annualizedReturnPct(returnPct, elapsedDays)
+    : null
+
+  const KIND_LABELS: Record<string, string> = { term: '정기예금', recurring: '정기적금', free: '자유적금' }
+  const TAX_LABELS: Record<string, string> = { taxable: '일반 (15.4%)', tax_free: '비과세', preferential: '우대 (9.5%)' }
+
+  function handleMonthlyContribution() {
+    setRecordError(null)
+    startTransition(async () => {
+      const result = await recordMonthlyContribution(assetId)
+      if (result?.error) {
+        setRecordError(result.error)
+      } else {
+        setRecorded(true)
+      }
+    })
+  }
+
+  return (
+    <div className="rounded-xl border border-yellow-200 bg-yellow-50/50 p-4 space-y-4">
+      <div className="flex items-center gap-2">
+        <PiggyBank className="h-4 w-4 text-yellow-600" />
+        <span className="text-sm font-semibold text-yellow-800">예적금 정보</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-8 gap-y-2 max-w-sm">
+        <span className="text-sm text-muted-foreground">종류</span>
+        <span className="text-sm">{KIND_LABELS[details.kind] ?? details.kind}</span>
+
+        {details.depositStartDate && (
+          <>
+            <span className="text-sm text-muted-foreground">가입일</span>
+            <span className="text-sm">{details.depositStartDate}</span>
+          </>
+        )}
+
+        {details.maturityDate && (
+          <>
+            <span className="text-sm text-muted-foreground">만기일</span>
+            <span className="text-sm">
+              {details.maturityDate}
+              {daysLeft != null && (
+                <span className={`ml-2 text-xs font-medium ${daysLeft < 0 ? 'text-muted-foreground' : daysLeft <= 30 ? 'text-red-600' : 'text-yellow-700'}`}>
+                  {daysLeft < 0 ? '만기완료' : `D-${daysLeft}`}
+                </span>
+              )}
+            </span>
+          </>
+        )}
+
+        {hasRate && (
+          <>
+            <span className="text-sm text-muted-foreground">연이자율</span>
+            <span className="text-sm">{(rateBp! / 10000).toFixed(2)}%</span>
+          </>
+        )}
+
+        <span className="text-sm text-muted-foreground">세금</span>
+        <span className="text-sm">{TAX_LABELS[details.taxType ?? 'taxable']}</span>
+
+        <span className="text-sm text-muted-foreground">복리 방식</span>
+        <span className="text-sm">{details.compoundType === 'monthly' ? '월복리' : '단리'}</span>
+
+        {currentValueKrw != null && (
+          <>
+            <span className="text-sm text-muted-foreground">현재 추정 평가액</span>
+            <span className="text-sm font-medium">₩{formatKrw(currentValueKrw)}</span>
+          </>
+        )}
+
+        {expectedMaturity != null && (
+          <>
+            <span className="text-sm text-muted-foreground">예상 만기 수령액</span>
+            <span className="text-sm text-yellow-700 font-medium">₩{formatKrw(expectedMaturity)}</span>
+          </>
+        )}
+
+        {annualized != null && (
+          <>
+            <span className="text-sm text-muted-foreground">연환산 수익률</span>
+            <span className="text-sm font-medium text-red-500">+{annualized.toFixed(2)}%</span>
+          </>
+        )}
+      </div>
+
+      {(details.kind === 'recurring' || details.kind === 'free') && details.monthlyContributionKrw && (
+        <div className="flex items-center gap-3 pt-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-yellow-400 text-yellow-700 hover:bg-yellow-100"
+            onClick={handleMonthlyContribution}
+            disabled={isPending || recorded}
+          >
+            {isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Banknote className="mr-1.5 h-3.5 w-3.5" />}
+            {recorded ? '납입 완료!' : `이번 달 납입 기록 (₩${formatKrw(details.monthlyContributionKrw)})`}
+          </Button>
+          {recordError && <p className="text-xs text-destructive">{recordError}</p>}
+        </div>
+      )}
+    </div>
+  )
 }
 
 const fundPriceSchema = z.object({
@@ -181,7 +342,7 @@ function ValuationUpdateForm({ asset, onSuccess }: { asset: Asset; onSuccess: ()
             <FormItem>
               <FormLabel>거래 시 환율 (₩/＄)</FormLabel>
               <FormControl>
-                <Input {...field} inputMode="numeric" placeholder="예: 1350" />
+                <Input {...field} inputMode="decimal" placeholder="예: 1356.50" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -229,7 +390,7 @@ function decodeQuantity(stored: number): string {
   return `${intPart}.${fracPart.toString().padStart(8, '0').replace(/0+$/, '')}`
 }
 
-export function OverviewTab({ asset, valuations, holding }: OverviewTabProps) {
+export function OverviewTab({ asset, valuations, holding, savingsDetails = null, savingsBuys = [] }: OverviewTabProps) {
   const [showUpdateForm, setShowUpdateForm] = useState(false)
   const isFundAsset = asset.assetType === 'fund'
   const isRealEstate = asset.assetType === 'real_estate'
@@ -283,6 +444,20 @@ export function OverviewTab({ asset, valuations, holding }: OverviewTabProps) {
               )}
             </div>
           </div>
+          <Separator />
+        </>
+      )}
+
+      {/* Savings info section */}
+      {asset.assetType === 'savings' && savingsDetails && (
+        <>
+          <SavingsInfoSection
+            assetId={asset.id}
+            details={savingsDetails}
+            buys={savingsBuys}
+            holding={holding}
+            latestManualKrw={valuations[0]?.valueKrw ?? null}
+          />
           <Separator />
         </>
       )}
@@ -351,7 +526,7 @@ export function OverviewTab({ asset, valuations, holding }: OverviewTabProps) {
                 <TableHeader>
                   <TableRow>
                     <TableHead>날짜</TableHead>
-                    <TableHead>{isFundAsset ? '기준가 (₩/좌)' : isRealEstate ? '단가 (₩/개)' : '평가금액 (₩)'}</TableHead>
+                    <TableHead>{isFundAsset ? '기준가 (₩/좌)' : isRealEstate ? '단가 (₩/개)' : asset.assetType === 'savings' ? '실지급액 (₩)' : '평가금액 (₩)'}</TableHead>
                     <TableHead>메모</TableHead>
                   </TableRow>
                 </TableHeader>

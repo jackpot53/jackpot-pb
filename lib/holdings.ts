@@ -9,12 +9,16 @@ export interface TransactionInput {
   pricePerUnit: number  // KRW BIGINT
   fee: number           // KRW BIGINT (0 if not set)
   isVoided: boolean
+  currency?: 'KRW' | 'USD'
+  exchangeRateAtTime?: number | null  // KRW per USD × 10000
 }
 
 export interface HoldingsResult {
   totalQuantity: number   // ×10^8
   avgCostPerUnit: number  // KRW per unit
   totalCostKrw: number    // total invested KRW (cost basis)
+  avgCostPerUnitOriginal: number | null  // USD cents for USD assets, null for KRW
+  avgExchangeRateAtTime: number | null   // KRW per USD × 10000, null for KRW assets
 }
 
 /**
@@ -27,7 +31,10 @@ export function computeHoldings(txns: TransactionInput[]): HoldingsResult {
 
   let totalQuantity = 0
   let avgCostPerUnit = 0
+  let avgCostPerUnitOriginal: number | null = null
+  let avgExchangeRateAtTime: number | null = null
   let totalCostKrw = 0
+  let isUsd = false
 
   for (const tx of active) {
     if (tx.type === 'buy') {
@@ -40,6 +47,21 @@ export function computeHoldings(txns: TransactionInput[]): HoldingsResult {
         avgCostPerUnit = Math.round(
           (avgCostPerUnit * prevUnits + tx.pricePerUnit * addUnits) / (prevUnits + addUnits)
         )
+        // Compute parallel WAVG in original USD cents (pricePerUnit KRW / FX rate → USD × 100)
+        // 원화매수(currency='KRW')도 exchangeRateAtTime이 있으면 USD 원가 추적 가능
+        if (tx.exchangeRateAtTime && tx.exchangeRateAtTime > 0) {
+          isUsd = true
+          const txUsdCents = Math.round(tx.pricePerUnit * 1000000 / tx.exchangeRateAtTime)
+          const prevOriginal = avgCostPerUnitOriginal ?? 0
+          avgCostPerUnitOriginal = Math.round(
+            (prevOriginal * prevUnits + txUsdCents * addUnits) / (prevUnits + addUnits)
+          )
+          // WAVG of exchange rates (quantity-weighted)
+          const prevFx = avgExchangeRateAtTime ?? 0
+          avgExchangeRateAtTime = Math.round(
+            (prevFx * prevUnits + tx.exchangeRateAtTime * addUnits) / (prevUnits + addUnits)
+          )
+        }
       }
       totalQuantity = newQty
       // Cost = (qty / 1e8) * price + fee — use integer-safe multiply then divide
@@ -58,7 +80,13 @@ export function computeHoldings(txns: TransactionInput[]): HoldingsResult {
     }
   }
 
-  return { totalQuantity, avgCostPerUnit, totalCostKrw }
+  return {
+    totalQuantity,
+    avgCostPerUnit,
+    totalCostKrw,
+    avgCostPerUnitOriginal: isUsd ? avgCostPerUnitOriginal : null,
+    avgExchangeRateAtTime: isUsd ? avgExchangeRateAtTime : null,
+  }
 }
 
 /**
@@ -74,6 +102,8 @@ export async function upsertHoldings(assetId: string, userId: string): Promise<v
       pricePerUnit: transactions.pricePerUnit,
       fee: transactions.fee,
       isVoided: transactions.isVoided,
+      currency: transactions.currency,
+      exchangeRateAtTime: transactions.exchangeRateAtTime,
     })
     .from(transactions)
     .where(eq(transactions.assetId, assetId))
@@ -88,6 +118,8 @@ export async function upsertHoldings(assetId: string, userId: string): Promise<v
       totalQuantity: result.totalQuantity,
       avgCostPerUnit: result.avgCostPerUnit,
       totalCostKrw: result.totalCostKrw,
+      avgCostPerUnitOriginal: result.avgCostPerUnitOriginal,
+      avgExchangeRateAtTime: result.avgExchangeRateAtTime,
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
@@ -97,6 +129,8 @@ export async function upsertHoldings(assetId: string, userId: string): Promise<v
         totalQuantity: result.totalQuantity,
         avgCostPerUnit: result.avgCostPerUnit,
         totalCostKrw: result.totalCostKrw,
+        avgCostPerUnitOriginal: result.avgCostPerUnitOriginal,
+        avgExchangeRateAtTime: result.avgExchangeRateAtTime,
         updatedAt: new Date(),
       },
     })

@@ -6,13 +6,14 @@ import { assets } from '@/db/schema/assets'
 import { and, eq, isNotNull, or } from 'drizzle-orm'
 import { getPriceCacheByTickers, upsertPriceCache } from '@/db/queries/price-cache'
 import { fetchYahooQuote } from '@/lib/price/yahoo'
-import { fetchFinnhubQuote } from '@/lib/price/finnhub'
-import { fetchBokFxRate } from '@/lib/price/bok-fx'
 import { refreshFxIfStale } from '@/lib/price/cache'
 import { fetchFunetfNav } from '@/lib/price/funetf'
 
 const PRICE_TTL_MS = 5 * 60 * 1000
 const KR_ASSET_TYPES = ['stock_kr', 'etf_kr']
+// Process-level guard: skip redundant DB round-trips when prices were recently refreshed.
+// Half of PRICE_TTL_MS (150 s) keeps prices fresh while avoiding repeated checks on warm containers.
+let lastRefreshedAt = 0
 
 async function requireUser() {
   const supabase = await createClient()
@@ -27,6 +28,8 @@ async function requireUser() {
  * This avoids N sequential DB round-trips while keeping connection pool usage low.
  */
 export async function refreshAllPrices(): Promise<void> {
+  if (Date.now() - lastRefreshedAt < 150_000) return
+
   await requireUser()
 
   // Step 1: Refresh FX rate (TTL 1 hour)
@@ -44,10 +47,10 @@ export async function refreshAllPrices(): Promise<void> {
     ))
 
   const tickers = liveAssets.filter((a) => a.ticker).map((a) => a.ticker!)
-  if (tickers.length === 0) return
+  if (tickers.length === 0) { lastRefreshedAt = Date.now(); return }
 
-  // Step 3: Bulk-fetch cache for all tickers (one query)
-  const cacheMap = await getPriceCacheByTickers(tickers)
+  // Step 3: Bulk-fetch cache for all tickers (one query), including USD_KRW for FX conversion
+  const cacheMap = await getPriceCacheByTickers([...tickers, 'USD_KRW'])
   const now = Date.now()
 
   const staleAssets = liveAssets.filter((a) => {
@@ -56,7 +59,7 @@ export async function refreshAllPrices(): Promise<void> {
     return !cached || now - cached.cachedAt.getTime() > PRICE_TTL_MS
   }) as { ticker: string; assetType: string }[]
 
-  if (staleAssets.length === 0) return
+  if (staleAssets.length === 0) { lastRefreshedAt = Date.now(); return }
 
   // Step 4: Fetch FX rate from cache (needed for USD→KRW conversion)
   const fxCache = cacheMap.get('USD_KRW')
@@ -78,15 +81,18 @@ export async function refreshAllPrices(): Promise<void> {
           const changeBps = result.changePercent !== null ? Math.round(result.changePercent * 100) : null
           await upsertPriceCache({ ticker, priceKrw, priceOriginal: priceKrw, currency: 'KRW', changeBps })
         } else {
-          const finnhubResult = await fetchFinnhubQuote(ticker)
-          if (finnhubResult === null || !fxRate) return
-          const priceKrw = Math.round((finnhubResult.priceUsdCents / 100) * fxRate)
-          const changeBps = finnhubResult.changePercent !== null ? Math.round(finnhubResult.changePercent * 100) : null
-          await upsertPriceCache({ ticker, priceKrw, priceOriginal: finnhubResult.priceUsdCents, currency: 'USD', changeBps })
+          const result = await fetchYahooQuote(ticker)
+          if (!result || result.price <= 0) return
+          if (!fxRate) return
+          const priceUsdCents = Math.round(result.price * 100)
+          const priceKrw = Math.round(result.price * fxRate)
+          const changeBps = result.changePercent !== null ? Math.round(result.changePercent * 100) : null
+          await upsertPriceCache({ ticker, priceKrw, priceOriginal: priceUsdCents, currency: 'USD', changeBps })
         }
       } catch {
         // stale fallback: skip on error, existing cache preserved
       }
     })
   )
+  lastRefreshedAt = Date.now()
 }

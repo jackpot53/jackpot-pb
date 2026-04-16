@@ -62,10 +62,13 @@ interface TickerSuggestion {
 
 const assetSchema = z.object({
   name: z.string().min(1, '종목명을 입력해주세요.').max(255),
-  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal']),
+  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal', 'cma']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
   accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire']).optional().nullable(),
+  brokerageId: z.string().max(50).optional().nullable(),
+  withdrawalBankId: z.string().max(50).optional().nullable(),
+  owner: z.string().max(20).optional().nullable(),
   ticker: z.string().max(20).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
   initialQuantity: z.string().optional().nullable(),
@@ -123,6 +126,26 @@ const ASSET_TYPE_ICONS: Record<string, LucideIcon> = {
   real_estate: Building2,
 }
 
+const MANUAL_PRICE_TYPES = ['savings', 'real_estate']
+
+const tileClass = (active: boolean) =>
+  `rounded-md border py-2.5 px-1.5 text-[11px] text-center leading-snug transition-all duration-150 cursor-pointer flex flex-col items-center gap-1.5 ${
+    active
+      ? 'bg-foreground text-background border-foreground font-semibold'
+      : 'text-foreground/55 border-border hover:border-foreground/35 hover:text-foreground/90'
+  }`
+
+const pillClass = (active: boolean) =>
+  `px-3 py-1 rounded-full text-xs border transition-all duration-150 inline-flex items-center gap-1.5 ${
+    active
+      ? 'bg-foreground text-background border-foreground font-medium'
+      : 'text-muted-foreground border-border hover:border-foreground/35 hover:text-foreground'
+  }`
+
+const lbl = 'py-3 pr-4 flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground border-b border-r border-border/50'
+const cell = 'py-3 pl-4 min-w-0 border-b border-border/50'
+const row = 'contents'
+
 interface AssetFormProps {
   defaultValues?: Partial<AssetFormValues>
   onSubmit: (data: AssetFormValues) => Promise<{ error: string } | void>
@@ -160,6 +183,9 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
       priceType: 'live',
       currency: 'KRW',
       accountType: null,
+      brokerageId: null,
+      withdrawalBankId: null,
+      owner: null,
       ticker: null,
       notes: null,
       initialQuantity: null,
@@ -179,8 +205,6 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
   const isSearchable = SEARCHABLE_TYPES.includes(assetType) && priceType === 'live'
   const isAccountTypeable = ACCOUNT_TYPE_TYPES.includes(assetType)
   const availableAccountTypes = ACCOUNT_TYPE_BY_ASSET[assetType] ?? Object.keys(ACCOUNT_TYPE_LABELS)
-
-  const MANUAL_PRICE_TYPES = ['savings', 'real_estate']
 
   useEffect(() => {
     if (assetType === 'real_estate') {
@@ -275,24 +299,6 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
       }
     })
   }
-
-  const tileClass = (active: boolean) =>
-    `rounded-md border py-2.5 px-1.5 text-[11px] text-center leading-snug transition-all duration-150 cursor-pointer flex flex-col items-center gap-1.5 ${
-      active
-        ? 'bg-foreground text-background border-foreground font-semibold'
-        : 'text-foreground/55 border-border hover:border-foreground/35 hover:text-foreground/90'
-    }`
-
-  const pillClass = (active: boolean) =>
-    `px-3 py-1 rounded-full text-xs border transition-all duration-150 inline-flex items-center gap-1.5 ${
-      active
-        ? 'bg-foreground text-background border-foreground font-medium'
-        : 'text-muted-foreground border-border hover:border-foreground/35 hover:text-foreground'
-    }`
-
-  const lbl = 'py-3 pr-4 flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground border-b border-r border-border/50'
-  const cell = 'py-3 pl-4 min-w-0 border-b border-border/50'
-  const row = 'contents'
 
   return (
     <Form {...form}>

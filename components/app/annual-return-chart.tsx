@@ -66,9 +66,9 @@ export interface AnnualReturnChartProps {
 
 export function AnnualReturnChart({ data }: AnnualReturnChartProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>연간 수익률</CardTitle>
+    <Card className="border-l-4 border-l-indigo-500 shadow-sm">
+      <CardHeader className="bg-gradient-to-r from-indigo-50/60 to-transparent dark:from-indigo-950/20 rounded-tl-[calc(var(--radius)-1px)]">
+        <CardTitle className="text-indigo-700 dark:text-indigo-400">연간 수익률</CardTitle>
         <CardDescription>연도별 전체 자산 수익률 (%)</CardDescription>
       </CardHeader>
       <CardContent>

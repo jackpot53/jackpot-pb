@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import { createClient } from '@/utils/supabase/server'
+import { getAuthUser } from '@/utils/supabase/server'
 import { getAssetById } from '@/db/queries/assets'
 import { getHoldingByAssetId } from '@/db/queries/holdings'
 import { AssetForm } from '@/components/app/asset-form'
@@ -15,8 +15,7 @@ function decodeQuantity(stored: number): string {
 export default async function EditAssetPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getAuthUser()
   if (!user) redirect('/login')
 
   const [asset, holding] = await Promise.all([getAssetById(id, user.id), getHoldingByAssetId(id)])

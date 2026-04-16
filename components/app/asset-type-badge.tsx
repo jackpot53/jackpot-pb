@@ -1,7 +1,7 @@
-import { TrendingUp, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ShieldCheck, Gem } from 'lucide-react'
+import { TrendingUp, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ShieldCheck, Gem, CreditCard } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
-type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal'
+type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal' | 'cma'
 
 const BADGE_MAP: Record<AssetType, { label: string; className: string; icon: React.ElementType }> = {
   stock_kr:      { label: '주식 (국내)', icon: TrendingUp,   className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
@@ -14,6 +14,7 @@ const BADGE_MAP: Record<AssetType, { label: string; className: string; icon: Rea
   fund:          { label: '펀드',       icon: BookOpen,     className: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' },
   insurance:     { label: '보험',       icon: ShieldCheck,  className: 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200' },
   precious_metal:{ label: '금/은',      icon: Gem,          className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
+  cma:           { label: 'CMA',        icon: CreditCard,   className: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200' },
 }
 
 export function AssetTypeBadge({ assetType }: { assetType: AssetType }) {

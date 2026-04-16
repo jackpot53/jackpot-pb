@@ -15,7 +15,7 @@ describe('refreshPriceIfStale', () => {
     const { fetchFinnhubQuote } = await import('@/lib/price/finnhub')
     vi.mocked(getPriceCacheByTicker).mockResolvedValueOnce({
       id: 'test-uuid', ticker: 'AAPL', priceKrw: 250000, priceOriginal: 18543,
-      currency: 'USD', cachedAt: new Date(Date.now() - 60_000), // 1 min ago
+      currency: 'USD', changeBps: null, cachedAt: new Date(Date.now() - 60_000), // 1 min ago
     })
     const { refreshPriceIfStale } = await import('../cache')
     await refreshPriceIfStale('AAPL', 'stock_us')
@@ -29,13 +29,13 @@ describe('refreshPriceIfStale', () => {
     vi.mocked(getPriceCacheByTicker)
       .mockResolvedValueOnce({
         id: 'test-uuid-1', ticker: 'AAPL', priceKrw: 240000, priceOriginal: 18000,
-        currency: 'USD', cachedAt: new Date(Date.now() - 10 * 60_000), // 10 min ago
+        currency: 'USD', changeBps: null, cachedAt: new Date(Date.now() - 10 * 60_000), // 10 min ago
       })
       .mockResolvedValueOnce({
         id: 'test-uuid-fx', ticker: 'USD_KRW', priceKrw: 13565000, priceOriginal: 13565000,
-        currency: 'KRW', cachedAt: new Date(Date.now() - 30 * 60_000),
+        currency: 'KRW', changeBps: null, cachedAt: new Date(Date.now() - 30 * 60_000),
       })
-    vi.mocked(fetchFinnhubQuote).mockResolvedValueOnce(18543)
+    vi.mocked(fetchFinnhubQuote).mockResolvedValueOnce({ priceUsdCents: 18543, changePercent: null })
     const { refreshPriceIfStale } = await import('../cache')
     await refreshPriceIfStale('AAPL', 'stock_us')
     expect(fetchFinnhubQuote).toHaveBeenCalledWith('AAPL')
@@ -47,7 +47,7 @@ describe('refreshPriceIfStale', () => {
     const { fetchFinnhubQuote } = await import('@/lib/price/finnhub')
     vi.mocked(getPriceCacheByTicker).mockResolvedValueOnce({
       id: 'test-uuid', ticker: 'AAPL', priceKrw: 240000, priceOriginal: 18000,
-      currency: 'USD', cachedAt: new Date(Date.now() - 10 * 60_000),
+      currency: 'USD', changeBps: null, cachedAt: new Date(Date.now() - 10 * 60_000),
     })
     vi.mocked(fetchFinnhubQuote).mockResolvedValueOnce(null)
     const { refreshPriceIfStale } = await import('../cache')
@@ -64,7 +64,7 @@ describe('refreshFxIfStale', () => {
     const { fetchBokFxRate } = await import('@/lib/price/bok-fx')
     vi.mocked(getPriceCacheByTicker).mockResolvedValueOnce({
       id: 'test-uuid-fx', ticker: 'USD_KRW', priceKrw: 13565000, priceOriginal: 13565000,
-      currency: 'KRW', cachedAt: new Date(Date.now() - 30 * 60_000), // 30 min ago
+      currency: 'KRW', changeBps: null, cachedAt: new Date(Date.now() - 30 * 60_000), // 30 min ago
     })
     const { refreshFxIfStale } = await import('../cache')
     await refreshFxIfStale()
@@ -76,7 +76,7 @@ describe('refreshFxIfStale', () => {
     const { fetchBokFxRate } = await import('@/lib/price/bok-fx')
     vi.mocked(getPriceCacheByTicker).mockResolvedValueOnce({
       id: 'test-uuid-fx', ticker: 'USD_KRW', priceKrw: 13565000, priceOriginal: 13565000,
-      currency: 'KRW', cachedAt: new Date(Date.now() - 2 * 60 * 60_000), // 2 hours ago
+      currency: 'KRW', changeBps: null, cachedAt: new Date(Date.now() - 2 * 60 * 60_000), // 2 hours ago
     })
     vi.mocked(fetchBokFxRate).mockResolvedValueOnce(null)
     const { refreshFxIfStale } = await import('../cache')
