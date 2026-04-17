@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { Layers, LayoutGrid, TrendingUp, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown, HelpCircle, ShieldCheck, Gem, CreditCard, Plus, RefreshCw, Wallet } from 'lucide-react'
 
 import { buttonVariants } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { cn } from '@/lib/utils'
@@ -44,6 +43,20 @@ const ASSET_TYPE_LABELS: Record<string, string> = {
   stock_us: '주식 (미국)',
   etf_kr: 'ETF (국내)',
   etf_us: 'ETF (미국)',
+  crypto: '코인',
+  fund: '펀드',
+  savings: '예적금',
+  real_estate: '부동산',
+  insurance: '보험',
+  precious_metal: '금/은',
+  cma: 'CMA',
+}
+
+const ASSET_TYPE_LABELS_SHORT: Record<string, string> = {
+  stock_kr: '국내주식',
+  stock_us: '미국주식',
+  etf_kr: '국내ETF',
+  etf_us: '미국ETF',
   crypto: '코인',
   fund: '펀드',
   savings: '예적금',
@@ -843,7 +856,7 @@ function FloatingLogos({ performances }: { performances: AssetPerformance[] }) {
   )
 }
 
-export function SummaryCards({ grouped, performances, valueCandles }: { grouped: Record<string, AssetPerformance[]>; performances: AssetPerformance[]; valueCandles?: CandlestickPoint[] }) {
+export function SummaryCards({ grouped, performances, valueCandles, showTypeStrip = true }: { grouped: Record<string, AssetPerformance[]>; performances: AssetPerformance[]; valueCandles?: CandlestickPoint[]; showTypeStrip?: boolean }) {
   const types = Object.keys(grouped)
 
   const grandTotalCost = performances.reduce((s, a) => s + Number(a.totalCostKrw), 0)
@@ -952,7 +965,7 @@ export function SummaryCards({ grouped, performances, valueCandles }: { grouped:
       </div>
 
       {/* Per-type strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+      {showTypeStrip && <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
         {types.map((type) => {
           const assets = grouped[type]
           const totalCost = assets.reduce((s, a) => s + a.totalCostKrw, 0)
@@ -991,7 +1004,7 @@ export function SummaryCards({ grouped, performances, valueCandles }: { grouped:
             </div>
           )
         })}
-      </div>
+      </div>}
     </div>
   )
 }
@@ -1031,7 +1044,6 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
   }, {})
 
   const types = Object.keys(grouped)
-  const defaultTab = types[0] ?? 'all'
 
   if (performances.length === 0) {
     return (
@@ -1042,70 +1054,82 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
     )
   }
 
-  const showAll = types.length > 1
-
   return (
     <div className="space-y-6">
       <SummaryCards grouped={grouped} performances={performances} />
       <Separator className="bg-border" />
-      <Tabs defaultValue={showAll ? 'all' : defaultTab}>
-        <TabsList className="w-full bg-muted/30 border-border/40">
-          {showAll && (
-            <TabsTrigger value="all" className="flex-1 text-muted-foreground hover:text-foreground data-active:bg-card data-active:text-foreground data-active:border-border/60 data-active:shadow-sm">
-              <LayoutGrid className="h-3.5 w-3.5" />
-              전체
-            </TabsTrigger>
-          )}
+      <AssetFilter
+        types={types}
+        grouped={grouped}
+        sparklines={sparklines}
+        monthlyByType={monthlyByType}
+        annualByType={annualByType}
+        dailyByType={dailyByType}
+      />
+    </div>
+  )
+}
+
+function AssetFilter({
+  types, grouped, sparklines, monthlyByType, annualByType, dailyByType,
+}: {
+  types: string[]
+  grouped: Record<string, AssetPerformance[]>
+  sparklines: Record<string, number[]>
+  monthlyByType: Record<string, MonthlyDataPoint[]>
+  annualByType: Record<string, AnnualDataPoint[]>
+  dailyByType: Record<string, DailyDataPoint[]>
+}) {
+  const [active, setActive] = useState<string>('all')
+  const showAll = types.length > 1
+  const visibleTypes = active === 'all' ? types : types.filter((t) => t === active)
+
+  return (
+    <div className="space-y-4">
+      {/* 필터 pills */}
+      {showAll && (
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setActive('all')}
+            className={cn(
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors',
+              active === 'all'
+                ? 'bg-card border-border text-foreground shadow-sm'
+                : 'bg-muted/30 border-transparent text-muted-foreground hover:text-foreground hover:border-border/50',
+            )}
+          >
+            <LayoutGrid className="h-3 w-3" />
+            전체
+            <span className="opacity-60">({types.reduce((s, t) => s + grouped[t].length, 0)})</span>
+          </button>
           {types.map((type) => {
             const Icon = ASSET_TYPE_ICONS[type]
+            const isActive = active === type
             return (
-              <TabsTrigger key={type} value={type} className="flex-1 text-muted-foreground hover:text-foreground data-active:bg-card data-active:text-foreground data-active:border-border/60 data-active:shadow-sm">
-                {Icon && <Icon className="h-3.5 w-3.5" />}
-                {ASSET_TYPE_LABELS[type]}
-                <span className="ml-1 text-xs opacity-60">({grouped[type].length})</span>
-              </TabsTrigger>
+              <button
+                key={type}
+                onClick={() => setActive(isActive ? 'all' : type)}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors',
+                  isActive
+                    ? 'bg-card border-border text-foreground shadow-sm'
+                    : 'bg-muted/30 border-transparent text-muted-foreground hover:text-foreground hover:border-border/50',
+                )}
+              >
+                {Icon && <Icon className="h-3 w-3" />}
+                {ASSET_TYPE_LABELS_SHORT[type] ?? ASSET_TYPE_LABELS[type]}
+                <span className="opacity-60">({grouped[type].length})</span>
+              </button>
             )
           })}
-        </TabsList>
+        </div>
+      )}
 
-        {showAll && (
-          <TabsContent value="all" className="mt-4">
-            <div className="space-y-0">
-              {types.map((type, i) => (
-                <div key={type}>
-                  {i > 0 && <Separator className="my-6 bg-foreground" />}
-                  <div className="space-y-3">
-                    <CollapsibleChart
-                      assets={grouped[type]}
-                      sparklines={sparklines}
-                      monthlyData={monthlyByType[type] ?? []}
-                      annualData={annualByType[type] ?? []}
-                      dailyData={dailyByType[type] ?? []}
-                    />
-                    <AssetCardList
-                      assets={grouped[type]}
-                      sparklines={sparklines}
-                      title={
-                        <>
-                          <AssetTypeBadge assetType={type as AssetPerformance['assetType']} />
-                          {type === 'fund' && (
-                            <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                              <HelpCircle className="h-3 w-3" />
-                              1일 1회 기준가 갱신
-                            </span>
-                          )}
-                        </>
-                      }
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </TabsContent>
-        )}
-
-        {types.map((type) => (
-          <TabsContent key={type} value={type} className="mt-4">
+      {/* 콘텐츠 */}
+      <div className="space-y-0">
+        {visibleTypes.map((type, i) => (
+          <div key={type}>
+            {i > 0 && <Separator className="my-6 bg-foreground" />}
             <div className="space-y-3">
               <CollapsibleChart
                 assets={grouped[type]}
@@ -1114,11 +1138,25 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
                 annualData={annualByType[type] ?? []}
                 dailyData={dailyByType[type] ?? []}
               />
-              <AssetCardList assets={grouped[type]} sparklines={sparklines} />
+              <AssetCardList
+                assets={grouped[type]}
+                sparklines={sparklines}
+                title={
+                  <>
+                    <AssetTypeBadge assetType={type as AssetPerformance['assetType']} />
+                    {type === 'fund' && (
+                      <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <HelpCircle className="h-3 w-3" />
+                        1일 1회 기준가 갱신
+                      </span>
+                    )}
+                  </>
+                }
+              />
             </div>
-          </TabsContent>
+          </div>
         ))}
-      </Tabs>
+      </div>
     </div>
   )
 }

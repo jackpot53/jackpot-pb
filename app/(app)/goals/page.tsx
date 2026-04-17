@@ -17,6 +17,8 @@ import { refreshAllPricesInternal } from '@/app/actions/prices'
 import { timed } from '@/lib/perf'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { SummaryCards } from '@/components/app/assets-page-client'
 
 export default async function GoalsPage() {
   const pageStart = performance.now()
@@ -159,8 +161,17 @@ async function GoalsContent({ userId, pageStart }: { userId: string; pageStart: 
     .filter(g => g.targetDate)
     .sort((a, b) => (a.targetDate ?? '').localeCompare(b.targetDate ?? ''))[0]?.targetDate ?? null
 
+  const grouped = performances.reduce<Record<string, typeof performances>>((acc, a) => {
+    if (!acc[a.assetType]) acc[a.assetType] = []
+    acc[a.assetType].push(a)
+    return acc
+  }, {})
+
   return (
     <>
+      {/* 포트폴리오 스탯 */}
+      <SummaryCards grouped={grouped} performances={performances} showTypeStrip={false} />
+
       {/* 목표 통계 배지 */}
       {goals.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-1">
@@ -195,9 +206,11 @@ async function GoalsContent({ userId, pageStart }: { userId: string; pageStart: 
           <GoalProgressChart goals={goals} currentValueKrw={currentValueKrw} />
         </div>
       </div>
+      <Separator className="bg-border" />
 
       {/* 하단: 날짜별 달성률 */}
       <GoalAchievementChart goals={goals} snapshots={snapshots} />
+      <Separator className="bg-border" />
     </>
   )
 }

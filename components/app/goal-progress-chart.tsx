@@ -1,5 +1,6 @@
 import { TrendingUp } from 'lucide-react'
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import { GoalProgressD3 } from '@/components/app/goal-progress-d3'
 import { SnapshotButton } from '@/components/app/snapshot-button'
 import type { GoalRow } from '@/db/queries/goals'
@@ -12,7 +13,7 @@ interface GoalProgressChartProps {
 export function GoalProgressChart({ goals, currentValueKrw }: GoalProgressChartProps) {
   return (
     <Card className="h-full flex flex-col border-l-4 border-l-emerald-500 shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between pb-4 bg-gradient-to-r from-emerald-500/10 to-transparent rounded-tl-[calc(var(--radius)-1px)]">
+      <CardHeader className="flex flex-row items-center justify-between pb-4">
         <div>
           <CardTitle className="flex items-center gap-2 text-emerald-400">
             <TrendingUp className="h-4 w-4" />목표 진행 현황
@@ -21,6 +22,7 @@ export function GoalProgressChart({ goals, currentValueKrw }: GoalProgressChartP
         </div>
         <SnapshotButton />
       </CardHeader>
+      <Separator />
       <CardContent className="flex-1 flex items-center justify-center">
         <GoalProgressD3 goals={goals} currentValueKrw={currentValueKrw} />
       </CardContent>

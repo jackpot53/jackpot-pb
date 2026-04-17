@@ -35,23 +35,21 @@ function FlowRow({
   const isPositive = (entry.changePercent ?? 0) >= 0
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-white/10 hover:border-[#FEE500]/30 hover:bg-[#FEE500]/5 transition-colors">
+    <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/20 bg-white/[0.04] hover:bg-white/[0.07] transition-colors">
       <span className="text-[10px] font-bold text-muted-foreground/40 w-4 shrink-0 text-right">
         {rank}
       </span>
-      <AssetLogo ticker={entry.ticker} name={entry.name} assetType={assetType} size={28} />
+      <AssetLogo ticker={entry.ticker} name={entry.name} assetType={assetType} size={36} />
       <div className="flex-1 min-w-0">
-        <div className="text-xs font-medium truncate">{entry.name}</div>
-        {entry.changePercent !== undefined && (
-          <div className={cn('text-[10px] font-semibold', isPositive ? 'text-red-500' : 'text-blue-500')}>
-            {formatChangePercent(entry.changePercent)}
-          </div>
-        )}
+        <p className="text-xs font-bold truncate leading-tight">{entry.name}</p>
+        <p className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">
+          {showAmount && entry.netAmount > 0 ? `+${formatNetAmount(entry.netAmount)}` : '\u00A0'}
+        </p>
       </div>
-      {showAmount && entry.netAmount > 0 && (
-        <div className="text-xs font-semibold tabular-nums text-red-500 shrink-0">
-          +{formatNetAmount(entry.netAmount)}
-        </div>
+      {entry.changePercent !== undefined && (
+        <span className={cn('text-xs font-mono font-bold shrink-0', isPositive ? 'text-red-400' : 'text-blue-400')}>
+          {formatChangePercent(entry.changePercent)}
+        </span>
       )}
     </div>
   )
@@ -74,9 +72,9 @@ function FlowColumn({
   emptyLabel: string
 }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 border-t sm:border-t-0 sm:border-l border-border pt-3 sm:pt-0 sm:pl-4 first:border-0 first:pt-0 first:pl-0">
       <div className="flex items-center gap-1.5">
-        <Icon className="h-4 w-4 text-[#FEE500]/70" />
+        <Icon className="h-4 w-4 text-muted-foreground" />
         <div>
           <div className="text-sm font-semibold">{title}</div>
           <div className="text-[10px] text-muted-foreground">{subtitle}</div>
@@ -102,7 +100,7 @@ function TrendingChip({ entry }: { entry: FlowEntry }) {
   const isPositive = (pct ?? 0) >= 0
 
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-card border border-white/10 shrink-0 hover:border-[#FEE500]/30 hover:bg-[#FEE500]/5 transition-colors">
+    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-card border border-border shrink-0 hover:bg-muted/30 transition-colors">
       <AssetLogo ticker={entry.ticker} name={entry.name} assetType={assetType} size={20} />
       <div className="text-xs font-medium">{entry.ticker}</div>
       {pct !== undefined && (
@@ -126,20 +124,21 @@ export function MarketFlowSection({ data }: Props) {
       <Separator className="bg-border" />
 
       {/* 섹션 컨테이너 */}
-      <div className="rounded-2xl border border-[#FEE500]/20 bg-[#FEE500]/[0.03] p-5 space-y-4">
+      <div className="rounded-2xl border border-border bg-card p-5 space-y-4">
         {/* 섹션 헤더 */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#FEE500]/15">
-            <Flame className="h-4 w-4 text-[#FEE500]" />
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted">
+            <Flame className="h-4 w-4 text-muted-foreground" />
           </div>
           <div>
             <h2 className="text-base font-bold">시장 동향</h2>
             <p className="text-[10px] text-muted-foreground">오늘 외국인·기관 순매수 상위 + 거래량 HOT 종목</p>
           </div>
         </div>
+        <Separator className="bg-border" />
 
         {/* KR 3열 */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <FlowColumn
             icon={Globe}
             title="외국인 순매수"
@@ -168,9 +167,9 @@ export function MarketFlowSection({ data }: Props) {
 
         {/* US 트렌딩 */}
         {us.trending.length > 0 && (
-          <div className="space-y-2 pt-2 border-t border-[#FEE500]/10">
+          <div className="space-y-2 pt-2 border-t border-border">
             <div className="flex items-center gap-1.5">
-              <TrendingUp className="h-4 w-4 text-[#FEE500]/70" />
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
               <div>
                 <span className="text-sm font-semibold">US 트렌딩</span>
                 <span className="text-[10px] text-muted-foreground ml-1.5">Yahoo Finance 기준</span>

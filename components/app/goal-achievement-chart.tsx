@@ -3,8 +3,9 @@ import { useRef, useEffect, useCallback, useState } from 'react'
 import { scaleBand, scaleLinear } from 'd3-scale'
 import { select } from 'd3-selection'
 import { axisBottom, axisLeft } from 'd3-axis'
-import { CandlestickChart, ChevronDown } from 'lucide-react'
+import { CandlestickChart } from 'lucide-react'
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { SnapshotRow } from '@/db/queries/portfolio-snapshots'
 import type { GoalRow } from '@/db/queries/goals'
@@ -84,9 +85,8 @@ interface GoalAchievementChartProps {
 export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartProps) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
-  const [period, setPeriod] = useState<Period>('monthly')
+  const [period, setPeriod] = useState<Period>('daily')
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
-  const [open, setOpen] = useState(true)
 
   const draw = useCallback(() => {
     if (!svgRef.current || !wrapRef.current) return
@@ -238,44 +238,33 @@ export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartP
 
   return (
     <Card className="border-l-4 border-l-amber-500 shadow-sm">
-      <CardHeader
-        className="flex flex-row items-center justify-between pb-4 cursor-pointer select-none bg-gradient-to-r from-amber-500/10 to-transparent rounded-tl-[calc(var(--radius)-1px)]"
-        onClick={() => setOpen(v => !v)}
-      >
+      <CardHeader className="flex flex-row items-center justify-between pb-4">
         <div>
           <CardTitle className="flex items-center gap-2 text-amber-400">
             <CandlestickChart className="h-4 w-4" />날짜별 달성률
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-0.5">자산 추이와 목표 달성선을 캔들 차트로 비교합니다</p>
         </div>
-        <div className="flex items-center gap-2">
-          {open && (
-            <div
-              className="flex rounded-md border divide-x overflow-hidden text-xs"
-              onClick={e => e.stopPropagation()}
+        <div
+          className="flex rounded-md border divide-x overflow-hidden text-xs"
+        >
+          {(['daily', 'monthly', 'yearly'] as Period[]).map(p => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`px-3 py-1.5 transition-colors ${
+                period === p
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-background text-muted-foreground hover:bg-muted'
+              }`}
             >
-              {(['daily', 'monthly', 'yearly'] as Period[]).map(p => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
-                  className={`px-3 py-1.5 transition-colors ${
-                    period === p
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-background text-muted-foreground hover:bg-muted'
-                  }`}
-                >
-                  {PERIOD_LABELS[p]}
-                </button>
-              ))}
-            </div>
-          )}
-          <ChevronDown
-            className="h-4 w-4 text-muted-foreground transition-transform duration-300"
-            style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }}
-          />
+              {PERIOD_LABELS[p]}
+            </button>
+          ))}
         </div>
       </CardHeader>
-      {open && <CardContent>
+      <Separator />
+      <CardContent>
         {insufficient ? (
           <div className="space-y-3 py-2">
             {/* 범례 스켈레톤 */}
@@ -354,7 +343,7 @@ export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartP
             </div>
           </>
         )}
-      </CardContent>}
+      </CardContent>
     </Card>
   )
 }

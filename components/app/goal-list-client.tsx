@@ -15,6 +15,7 @@ function useReducedMotion() {
 import { Pencil, Trash2, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatKrw } from '@/lib/portfolio'
 import { GoalDialog } from '@/components/app/goal-dialog'
@@ -35,12 +36,13 @@ export function GoalListClient({ goals }: GoalListClientProps) {
   return (
     <>
       <Card className="h-full border-l-4 border-l-blue-500 shadow-sm">
-        <CardHeader className="pb-4 bg-gradient-to-r from-blue-500/10 to-transparent rounded-tl-[calc(var(--radius)-1px)]">
+        <CardHeader className="pb-4 rounded-tl-[calc(var(--radius)-1px)]">
           <CardTitle className="flex items-center gap-2 text-blue-400">
             <Target className="h-4 w-4" />나의 목표
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-0.5">달성하고 싶은 자산 목표를 관리합니다</p>
         </CardHeader>
+        <Separator />
         <CardContent>
           {goals.length === 0 ? (
             <div className="space-y-1">
