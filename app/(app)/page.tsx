@@ -9,12 +9,10 @@ import {
   computePortfolio,
   aggregateByType,
   formatKrw,
-  formatUsd,
-  formatReturn,
+
 } from '@/lib/portfolio'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { DashboardStatCard } from '@/components/app/dashboard-stat-card'
 import { AllocationPieChart, type AllocationSlice } from '@/components/app/allocation-pie-chart'
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { DashboardGoalsSection } from '@/components/app/dashboard-goals-section'
@@ -52,68 +50,8 @@ export default async function DashboardPage() {
   const summary = computePortfolio(performances, fxRateInt ?? 0)
   const byType: AllocationSlice[] = aggregateByType(performances)
 
-  // Step 6: Determine color sign for stat cards
-  const returnSign =
-    summary.returnPct > 0 ? 'positive' : summary.returnPct < 0 ? 'negative' : 'neutral'
-  const gainLossSign =
-    summary.gainLossKrw > 0 ? 'positive' : summary.gainLossKrw < 0 ? 'negative' : 'neutral'
-
   return (
     <div className="space-y-8">
-      {/* 히어로 배너 */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
-          <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
-          <div className="absolute bottom-0 left-1/3 w-80 h-48 rounded-full bg-violet-900/40 blur-3xl" />
-          <div className="absolute top-6 right-20 w-28 h-28 rounded-full border border-white/10" />
-          <div className="absolute top-12 right-28 w-14 h-14 rounded-full border border-white/10" />
-          <div className="absolute top-16 right-24 w-6 h-6 rounded-full bg-white/10" />
-          <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full border border-white/10" />
-          <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
-        </div>
-        <div className="relative space-y-2">
-          <div className="flex items-center gap-1.5 text-indigo-200 text-xs font-semibold tracking-widest uppercase">
-            <span>💼</span>포트폴리오 요약
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "'Sunflower', sans-serif" }}>내 자산 현황</h1>
-          <p className="text-indigo-100/70 text-sm">
-            총 자산 <span className="text-white font-semibold">{formatKrw(summary.totalValueKrw)}</span>
-            {summary.returnPct !== 0 && (
-              <span className={`ml-2 font-medium ${summary.returnPct > 0 ? 'text-emerald-300' : 'text-red-300'}`}>
-                {summary.returnPct > 0 ? '▲' : '▼'} {Math.abs(summary.returnPct).toFixed(2)}%
-              </span>
-            )}
-          </p>
-        </div>
-      </div>
-
-      {/* Row 1: Stat Cards — 4 columns on lg, 2 on md (DASH-01, DASH-04) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <DashboardStatCard
-          label="총 자산 (KRW)"
-          primaryValue={formatKrw(summary.totalValueKrw)}
-          accentColor="border-l-indigo-500"
-        />
-        <DashboardStatCard
-          label="총 자산 (USD)"
-          primaryValue={fxRateInt !== null ? formatUsd(summary.totalValueUsd) : 'N/A'}
-          accentColor="border-l-blue-500"
-        />
-        <DashboardStatCard
-          label="전체 수익률"
-          primaryValue={formatReturn(summary.returnPct)}
-          secondaryValue={formatKrw(summary.gainLossKrw)}
-          secondarySign={returnSign}
-          accentColor={returnSign === 'positive' ? 'border-l-emerald-500' : returnSign === 'negative' ? 'border-l-red-500' : 'border-l-slate-400'}
-        />
-        <DashboardStatCard
-          label="평가손익 (KRW)"
-          primaryValue={formatKrw(summary.gainLossKrw)}
-          secondarySign={gainLossSign}
-          accentColor={gainLossSign === 'positive' ? 'border-l-emerald-500' : gainLossSign === 'negative' ? 'border-l-red-500' : 'border-l-slate-400'}
-        />
-      </div>
-
       {/* Row 2: Allocation Pie Chart + Breakdown List (DASH-02) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Pie Chart */}

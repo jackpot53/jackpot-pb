@@ -1056,8 +1056,6 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
 
   return (
     <div className="space-y-6">
-      <SummaryCards grouped={grouped} performances={performances} />
-      <Separator className="bg-border" />
       <AssetFilter
         types={types}
         grouped={grouped}
