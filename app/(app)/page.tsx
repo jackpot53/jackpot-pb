@@ -56,7 +56,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* 히어로 배너 */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-700 via-indigo-700 to-violet-800 p-8 text-white shadow-xl">
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-slate-700 via-indigo-700 to-violet-800 p-6 sm:p-8 text-white shadow-xl">
         <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
           <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
           <div className="absolute bottom-0 left-1/3 w-80 h-48 rounded-full bg-violet-900/40 blur-3xl" />
@@ -83,7 +83,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Row 1: Stat Cards — 4 columns on lg, 2 on md (DASH-01, DASH-04) */}
-      <div className="grid grid-cols-4 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <DashboardStatCard
           label="총 자산 (KRW)"
           primaryValue={formatKrw(summary.totalValueKrw)}
@@ -110,7 +110,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Row 2: Allocation Pie Chart + Breakdown List (DASH-02) */}
-      <div className="grid grid-cols-2 gap-6 md:grid-cols-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Pie Chart */}
         <Card className="border-l-4 border-l-blue-500 shadow-sm">
           <CardHeader className="bg-gradient-to-r from-blue-50/60 to-transparent dark:from-blue-950/20 rounded-tl-[calc(var(--radius)-1px)]">

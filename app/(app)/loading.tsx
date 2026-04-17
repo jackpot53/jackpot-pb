@@ -14,7 +14,7 @@ export default function DashboardLoading() {
       </div>
 
       {/* 통계 카드 4개 */}
-      <div className="grid grid-cols-4 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
             <CardHeader className="pb-2">
@@ -29,7 +29,7 @@ export default function DashboardLoading() {
       </div>
 
       {/* 파이차트 + 자산 목록 */}
-      <div className="grid grid-cols-2 gap-5 md:grid-cols-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <Card>
           <CardHeader className="pb-3">
             <Skeleton className="h-4 w-24" />
