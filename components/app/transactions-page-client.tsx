@@ -272,6 +272,7 @@ export function TransactionsPageClient({ transactions, assetOptions, sparklines,
               size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
+              aria-label="이전 페이지"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -291,6 +292,7 @@ export function TransactionsPageClient({ transactions, assetOptions, sparklines,
               size="sm"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
+              aria-label="다음 페이지"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
