@@ -3,7 +3,7 @@
  * All functions are pure (no DB calls). They accept pre-fetched data as arguments.
  * All money values are KRW integers (BIGINT convention, Phase 1 D-04).
  */
-import { computeCurrentSavingsValueKrw, type SavingsDetails, type SavingsBuy } from '@/lib/savings'
+import { computeCurrentSavingsValueKrw, generateVirtualRecurringBuys, type SavingsDetails, type SavingsBuy } from '@/lib/savings'
 
 export interface AssetHoldingInput {
   assetId: string
@@ -43,6 +43,8 @@ export interface AssetPerformance extends AssetHoldingInput {
   maturityDate: string | null
   /** savings 전용: 연이자율 bp×100 (e.g. 52500 = 5.25%), 없으면 null */
   interestRateBp: number | null
+  /** savings recurring 전용: 월납입 계획액 (KRW), 없으면 null */
+  monthlyContributionKrw: number | null
 }
 
 export interface PortfolioSummary {
@@ -81,6 +83,29 @@ export function computeAssetPerformance(params: {
 }): AssetPerformance {
   const { holding, currentPriceKrw, currentPriceUsd = null, currentFxRate = null, isStale, cachedAt, latestManualValuationKrw, dailyChangeBps = null, savingsDetails = null, savingsBuys = [] } = params
 
+  // 정기적금(recurring): 실제 거래 내역이 없을 때 가상 납입 내역 생성
+  const effectiveBuys: SavingsBuy[] = (() => {
+    if (
+      savingsDetails?.kind === 'recurring' &&
+      savingsBuys.length === 0 &&
+      savingsDetails.monthlyContributionKrw != null &&
+      savingsDetails.monthlyContributionKrw > 0 &&
+      savingsDetails.depositStartDate
+    ) {
+      return generateVirtualRecurringBuys({
+        depositStartDate: savingsDetails.depositStartDate,
+        monthlyContributionKrw: savingsDetails.monthlyContributionKrw,
+      })
+    }
+    return savingsBuys
+  })()
+
+  // 가상 납입 내역 사용 시 totalCostKrw 재계산
+  const effectiveTotalCostKrw =
+    effectiveBuys !== savingsBuys && effectiveBuys.length > 0
+      ? effectiveBuys.reduce((s, b) => s + b.amountKrw, 0)
+      : holding.totalCostKrw
+
   // savings 자동계산: 이자율 기반으로 경과일수 × 이자를 각 납입건별 합산.
   // latestManualValuationKrw(실지급액 덮어쓰기)가 있으면 자동계산을 무시.
   const isSavingsAuto =
@@ -91,7 +116,7 @@ export function computeAssetPerformance(params: {
 
   if (isSavingsAuto && savingsDetails) {
     const autoValue = computeCurrentSavingsValueKrw({
-      buys: savingsBuys,
+      buys: effectiveBuys,
       interestRateBp: savingsDetails.interestRateBp!,
       maturityDate: savingsDetails.maturityDate,
       compoundType: savingsDetails.compoundType,
@@ -102,11 +127,12 @@ export function computeAssetPerformance(params: {
     // savings 자동계산 자산은 메타가 없거나 이자율이 0일 때만 missingValuation
     const missingValuation = false
     const returnPct =
-      holding.totalCostKrw > 0
-        ? ((currentValueKrw - holding.totalCostKrw) / holding.totalCostKrw) * 100
+      effectiveTotalCostKrw > 0
+        ? ((currentValueKrw - effectiveTotalCostKrw) / effectiveTotalCostKrw) * 100
         : 0
     return {
       ...holding,
+      totalCostKrw: effectiveTotalCostKrw,
       currentPriceKrw: currentValueKrw,
       currentPriceUsd: null,
       currentValueKrw,
@@ -120,6 +146,7 @@ export function computeAssetPerformance(params: {
       missingValuation,
       maturityDate: savingsDetails?.maturityDate ?? null,
       interestRateBp: savingsDetails?.interestRateBp ?? null,
+      monthlyContributionKrw: savingsDetails?.monthlyContributionKrw ?? null,
     }
   }
 
@@ -183,6 +210,7 @@ export function computeAssetPerformance(params: {
     missingValuation,
     maturityDate: savingsDetails?.maturityDate ?? null,
     interestRateBp: savingsDetails?.interestRateBp ?? null,
+    monthlyContributionKrw: savingsDetails?.monthlyContributionKrw ?? null,
   }
 }
 

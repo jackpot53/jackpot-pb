@@ -64,6 +64,7 @@ export async function recordMonthlyContribution(
   await upsertHoldings(assetId, user.id)
   revalidatePath(`/assets/${assetId}`)
   revalidatePath('/assets')
+  revalidatePath('/transactions')
 }
 
 const savingsDetailsPatchSchema = z.object({

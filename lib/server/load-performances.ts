@@ -38,7 +38,7 @@ export const loadPerformances = cache(async (userId: string): Promise<{
 
   const performances: AssetPerformance[] = []
   for (const asset of assetsWithHoldings.filter(
-    (a) => Number(a.totalQuantity ?? 0) > 0 || Number(a.totalCostKrw ?? 0) > 0 || a.latestManualValuationKrw !== null
+    (a) => Number(a.totalQuantity ?? 0) > 0 || Number(a.totalCostKrw ?? 0) > 0 || a.latestManualValuationKrw !== null || a.assetType === 'savings'
   )) {
     let currentPriceKrw = 0
     let cachedAt: Date | null = null

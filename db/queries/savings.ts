@@ -22,6 +22,7 @@ export async function getSavingsDetailsByAsset(assetId: string): Promise<Savings
     compoundType: (row.compoundType ?? 'simple') as SavingsDetails['compoundType'],
     taxType: (row.taxType ?? 'taxable') as SavingsDetails['taxType'],
     autoRenew: row.autoRenew,
+    monthlyContributionKrw: row.monthlyContributionKrw ?? null,
   }
 }
 
@@ -61,6 +62,7 @@ export async function getSavingsDetails(
       compoundType: (row.compoundType ?? 'simple') as SavingsDetails['compoundType'],
       taxType: (row.taxType ?? 'taxable') as SavingsDetails['taxType'],
       autoRenew: row.autoRenew,
+      monthlyContributionKrw: row.monthlyContributionKrw ?? null,
     })
   }
   return map

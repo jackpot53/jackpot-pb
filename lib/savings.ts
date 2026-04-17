@@ -27,6 +27,52 @@ export interface SavingsDetails {
   compoundType: CompoundType
   taxType: TaxType
   autoRenew: boolean
+  monthlyContributionKrw: number | null
+}
+
+/**
+ * 정기적금 가상 납입 내역 생성
+ * depositStartDate부터 asOf까지 매월 같은 날짜로 납입 내역을 생성한다.
+ * 실제 거래 내역이 없을 때 성과 계산에 사용한다.
+ */
+export function generateVirtualRecurringBuys({
+  depositStartDate,
+  monthlyContributionKrw,
+  asOf = new Date(),
+}: {
+  depositStartDate: string
+  monthlyContributionKrw: number
+  asOf?: Date
+}): SavingsBuy[] {
+  if (monthlyContributionKrw <= 0) return []
+
+  // YYYY-MM-DD를 로컬 자정으로 파싱 (new Date('YYYY-MM-DD')는 UTC 기준이라 UTC+9에서 하루 밀림)
+  const [sy, sm, sd] = depositStartDate.split('-').map(Number)
+  const todayLocal = new Date(asOf)
+  todayLocal.setHours(0, 0, 0, 0)
+
+  if (new Date(sy, sm - 1, sd) > todayLocal) return []
+
+  const buys: SavingsBuy[] = []
+  let year = sy
+  let month = sm - 1  // 0-indexed
+
+  while (true) {
+    // 해당 월의 마지막 날을 초과하지 않도록 클램프 (예: 1월 31일 → 2월 28일)
+    const lastDay = new Date(year, month + 1, 0).getDate()
+    const day = Math.min(sd, lastDay)
+    const cur = new Date(year, month, day)
+    if (cur > todayLocal) break
+
+    const mm = String(month + 1).padStart(2, '0')
+    const dd = String(day).padStart(2, '0')
+    buys.push({ transactionDate: `${year}-${mm}-${dd}`, amountKrw: monthlyContributionKrw })
+
+    month++
+    if (month > 11) { month = 0; year++ }
+  }
+
+  return buys
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

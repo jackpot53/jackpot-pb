@@ -1164,21 +1164,38 @@ export function NewAssetForm({ onSubmit }: {
 
             {assetType === 'savings' ? (
               <div className="flex flex-col gap-3">
-                {/* 초기 원금 | 연이자율 */}
+                {/* 초기 원금 | 연이자율 (recurring: 월납입계획액 | 연이자율) */}
                 <div className="grid grid-cols-2 gap-3">
-                  <FormField control={form.control} name="initialPricePerUnit"
-                    render={({ field }) => (
-                      <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
-                        <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
-                          <Receipt className="h-3.5 w-3.5 shrink-0" />초기 원금 (₩)
-                        </FormLabel>
-                        <FormControl>
-                          <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 10000000" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {savingsKind === 'recurring' && !['정기예금', '파킹통장', '외화예금'].some(t => name?.endsWith(t)) ? (
+                    <FormField control={form.control} name="monthlyContributionKrw"
+                      render={({ field }) => (
+                        <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                          <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                            <Banknote className="h-3.5 w-3.5 shrink-0" />월납입 계획액 (₩)
+                          </FormLabel>
+                          <FormControl>
+                            <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 500000" />
+                          </FormControl>
+                          <p className="text-[11px] text-muted-foreground">overview 탭 원클릭 납입 버튼의 기본값</p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : savingsKind !== 'recurring' ? (
+                    <FormField control={form.control} name="initialPricePerUnit"
+                      render={({ field }) => (
+                        <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                          <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                            <Receipt className="h-3.5 w-3.5 shrink-0" />초기 원금 (₩)
+                          </FormLabel>
+                          <FormControl>
+                            <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 10000000" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  ) : null}
                   <FormField control={form.control} name="interestRatePct"
                     render={({ field }) => (
                       <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
@@ -1225,8 +1242,8 @@ export function NewAssetForm({ onSubmit }: {
                   />
                 </div>
 
-                {/* 월납입액 — 예치금 유형(정기예금·파킹통장·외화예금)은 미표시 */}
-                {!['정기예금', '파킹통장', '외화예금'].some(t => name?.endsWith(t)) && (
+                {/* 월납입액 — 정기적금 외 적립식 (이미 위에 배치된 recurring 제외) */}
+                {savingsKind !== 'recurring' && !['정기예금', '파킹통장', '외화예금'].some(t => name?.endsWith(t)) && (
                   <FormField control={form.control} name="monthlyContributionKrw"
                     render={({ field }) => (
                       <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">

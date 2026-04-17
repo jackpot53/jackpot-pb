@@ -98,6 +98,7 @@ export async function createTransaction(
 
   await upsertHoldings(assetId, user.id)
   revalidatePath(`/assets/${assetId}`)
+  revalidatePath('/transactions')
 }
 
 export async function deleteTransaction(

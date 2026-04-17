@@ -124,8 +124,8 @@ function Num({ children, up, dn }: { children: React.ReactNode; up?: boolean; dn
   return (
     <span className={cn(
       'inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-bold border mx-0.5 align-middle',
-      up && 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-      dn && 'bg-red-500/20 text-red-300 border-red-500/30',
+      up && 'bg-red-500/20 text-red-300 border-red-500/30',
+      dn && 'bg-blue-500/20 text-blue-300 border-blue-500/30',
       !up && !dn && 'bg-white/10 text-white border-white/20',
     )}>
       {children}
@@ -206,8 +206,8 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
           {/* Portfolio daily change pill */}
           <div className={cn(
             'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold',
-            isUp && 'bg-emerald-500/15 text-emerald-400',
-            isDown && 'bg-red-500/15 text-red-400',
+            isUp && 'bg-red-500/15 text-red-400',
+            isDown && 'bg-blue-500/15 text-blue-400',
             !isUp && !isDown && 'bg-muted text-muted-foreground',
           )}>
             <SignIcon bps={portfolioChangeBps} />
@@ -252,7 +252,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                         <div
                           className={cn(
                             'h-full rounded-full transition-all',
-                            up ? 'bg-emerald-400' : dn ? 'bg-red-400' : 'bg-muted-foreground/30',
+                            up ? 'bg-red-400' : dn ? 'bg-blue-400' : 'bg-muted-foreground/30',
                           )}
                           style={{ width: `${Math.min(100, Math.abs(t.weightedChangeBps) / 3)}%` }}
                         />
@@ -261,8 +261,8 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                       <div className="text-right shrink-0">
                         <span className={cn(
                           'text-xs font-mono font-semibold',
-                          up && 'text-emerald-400',
-                          dn && 'text-red-400',
+                          up && 'text-red-400',
+                          dn && 'text-blue-400',
                           !up && !dn && 'text-muted-foreground',
                         )}>
                           {fmtPct(t.weightedChangeBps)}
@@ -296,15 +296,15 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                         size={36}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold truncate leading-tight">{m.name}</p>
+                        <p className="text-xs truncate leading-tight" style={{ fontFamily: "'Sunflower', sans-serif", fontWeight: 700 }}>{m.name}</p>
                         <p className="text-[11px] text-muted-foreground mt-0.5">
                           {m.dailyChangeKrw >= 0 ? '+' : ''}{fmtKrw(m.dailyChangeKrw)}
                         </p>
                       </div>
                       <span className={cn(
                         'text-sm font-mono font-bold shrink-0',
-                        up && 'text-emerald-400',
-                        dn && 'text-red-400',
+                        up && 'text-red-400',
+                        dn && 'text-blue-400',
                         !up && !dn && 'text-muted-foreground',
                       )}>
                         {fmtPct(m.dailyChangeBps)}

@@ -97,14 +97,12 @@ export default async function AppLayout({
             </div>
 
             {/* 하단 메타 */}
-            <div className="flex items-center justify-between text-xs text-white tracking-wide">
-              <span>© {new Date().getFullYear()} Jackpot</span>
+            <div className="flex items-center justify-center text-xs text-white tracking-wide">
               <span className="flex items-center gap-1.5">
                 <span
                   className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400/40"
                   style={{ animation: 'footer-dot 3s ease-in-out infinite' }}
                 />
-                Private use only
               </span>
             </div>
           </footer>

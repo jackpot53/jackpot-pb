@@ -55,6 +55,48 @@ function getFundDomain(name: string): string | null {
   return null
 }
 
+// 예적금 기관명 접두사 → 도메인 매핑 (긴 접두사 우선)
+const SAVINGS_PREFIX_DOMAIN: [string, string][] = [
+  ['카카오뱅크',   'kakaobank.com'],
+  ['케이뱅크',     'kbank.co.kr'],
+  ['토스뱅크',     'tossbank.com'],
+  ['MG새마을금고', 'kfcc.co.kr'],
+  ['새마을금고',   'kfcc.co.kr'],
+  ['KB국민',       'kbstar.com'],
+  ['KB',           'kbstar.com'],
+  ['NH농협',       'nonghyup.com'],
+  ['NH',           'nonghyup.com'],
+  ['농협',         'nonghyup.com'],
+  ['OK저축',       'oksavingsbank.com'],
+  ['신한',         'shinhan.com'],
+  ['하나',         'hanabank.com'],
+  ['우리',         'wooribank.com'],
+  ['IBK기업',      'ibk.co.kr'],
+  ['IBK',          'ibk.co.kr'],
+  ['SC제일',       'sc.com'],
+  ['씨티',         'citibank.co.kr'],
+  ['신협',         'cu.co.kr'],
+  ['수협',         'suhyup-bank.com'],
+  ['DGB대구',      'dgb.co.kr'],
+  ['DGB',          'dgb.co.kr'],
+  ['대구',         'dgb.co.kr'],
+  ['BNK부산',      'busanbank.co.kr'],
+  ['BNK',          'busanbank.co.kr'],
+  ['부산',         'busanbank.co.kr'],
+  ['광주',         'kjbank.com'],
+  ['전북',         'jbbank.co.kr'],
+  ['경남',         'knbank.co.kr'],
+  ['제주',         'jejubank.co.kr'],
+];
+
+function getSavingsDomain(name: string): string | null {
+  const trimmed = name.trim();
+  for (const [prefix, domain] of SAVINGS_PREFIX_DOMAIN) {
+    if (trimmed.startsWith(prefix)) return domain;
+  }
+  return null;
+}
+
 // 국내 ETF 브랜드 → 운용사 도메인 매핑 (logo.dev domain API 사용)
 const ETF_KR_BRAND_DOMAIN: Record<string, string> = {
   TIGER:   'miraeasset.com',       // 미래에셋자산운용
@@ -78,6 +120,13 @@ function buildLogoUrl(ticker: string | null, type: AssetType, name?: string): st
   if (type === 'etf_kr') {
     const brand = name?.trim().split(/\s+/)[0]?.toUpperCase();
     const domain = brand ? ETF_KR_BRAND_DOMAIN[brand] : undefined;
+    if (!domain) return null;
+    return `https://img.logo.dev/${domain}?token=${token}`;
+  }
+
+  // 예적금: 이름 첫 단어로 금융기관 도메인 판별
+  if (type === 'savings') {
+    const domain = name ? getSavingsDomain(name) : null;
     if (!domain) return null;
     return `https://img.logo.dev/${domain}?token=${token}`;
   }

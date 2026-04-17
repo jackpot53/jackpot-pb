@@ -127,6 +127,7 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
       })
     }
     revalidatePath('/assets')
+    revalidatePath('/transactions')
     redirect('/assets')
   }
 
