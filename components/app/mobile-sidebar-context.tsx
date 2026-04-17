@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, type ReactNode } from 'react'
 
 interface MobileSidebarContextValue {
   isOpen: boolean
@@ -13,7 +13,7 @@ const MobileSidebarContext = createContext<MobileSidebarContextValue>({
   close: () => {},
 })
 
-export function MobileSidebarProvider({ children }: { children: React.ReactNode }) {
+export function MobileSidebarProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
   return (
     <MobileSidebarContext.Provider
