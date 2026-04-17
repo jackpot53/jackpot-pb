@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
+import { useMobileSidebar } from '@/components/app/mobile-sidebar-context'
 import {
   Wallet,
   ArrowLeftRight,
@@ -120,15 +121,27 @@ function MiniSlotMachine() {
 export function Sidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
+  const { isOpen: isMobileOpen, close: closeMobile } = useMobileSidebar()
 
   return (
-    <aside
-      className={cn(
-        'relative z-10 h-screen border-r border-white flex flex-col shrink-0 transition-[width] duration-300 overflow-hidden',
-        collapsed ? 'w-14' : 'w-60'
+    <>
+      {/* 모바일 백드롭 */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={closeMobile}
+        />
       )}
-      style={{ background: 'linear-gradient(to bottom, #000000 0%, #0d0f2b 60%, #1a1a4e 100%)' }}
-    >
+      <aside
+        className={cn(
+          'fixed lg:static inset-y-0 left-0 z-50 h-screen border-r border-white flex flex-col shrink-0 overflow-hidden',
+          'transition-[transform,width] duration-300',
+          collapsed ? 'lg:w-14' : 'lg:w-60',
+          'w-60',
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+        )}
+        style={{ background: 'linear-gradient(to bottom, #000000 0%, #0d0f2b 60%, #1a1a4e 100%)' }}
+      >
       {/* 헤더: 슬롯머신 + 토글 */}
       <div className="relative flex h-14 items-center justify-center shrink-0 border-b border-white/[0.08]">
         {!collapsed && <MiniSlotMachine />}
@@ -223,6 +236,7 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={closeMobile}
               title={collapsed ? item.label : undefined}
               className={cn(
                 'group flex items-center gap-3 rounded-xl border transition-colors duration-200',
@@ -253,6 +267,7 @@ export function Sidebar() {
           )
         })}
       </nav>
-    </aside>
+      </aside>
+    </>
   )
 }
