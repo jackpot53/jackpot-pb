@@ -516,7 +516,7 @@ export default function LoginPage() {
             }}>
 
             {/* Left panel */}
-            <div className="md:w-[52%] relative flex flex-col items-center justify-between p-10 overflow-hidden"
+            <div className="hidden md:flex md:w-[52%] relative flex-col items-center justify-between p-10 overflow-hidden"
               style={{ background: 'rgba(4,8,20,0.95)', backdropFilter: 'blur(20px)' }}>
 
               {/* Corner accents */}
@@ -599,7 +599,7 @@ export default function LoginPage() {
             </div>
 
             {/* Right panel */}
-            <div className="md:w-[48%] p-8 md:p-12 flex flex-col justify-center relative"
+            <div className="w-full md:w-[48%] p-8 md:p-12 flex flex-col justify-center relative"
               style={{ background: 'rgba(10,7,22,0.98)', backdropFilter: 'blur(24px)' }}>
               {/* Gold grid */}
               <div className="absolute inset-0 pointer-events-none"
