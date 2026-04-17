@@ -25,7 +25,6 @@ const CandlestickChart = dynamic(
 import { formatKrw, formatUsd, formatReturn, formatQty } from '@/lib/portfolio'
 import type { AssetPerformance } from '@/lib/portfolio'
 import type { MonthlyDataPoint, AnnualDataPoint, DailyDataPoint } from '@/lib/snapshot/aggregation'
-import { TodayReport } from '@/components/app/today-report'
 
 const ASSET_TYPE_ORDER = [
   'stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal', 'cma',
@@ -993,7 +992,6 @@ export function SummaryCards({ grouped, performances, valueCandles }: { grouped:
           )
         })}
       </div>
-      <TodayReport performances={performances} />
     </div>
   )
 }

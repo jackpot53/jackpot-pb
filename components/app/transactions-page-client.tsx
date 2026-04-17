@@ -13,8 +13,6 @@ import { DeleteAssetDialog } from '@/components/app/delete-asset-dialog'
 import { AssetLogo } from '@/components/app/asset-logo'
 import { cn } from '@/lib/utils'
 import type { TransactionWithAsset } from '@/db/queries/transactions'
-import { MarketFlowSection } from '@/components/app/market-flow-section'
-import type { MarketFlowData } from '@/lib/market-flow/types'
 import { AnimatedLogo } from '@/components/app/animated-logo'
 
 type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal' | 'cma' | 'cma'
@@ -30,7 +28,6 @@ interface AssetOption {
 interface Props {
   transactions: TransactionWithAsset[]
   assetOptions: AssetOption[]
-  marketFlow: MarketFlowData
 }
 
 const KRW_FMT = new Intl.NumberFormat('ko-KR')
@@ -146,7 +143,7 @@ function TransactionCard({ tx, onDeleted }: { tx: TransactionWithAsset; onDelete
   )
 }
 
-export function TransactionsPageClient({ transactions, assetOptions, marketFlow }: Props) {
+export function TransactionsPageClient({ transactions, assetOptions }: Props) {
   const [assetFilter, setAssetFilter] = useState<string>('전체')
   const [typeFilter, setTypeFilter] = useState<string>('전체')
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
@@ -351,7 +348,6 @@ export function TransactionsPageClient({ transactions, assetOptions, marketFlow 
         )}
       </div>
 
-      <MarketFlowSection data={marketFlow} />
     </div>
   )
 }

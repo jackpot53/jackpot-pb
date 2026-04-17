@@ -157,6 +157,109 @@ function generateInsight(portfolioChangeBps: number, typeStats: TypeStat[], tota
   )
 }
 
+function generateNarrative(
+  portfolioChangeBps: number,
+  totalDailyChangeKrw: number,
+  topMovers: TopMover[],
+  typeStats: TypeStat[],
+): React.ReactNode {
+  if (topMovers.length === 0) return null
+
+  const up = portfolioChangeBps > 0
+  const dn = portfolioChangeBps < 0
+  const gainers = topMovers.filter((m) => m.dailyChangeBps > 0)
+  const losers  = topMovers.filter((m) => m.dailyChangeBps < 0)
+
+  const totalAbsChange = Math.abs(totalDailyChangeKrw)
+
+  function Ticker({ m }: { m: TopMover }) {
+    const mu = m.dailyChangeBps > 0
+    const md = m.dailyChangeBps < 0
+    return (
+      <span className={cn(
+        'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-bold border mx-0.5 align-middle',
+        mu && 'bg-red-500/15 text-red-300 border-red-500/25',
+        md && 'bg-blue-500/15 text-blue-300 border-blue-500/25',
+        !mu && !md && 'bg-white/10 text-white/70 border-white/15',
+      )}>
+        {m.name}
+        <span className="opacity-70">{fmtPct(m.dailyChangeBps)}</span>
+      </span>
+    )
+  }
+
+  const sentences: React.ReactNode[] = []
+
+  // 주도 상승 종목
+  if (gainers.length > 0) {
+    const top = gainers[0]
+    const contrib = totalAbsChange > 0 ? Math.round((Math.abs(top.dailyChangeKrw) / totalAbsChange) * 100) : 0
+    sentences.push(
+      <span key="gainer">
+        <Ticker m={top} />
+        {gainers.length > 1 && (
+          <> 등 {gainers.length}개 종목이</>
+        )}
+        {gainers.length === 1 && <>이(가)</>}
+        {' '}
+        <span className="text-red-300/80 font-semibold">
+          {up ? `+${fmtKrw(top.dailyChangeKrw)}` : fmtKrw(top.dailyChangeKrw)}
+        </span>
+        {contrib >= 20 && <span className="text-white/40"> (전체 변동의 {contrib}%)</span>}
+        {' '}상승을 이끌었습니다.
+      </span>
+    )
+  }
+
+  // 주도 하락 종목
+  if (losers.length > 0) {
+    const top = losers[0]
+    const contrib = totalAbsChange > 0 ? Math.round((Math.abs(top.dailyChangeKrw) / totalAbsChange) * 100) : 0
+    sentences.push(
+      <span key="loser">
+        <Ticker m={top} />
+        {losers.length > 1 && (
+          <> 등 {losers.length}개 종목은</>
+        )}
+        {losers.length === 1 && <>은(는)</>}
+        {' '}
+        <span className="text-blue-300/80 font-semibold">
+          {fmtKrw(top.dailyChangeKrw)}
+        </span>
+        {contrib >= 20 && <span className="text-white/40"> (전체 변동의 {contrib}%)</span>}
+        {' '}하락했습니다.
+      </span>
+    )
+  }
+
+  // 결론
+  if (up || dn) {
+    const bestType = typeStats[0]
+    const bestLabel = ASSET_TYPE_LABEL[bestType?.assetType] ?? bestType?.assetType
+    if (bestType && Math.abs(bestType.weightedChangeBps) > 30) {
+      sentences.push(
+        <span key="type">
+          전체적으로 <span className="text-white/70 font-semibold">{bestLabel}</span> 섹터가{' '}
+          <Num up={bestType.weightedChangeBps > 0} dn={bestType.weightedChangeBps < 0}>
+            {fmtPct(bestType.weightedChangeBps)}
+          </Num>
+          {bestType.weightedChangeBps > 0 ? '로 포트폴리오 상승을 주도했습니다.' : '로 하락 압력을 높였습니다.'}
+        </span>
+      )
+    }
+  }
+
+  if (sentences.length === 0) return null
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      {sentences.map((s, i) => (
+        <p key={i} className="text-xs text-white/55 leading-relaxed">{s}</p>
+      ))}
+    </div>
+  )
+}
+
 // ── news hook ────────────────────────────────────────────────────────────────
 
 function useMarketNews(assetTypes: string[], initial?: NewsItem[]) {
@@ -190,20 +293,23 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
   const isDown = portfolioChangeBps < 0
 
   const insight = generateInsight(portfolioChangeBps, typeStats, totalDailyChangeKrw)
+  const narrative = generateNarrative(portfolioChangeBps, totalDailyChangeKrw, topMovers, typeStats)
 
   return (
     <div className="rounded-2xl border border-border bg-card overflow-hidden">
       {/* Header */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full px-6 py-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
+        className="w-full px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 hover:bg-muted/30 transition-colors text-left"
       >
-        <div className="text-left">
+        <div className="flex-1 min-w-0">
           <h2 className="text-base font-semibold">오늘의 리포트</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">{insight}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2 sm:line-clamp-1">{insight}</p>
+          {narrative && (
+            <div className="mt-1.5 space-y-0.5">{narrative}</div>
+          )}
         </div>
-        <div className="flex items-center gap-2">
-          {/* Portfolio daily change pill */}
+        <div className="flex items-center gap-2 shrink-0">
           <div className={cn(
             'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold',
             isUp && 'bg-red-500/15 text-red-400',
@@ -222,9 +328,9 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
 
       {open && (
         <>
-          <div className="grid grid-cols-3 divide-x divide-border border-t border-border">
-            {/* Left: Type breakdown */}
-            <div className="px-6 py-4">
+          <div className="border-t border-border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {/* 자산별 등락 */}
+            <div className="px-4 sm:px-6 py-4 border-b sm:border-b-0 sm:border-r border-border">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-[11px] font-semibold text-muted-foreground mb-3">
                 <BarChart2 className="h-3 w-3" />
                 <span className="font-bold">자산별 등락</span>
@@ -236,18 +342,16 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                   const meta = ASSET_TYPE_META[t.assetType]
                   const Icon = meta?.icon ?? TrendingUp
                   return (
-                    <div key={t.assetType} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/20">
-                      {/* 아이콘 + 라벨 */}
+                    <div key={t.assetType} className="flex items-center gap-2 sm:gap-3 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/20">
                       <span className={cn(
                         'inline-flex items-center justify-center w-6 h-6 rounded-full shrink-0',
                         meta?.bg ?? 'bg-muted',
                       )}>
                         <Icon className={cn('h-3 w-3', meta?.color ?? 'text-muted-foreground')} />
                       </span>
-                      <span className="text-xs font-medium text-foreground shrink-0 w-16">
+                      <span className="text-xs font-medium text-foreground shrink-0 w-14 sm:w-16">
                         {meta?.label ?? t.assetType}
                       </span>
-                      {/* 바 */}
                       <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
                         <div
                           className={cn(
@@ -257,7 +361,6 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                           style={{ width: `${Math.min(100, Math.abs(t.weightedChangeBps) / 3)}%` }}
                         />
                       </div>
-                      {/* 수치 */}
                       <div className="text-right shrink-0">
                         <span className={cn(
                           'text-xs font-mono font-semibold',
@@ -267,7 +370,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                         )}>
                           {fmtPct(t.weightedChangeBps)}
                         </span>
-                        <span className="text-[10px] text-muted-foreground ml-1.5">
+                        <span className="hidden sm:inline text-[10px] text-muted-foreground ml-1.5">
                           {t.dailyChangeKrw >= 0 ? '+' : ''}{fmtKrw(t.dailyChangeKrw)}
                         </span>
                       </div>
@@ -277,8 +380,8 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
               </div>
             </div>
 
-            {/* Right: Top movers */}
-            <div className="px-6 py-4">
+            {/* 주요 종목 */}
+            <div className="px-4 sm:px-6 py-4 border-b lg:border-b-0 lg:border-r border-border">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-[11px] font-semibold text-muted-foreground mb-3">
                 <TrendingUp className="h-3 w-3" />
                 <span className="font-bold">주요 종목</span>
@@ -315,8 +418,8 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
               </div>
             </div>
 
-            {/* Right: News headlines */}
-            <div className="px-6 py-4">
+            {/* 증시 뉴스 */}
+            <div className="px-4 sm:px-6 py-4 sm:col-span-2 lg:col-span-1">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-[11px] font-semibold text-muted-foreground mb-3">
                 <Newspaper className="h-3 w-3" />
                 <span className="font-bold">증시 뉴스</span>
@@ -351,9 +454,8 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
             </div>
           </div>
 
-          {/* Stale warning footer */}
           {staleCount > 0 && (
-            <div className="px-6 py-2 border-t border-border bg-amber-500/10 flex items-center gap-1.5 text-xs text-amber-400">
+            <div className="px-4 sm:px-6 py-2 border-t border-border bg-amber-500/10 flex items-center gap-1.5 text-xs text-amber-400">
               <TriangleAlert className="h-3.5 w-3.5 shrink-0" />
               {staleCount}개 종목 시세가 오래됐습니다. 수익률이 부정확할 수 있습니다.
             </div>
