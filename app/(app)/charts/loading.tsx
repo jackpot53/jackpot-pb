@@ -14,7 +14,7 @@ export default function ChartsLoading() {
       </div>
 
       {/* 차트 카드 2×2 그리드 */}
-      <div className="grid grid-cols-2 gap-5 md:grid-cols-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i} className="border-l-4 border-l-slate-300 dark:border-l-slate-600">
             <CardHeader className="pb-2">
