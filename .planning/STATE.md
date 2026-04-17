@@ -86,9 +86,10 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 260414-lx3 | 펀드 평가금액 계산 방식 변경: value_krw에 기준가 저장, currentValueKrw = 수량 × 기준가로 동적 계산 | 2026-04-14 | b5e7989 | [260414-lx3-value-krw-currentvaluekrw](./quick/260414-lx3-value-krw-currentvaluekrw/) |
 | 260415-i5h | assets 페이지 우측 차트를 D3 캔들스틱으로 교체 | 2026-04-15 | a314978 | [260415-i5h-assets-d3](./quick/260415-i5h-assets-d3/) |
+| 260417-f2x | Web Interface Guidelines 위반 수정: transition-all 제거, aria-label, role=switch, prefers-reduced-motion | 2026-04-17 | ee741c6 | [260417-f2x-web-interface-guidelines-prefers-reduced](./quick/260417-f2x-web-interface-guidelines-prefers-reduced/) |
 
 ## Session Continuity
 
-Last session: 2026-04-14T12:46:53.497Z
-Stopped at: Completed 01-04-PLAN.md
+Last session: 2026-04-17T01:57:06Z
+Stopped at: Completed 260417-f2x-PLAN.md
 Resume file: None
