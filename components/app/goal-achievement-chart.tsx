@@ -1,6 +1,8 @@
 'use client'
 import { useRef, useEffect, useCallback, useState } from 'react'
-import * as d3 from 'd3'
+import { scaleBand, scaleLinear } from 'd3-scale'
+import { select } from 'd3-selection'
+import { axisBottom, axisLeft } from 'd3-axis'
 import { CandlestickChart, ChevronDown } from 'lucide-react'
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -94,7 +96,7 @@ export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartP
     const chartW = Math.max(W - ML - MR, 60)
     const totalH = CHART_H + MT + MB
 
-    const svg = d3.select(svgRef.current)
+    const svg = select(svgRef.current)
     svg.selectAll('*').remove()
     svg.attr('width', W).attr('height', totalH)
 
@@ -107,12 +109,12 @@ export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartP
     const allMin = Math.min(...allValues, ...goalValues)
     const pad = (allMax - allMin) * 0.08
 
-    const yScale = d3.scaleLinear()
+    const yScale = scaleLinear()
       .domain([Math.max(0, allMin - pad), allMax + pad])
       .range([CHART_H, 0])
       .nice()
 
-    const xScale = d3.scaleBand()
+    const xScale = scaleBand()
       .domain(candles.map(c => c.date))
       .range([0, chartW])
       .padding(0.3)
@@ -121,7 +123,7 @@ export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartP
 
     // Y axis + grid
     chart.append('g')
-      .call(d3.axisLeft(yScale).ticks(5).tickFormat(v => formatKrwShort(Number(v))))
+      .call(axisLeft(yScale).ticks(5).tickFormat(v => formatKrwShort(Number(v))))
       .call(g => g.select('.domain').remove())
       .call(g => {
         g.selectAll('.tick line')
@@ -163,7 +165,7 @@ export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartP
     chart.append('g')
       .attr('transform', `translate(0,${CHART_H})`)
       .call(
-        d3.axisBottom(xScale)
+        axisBottom(xScale)
           .tickValues(xTicks)
           .tickFormat(d => tickLabel(String(d), period))
       )
@@ -237,11 +239,11 @@ export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartP
   return (
     <Card className="border-l-4 border-l-amber-500 shadow-sm">
       <CardHeader
-        className="flex flex-row items-center justify-between pb-4 cursor-pointer select-none bg-gradient-to-r from-amber-50/60 to-transparent dark:from-amber-950/20 rounded-tl-[calc(var(--radius)-1px)]"
+        className="flex flex-row items-center justify-between pb-4 cursor-pointer select-none bg-gradient-to-r from-amber-500/10 to-transparent rounded-tl-[calc(var(--radius)-1px)]"
         onClick={() => setOpen(v => !v)}
       >
         <div>
-          <CardTitle className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+          <CardTitle className="flex items-center gap-2 text-amber-400">
             <CandlestickChart className="h-4 w-4" />날짜별 달성률
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-0.5">자산 추이와 목표 달성선을 캔들 차트로 비교합니다</p>
@@ -341,9 +343,9 @@ export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartP
                     <span className="text-muted-foreground">시가</span>
                     <span className="text-right">{formatKrwShort(tooltip.candle.open)}</span>
                     <span className="text-muted-foreground">고가</span>
-                    <span className="text-right text-emerald-500">{formatKrwShort(tooltip.candle.high)}</span>
+                    <span className="text-right text-emerald-400">{formatKrwShort(tooltip.candle.high)}</span>
                     <span className="text-muted-foreground">저가</span>
-                    <span className="text-right text-red-500">{formatKrwShort(tooltip.candle.low)}</span>
+                    <span className="text-right text-red-400">{formatKrwShort(tooltip.candle.low)}</span>
                     <span className="text-muted-foreground">종가</span>
                     <span className="text-right">{formatKrwShort(tooltip.candle.close)}</span>
                   </div>

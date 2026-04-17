@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils'
 import type { TransactionWithAsset } from '@/db/queries/transactions'
 import { MarketFlowSection } from '@/components/app/market-flow-section'
 import type { MarketFlowData } from '@/lib/market-flow/types'
+import { AnimatedLogo } from '@/components/app/animated-logo'
 
 type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal' | 'cma' | 'cma'
 type Currency = 'KRW' | 'USD'
@@ -30,7 +31,7 @@ interface AssetOption {
 interface Props {
   transactions: TransactionWithAsset[]
   assetOptions: AssetOption[]
-  sparklines: Record<string, number[]>
+  sparklines?: Record<string, number[]>
   marketFlow: MarketFlowData
 }
 
@@ -80,7 +81,7 @@ function TransactionCard({ tx, sparklineData }: { tx: TransactionWithAsset; spar
             {tx.assetName}
           </Link>
           <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${
-            tx.type === 'buy' ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-600'
+            tx.type === 'buy' ? 'bg-red-500/15 text-red-400' : 'bg-blue-500/15 text-blue-400'
           }`}>
             {tx.type === 'buy'
               ? <><TrendingUp className="h-3 w-3" />매수</>
@@ -121,7 +122,7 @@ function TransactionCard({ tx, sparklineData }: { tx: TransactionWithAsset; spar
         </div>
       )}
       <div className={cn('text-right shrink-0', tx.isVoided && 'line-through')}>
-        <div className={cn('text-sm font-semibold tabular-nums', tx.type === 'buy' ? 'text-red-500' : 'text-blue-600')}>
+        <div className={cn('text-sm font-semibold tabular-nums', tx.type === 'buy' ? 'text-red-400' : 'text-blue-400')}>
           {tx.type === 'sell' ? '+' : ''}{totalUsd != null ? formatUsd(totalUsd) : `₩${formatKrw(total)}`}
         </div>
         {totalUsd != null && (
@@ -142,13 +143,29 @@ function TransactionCard({ tx, sparklineData }: { tx: TransactionWithAsset; spar
   )
 }
 
-export function TransactionsPageClient({ transactions, assetOptions, sparklines, marketFlow }: Props) {
+const NO_SPARKLINE_TYPES = new Set(['fund', 'real_estate', 'savings'])
+
+export function TransactionsPageClient({ transactions, assetOptions, sparklines: initialSparklines, marketFlow }: Props) {
+  const [sparklines, setSparklines] = useState<Record<string, number[]>>(initialSparklines ?? {})
   const [assetFilter, setAssetFilter] = useState<string>('전체')
   const [typeFilter, setTypeFilter] = useState<string>('전체')
   const [showVoided, setShowVoided] = useState(false)
 
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 10
+
+  useEffect(() => {
+    const tickers = [...new Set(
+      transactions
+        .filter((tx) => tx.ticker && !NO_SPARKLINE_TYPES.has(tx.assetType))
+        .map((tx) => tx.ticker!)
+    )]
+    if (tickers.length === 0) return
+    fetch(`/api/sparklines?tickers=${tickers.join(',')}`)
+      .then((r) => r.json())
+      .then((data: Record<string, number[]>) => setSparklines(data))
+      .catch(() => {})
+  }, [transactions])
 
   const filtered = useMemo(() => {
     return transactions.filter((tx) => {
@@ -171,13 +188,59 @@ export function TransactionsPageClient({ transactions, assetOptions, sparklines,
       {/* 히어로 배너 */}
       <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-orange-500 via-rose-600 to-red-600 p-8 text-white shadow-xl">
         <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+          <style>{`
+            @keyframes tx-slide-r { 0%{transform:translateX(-6px);opacity:0} 40%{opacity:1} 100%{transform:translateX(10px);opacity:0} }
+            @keyframes tx-slide-l { 0%{transform:translateX(6px);opacity:0} 40%{opacity:1} 100%{transform:translateX(-10px);opacity:0} }
+            @keyframes tx-coin { 0%,100%{transform:translateY(0) scale(1);opacity:.5} 50%{transform:translateY(-7px) scale(1.15);opacity:.85} }
+            @keyframes tx-pulse-ring { 0%{transform:scale(.6);opacity:.5} 100%{transform:scale(1.8);opacity:0} }
+          `}</style>
           <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
           <div className="absolute bottom-0 left-1/3 w-80 h-48 rounded-full bg-red-900/40 blur-3xl" />
           <div className="absolute top-6 right-20 w-28 h-28 rounded-full border border-white/10" />
           <div className="absolute top-12 right-28 w-14 h-14 rounded-full border border-white/10" />
           <div className="absolute top-16 right-24 w-6 h-6 rounded-full bg-white/10" />
           <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full border border-white/10" />
+          {/* 매수/매도 화살표 애니메이션 — 우측 중앙 */}
+          <div className="absolute right-10 top-1/2 -translate-y-1/2 hidden sm:flex flex-col gap-3">
+            {/* 매수 (→) 흐름 */}
+            <div className="flex items-center gap-1">
+              {[0, 0.25, 0.5].map((delay, i) => (
+                <svg key={i} viewBox="0 0 16 16" className="w-5 h-5" style={{ animation: `tx-slide-r 1.4s ease-in-out ${delay}s infinite` }}>
+                  <path d="M3 8h10M9 4l4 4-4 4" stroke="rgba(253,186,116,0.8)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                </svg>
+              ))}
+              <span className="text-[10px] font-bold text-orange-200/60 ml-1">매수</span>
+            </div>
+            {/* 코인 펄스 */}
+            <div className="flex items-center justify-center relative w-10 h-10 mx-auto">
+              <div className="absolute inset-0 rounded-full border border-orange-300/40" style={{ animation: 'tx-pulse-ring 1.8s ease-out infinite' }} />
+              <div className="absolute inset-0 rounded-full border border-rose-300/30" style={{ animation: 'tx-pulse-ring 1.8s ease-out infinite', animationDelay: '0.9s' }} />
+              <span className="text-base relative" style={{ animation: 'tx-coin 2s ease-in-out infinite' }}>₩</span>
+            </div>
+            {/* 매도 (←) 흐름 */}
+            <div className="flex items-center gap-1 flex-row-reverse">
+              {[0, 0.25, 0.5].map((delay, i) => (
+                <svg key={i} viewBox="0 0 16 16" className="w-5 h-5" style={{ animation: `tx-slide-l 1.4s ease-in-out ${delay}s infinite` }}>
+                  <path d="M13 8H3M7 4L3 8l4 4" stroke="rgba(253,164,175,0.75)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                </svg>
+              ))}
+              <span className="text-[10px] font-bold text-rose-200/60 mr-1">매도</span>
+            </div>
+          </div>
           <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
+          {/* AnimatedLogo — 동전 던지듯 펜듈럼 스윙 */}
+          <style>{`
+            @keyframes tx-logo-pendulum {
+              0%,100% { transform: rotate(-12deg) scale(1); filter: drop-shadow(0 0 6px rgba(251,113,133,0.3)); }
+              25% { transform: rotate(12deg) scale(1.06); filter: drop-shadow(0 0 16px rgba(251,191,36,0.6)); }
+              50% { transform: rotate(-8deg) scale(0.96); }
+              75% { transform: rotate(10deg) scale(1.04); filter: drop-shadow(0 0 14px rgba(251,113,133,0.5)); }
+            }
+          `}</style>
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-75 hidden sm:block"
+            style={{ animation: 'tx-logo-pendulum 2.2s ease-in-out infinite', transformOrigin: 'top center' }}>
+            <AnimatedLogo size={108} />
+          </div>
         </div>
         <div className="relative flex items-start justify-between gap-6">
           <div className="space-y-2">

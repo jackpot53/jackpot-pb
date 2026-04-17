@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { getAssetsWithHoldings } from '@/db/queries/assets-with-holdings'
 import { getPriceCacheByTickers } from '@/db/queries/price-cache'
-import { refreshFxIfStale, refreshPriceIfStale } from '@/lib/price/cache'
+import { refreshAllPricesInternal } from '@/app/actions/prices'
 import {
   computeAssetPerformance,
   computePortfolio,
@@ -10,13 +10,29 @@ import {
 import { writePortfolioSnapshot } from '@/lib/snapshot/writer'
 import { db } from '@/db'
 import { assets } from '@/db/schema/assets'
-import { and, eq, isNotNull, or } from 'drizzle-orm'
 
 const PRICE_TTL_MS = 5 * 60 * 1000
 
 function isStalePrice(cachedAt: Date | null): boolean {
   if (!cachedAt) return true
   return Date.now() - cachedAt.getTime() > PRICE_TTL_MS
+}
+
+/** Simple concurrency limiter (avoids p-limit dependency). */
+async function withConcurrency<T>(
+  tasks: (() => Promise<T>)[],
+  limit: number,
+): Promise<T[]> {
+  const results: T[] = new Array(tasks.length)
+  let idx = 0
+  async function worker() {
+    while (idx < tasks.length) {
+      const i = idx++
+      results[i] = await tasks[i]()
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, tasks.length) }, worker))
+  return results
 }
 
 /**
@@ -41,8 +57,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Step 1: Refresh FX rate once (shared across all users)
-    await refreshFxIfStale()
+    // Step 1: Refresh all prices + FX in bulk (replaces per-ticker N+1)
+    await refreshAllPricesInternal()
 
     // Step 2: Find all users who have assets
     const userRows = await db
@@ -54,95 +70,87 @@ export async function GET(request: NextRequest) {
       return Response.json({ ok: true, skipped: 'no users with assets' })
     }
 
-    // Step 3: Refresh prices for all live tickers (once, shared across all users)
-    const liveAssets = await db
-      .select({ ticker: assets.ticker, assetType: assets.assetType })
-      .from(assets)
-      .where(and(
-        isNotNull(assets.ticker),
-        or(eq(assets.priceType, 'live'), eq(assets.assetType, 'fund'))
-      ))
-
-    await Promise.allSettled(
-      liveAssets.map((a) => refreshPriceIfStale(a.ticker!, a.assetType))
-    )
-
     const snapshotDate = new Date().toISOString().slice(0, 10) // 'YYYY-MM-DD' UTC
     const results: Record<string, string> = {}
 
-    // Step 4: Snapshot each user independently
-    for (const userId of userIds) {
-      try {
-        const assetsWithHoldings = await getAssetsWithHoldings(userId)
+    async function snapshotUser(userId: string): Promise<void> {
+      const assetsWithHoldings = await getAssetsWithHoldings(userId)
 
-        const liveTickers = assetsWithHoldings
-          .filter((a) => (a.priceType === 'live' || a.assetType === 'fund') && a.ticker)
-          .map((a) => a.ticker!)
-        const priceMap = await getPriceCacheByTickers([...liveTickers, 'USD_KRW'])
-        const fxCache = priceMap.get('USD_KRW')
-        const fxRateInt: number = fxCache?.priceKrw ?? 0
+      const liveTickers = assetsWithHoldings
+        .filter((a) => (a.priceType === 'live' || a.assetType === 'fund') && a.ticker)
+        .map((a) => a.ticker!)
+      const priceMap = await getPriceCacheByTickers([...liveTickers, 'USD_KRW'])
+      const fxCache = priceMap.get('USD_KRW')
+      const fxRateInt: number = fxCache?.priceKrw ?? 0
 
-        const performances: AssetPerformance[] = []
-        for (const asset of assetsWithHoldings) {
-          let currentPriceKrw = 0
-          let cachedAt: Date | null = null
-          let stale = false
+      const performances: AssetPerformance[] = []
+      for (const asset of assetsWithHoldings) {
+        let currentPriceKrw = 0
+        let cachedAt: Date | null = null
+        let stale = false
 
-          if ((asset.priceType === 'live' || asset.assetType === 'fund') && asset.ticker) {
-            const priceRow = priceMap.get(asset.ticker)
-            currentPriceKrw = priceRow?.priceKrw ?? 0
-            cachedAt = priceRow?.cachedAt ?? null
-            stale = isStalePrice(cachedAt)
-          }
-
-          performances.push(
-            computeAssetPerformance({
-              holding: {
-                ...asset,
-                totalQuantity: asset.totalQuantity ?? 0,
-                avgCostPerUnit: asset.avgCostPerUnit ?? 0,
-                totalCostKrw: asset.totalCostKrw ?? 0,
-              },
-              currentPriceKrw,
-              isStale: stale,
-              cachedAt,
-              latestManualValuationKrw: asset.latestManualValuationKrw,
-            })
-          )
+        if ((asset.priceType === 'live' || asset.assetType === 'fund') && asset.ticker) {
+          const priceRow = priceMap.get(asset.ticker)
+          currentPriceKrw = priceRow?.priceKrw ?? 0
+          cachedAt = priceRow?.cachedAt ?? null
+          stale = isStalePrice(cachedAt)
         }
 
-        const summary = computePortfolio(performances, fxRateInt)
-        const returnBps = Math.round((summary.returnPct / 100) * 10000)
-
-        // Compute per-asset-type breakdowns from individual performances
-        const breakdownMap = new Map<string, { totalValueKrw: number; totalCostKrw: number }>()
-        for (const p of performances) {
-          const existing = breakdownMap.get(p.assetType) ?? { totalValueKrw: 0, totalCostKrw: 0 }
-          breakdownMap.set(p.assetType, {
-            totalValueKrw: existing.totalValueKrw + p.currentValueKrw,
-            totalCostKrw: existing.totalCostKrw + p.totalCostKrw,
+        performances.push(
+          computeAssetPerformance({
+            holding: {
+              ...asset,
+              totalQuantity: asset.totalQuantity ?? 0,
+              avgCostPerUnit: asset.avgCostPerUnit ?? 0,
+              totalCostKrw: asset.totalCostKrw ?? 0,
+            },
+            currentPriceKrw,
+            isStale: stale,
+            cachedAt,
+            latestManualValuationKrw: asset.latestManualValuationKrw,
           })
-        }
-        const breakdowns = Array.from(breakdownMap.entries()).map(([assetType, v]) => ({
-          assetType: assetType as 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal',
-          totalValueKrw: v.totalValueKrw,
-          totalCostKrw: v.totalCostKrw,
-        }))
-
-        await writePortfolioSnapshot({
-          snapshotDate,
-          totalValueKrw: summary.totalValueKrw,
-          totalCostKrw: summary.totalCostKrw,
-          returnBps,
-          userId,
-        }, breakdowns)
-
-        results[userId] = 'ok'
-      } catch (userError) {
-        console.error(`[cron/snapshot] error for user ${userId}:`, userError)
-        results[userId] = String(userError)
+        )
       }
+
+      const summary = computePortfolio(performances, fxRateInt)
+      const returnBps = Math.round((summary.returnPct / 100) * 10000)
+
+      const breakdownMap = new Map<string, { totalValueKrw: number; totalCostKrw: number }>()
+      for (const p of performances) {
+        const existing = breakdownMap.get(p.assetType) ?? { totalValueKrw: 0, totalCostKrw: 0 }
+        breakdownMap.set(p.assetType, {
+          totalValueKrw: existing.totalValueKrw + p.currentValueKrw,
+          totalCostKrw: existing.totalCostKrw + p.totalCostKrw,
+        })
+      }
+      const breakdowns = Array.from(breakdownMap.entries()).map(([assetType, v]) => ({
+        assetType: assetType as 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal',
+        totalValueKrw: v.totalValueKrw,
+        totalCostKrw: v.totalCostKrw,
+      }))
+
+      await writePortfolioSnapshot({
+        snapshotDate,
+        totalValueKrw: summary.totalValueKrw,
+        totalCostKrw: summary.totalCostKrw,
+        returnBps,
+        userId,
+      }, breakdowns)
     }
+
+    // Step 3: Snapshot all users with bounded concurrency (4 at a time)
+    await withConcurrency(
+      userIds.map(userId => async () => {
+        try {
+          await snapshotUser(userId)
+          results[userId] = 'ok'
+        } catch (userError) {
+          console.error(`[cron/snapshot] error for user ${userId}:`, userError)
+          results[userId] = String(userError)
+        }
+      }),
+      4,
+    )
 
     return Response.json({ ok: true, snapshotDate, users: results })
   } catch (error) {

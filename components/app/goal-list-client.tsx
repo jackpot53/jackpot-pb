@@ -35,8 +35,8 @@ export function GoalListClient({ goals }: GoalListClientProps) {
   return (
     <>
       <Card className="h-full border-l-4 border-l-blue-500 shadow-sm">
-        <CardHeader className="pb-4 bg-gradient-to-r from-blue-50/60 to-transparent dark:from-blue-950/20 rounded-tl-[calc(var(--radius)-1px)]">
-          <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+        <CardHeader className="pb-4 bg-gradient-to-r from-blue-500/10 to-transparent rounded-tl-[calc(var(--radius)-1px)]">
+          <CardTitle className="flex items-center gap-2 text-blue-400">
             <Target className="h-4 w-4" />나의 목표
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-0.5">달성하고 싶은 자산 목표를 관리합니다</p>
@@ -55,7 +55,7 @@ export function GoalListClient({ goals }: GoalListClientProps) {
               ))}
               <div className="flex flex-col items-center gap-2 py-5">
                 <div
-                  className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/40"
+                  className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-500/15"
                   style={reducedMotion ? {} : { animation: 'goal-bounce 2s ease-in-out infinite' }}
                 >
                   <Target className="h-5 w-5 text-blue-400" />

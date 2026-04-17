@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { getAuthUser } from '@/utils/supabase/server'
 import { LineChart, TrendingUp, LayoutGrid, PieChart, DatabaseZap } from 'lucide-react'
+import { AnimatedLogo } from '@/components/app/animated-logo'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -16,7 +17,8 @@ import {
   toMonthlyValueCandlestick,
   snapshotsForType,
 } from '@/lib/snapshot/aggregation'
-import { refreshAllPrices } from '@/app/actions/prices'
+import { after } from 'next/server'
+import { refreshAllPricesInternal } from '@/app/actions/prices'
 import { loadPerformances } from '@/lib/server/load-performances'
 import { formatKrw } from '@/lib/portfolio'
 import type { AssetPerformance } from '@/lib/portfolio'
@@ -104,7 +106,7 @@ function NoDataCard({ title }: { title: string }) {
 function CandlestickSummary({ data, title, subtitle }: { data: CandlestickPoint[]; title: string; subtitle: string }) {
   const last = data[data.length - 1]
   const isUp = last ? last.close >= last.open : true
-  const color = isUp ? 'text-red-500' : 'text-blue-600'
+  const color = isUp ? 'text-red-400' : 'text-blue-400'
 
   return (
     <div className="mb-3">
@@ -140,7 +142,7 @@ function CandlestickSummary({ data, title, subtitle }: { data: CandlestickPoint[
 function AssetTypeCandlestickSummary({ data, assetType }: { data: CandlestickPoint[]; assetType: string }) {
   const last = data[data.length - 1]
   const isUp = last ? last.close >= last.open : true
-  const color = isUp ? 'text-red-500' : 'text-blue-600'
+  const color = isUp ? 'text-red-400' : 'text-blue-400'
 
   return (
     <div className="mb-2">
@@ -168,8 +170,11 @@ const ASSET_TYPE_ORDER = [
 ] as const
 
 async function ChartsPageContent({ userId }: { userId: string }) {
+  // Fire-and-forget: refresh prices in the background after response is sent
+  after(() => { void refreshAllPricesInternal().catch(() => {}) })
+
   const [{ performances }, snapshots] = await Promise.all([
-    (async () => { await refreshAllPrices(); return loadPerformances(userId) })(),
+    loadPerformances(userId),
     getAllSnapshotsWithBreakdowns(userId).catch(() => []),
   ])
 
@@ -207,7 +212,7 @@ async function ChartsPageContent({ userId }: { userId: string }) {
   return (
     <div className="space-y-6">
       <SummaryCards grouped={grouped} performances={performances} valueCandles={valueCandles} />
-      <Separator className="bg-foreground" />
+      <Separator className="bg-white/[0.08]" />
 
       {/* 전체 자산 누적 수익률 */}
       <div className="space-y-3">
@@ -222,7 +227,7 @@ async function ChartsPageContent({ userId }: { userId: string }) {
         <div className="grid grid-cols-3 gap-6">
           {dailyCandles.length > 0 ? (
             <Card className="border-l-4 border-l-blue-500 shadow-sm">
-              <CardHeader className="pb-3 border-b bg-gradient-to-r from-blue-50/60 to-transparent dark:from-blue-950/20 rounded-tl-[calc(var(--radius)-1px)]">
+              <CardHeader className="pb-3 border-b bg-gradient-to-r from-blue-500/10 to-transparent rounded-tl-[calc(var(--radius)-1px)]">
                 <CandlestickSummary data={dailyCandles} title="일간" subtitle={`최근 ${dailyCandles.length}일`} />
               </CardHeader>
               <CardContent className="pt-4">
@@ -236,7 +241,7 @@ async function ChartsPageContent({ userId }: { userId: string }) {
           )}
           {monthlyCandles.length > 0 ? (
             <Card className="border-l-4 border-l-violet-500 shadow-sm">
-              <CardHeader className="pb-3 border-b bg-gradient-to-r from-violet-50/60 to-transparent dark:from-violet-950/20 rounded-tl-[calc(var(--radius)-1px)]">
+              <CardHeader className="pb-3 border-b bg-gradient-to-r from-violet-500/10 to-transparent rounded-tl-[calc(var(--radius)-1px)]">
                 <CandlestickSummary data={monthlyCandles} title="월간" subtitle={`${monthlyCandles.length}개월`} />
               </CardHeader>
               <CardContent className="pt-4">
@@ -250,7 +255,7 @@ async function ChartsPageContent({ userId }: { userId: string }) {
           )}
           {annualCandles.length > 0 ? (
             <Card className="border-l-4 border-l-indigo-500 shadow-sm">
-              <CardHeader className="pb-3 border-b bg-gradient-to-r from-indigo-50/60 to-transparent dark:from-indigo-950/20 rounded-tl-[calc(var(--radius)-1px)]">
+              <CardHeader className="pb-3 border-b bg-gradient-to-r from-indigo-500/10 to-transparent rounded-tl-[calc(var(--radius)-1px)]">
                 <CandlestickSummary data={annualCandles} title="년간" subtitle={`${annualCandles.length}년`} />
               </CardHeader>
               <CardContent className="pt-4">
@@ -265,7 +270,7 @@ async function ChartsPageContent({ userId }: { userId: string }) {
         </div>
       </div>
 
-      <Separator className="bg-foreground" />
+      <Separator className="bg-white/[0.08]" />
 
       {/* 자산별 누적 수익률 */}
       {typeCandles.length > 0 && (
@@ -276,7 +281,7 @@ async function ChartsPageContent({ userId }: { userId: string }) {
           <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${typeCandles.length}, 1fr)` }}>
             {typeCandles.map(({ type, candles }) => (
               <Card key={type} className="border-l-4 border-l-violet-400 shadow-sm">
-                <CardHeader className="pb-3 border-b bg-gradient-to-r from-violet-50/50 to-transparent dark:from-violet-950/20 rounded-tl-[calc(var(--radius)-1px)]">
+                <CardHeader className="pb-3 border-b bg-gradient-to-r from-violet-500/10 to-transparent rounded-tl-[calc(var(--radius)-1px)]">
                   <AssetTypeCandlestickSummary data={candles} assetType={type} />
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -316,13 +321,87 @@ export default async function ChartsPage() {
       {/* 히어로 배너 */}
       <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8 text-white shadow-xl">
         <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+          <style>{`
+            @keyframes charts-bar { 0%,100%{transform:scaleY(1);opacity:.35} 50%{transform:scaleY(1.18);opacity:.6} }
+            @keyframes charts-line { 0%{stroke-dashoffset:120} 100%{stroke-dashoffset:0} }
+            @keyframes charts-glow { 0%,100%{opacity:.2} 50%{opacity:.55} }
+            @keyframes charts-ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+          `}</style>
           <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
           <div className="absolute bottom-0 left-1/3 w-80 h-48 rounded-full bg-indigo-900/40 blur-3xl" />
           <div className="absolute top-6 right-20 w-28 h-28 rounded-full border border-white/10" />
           <div className="absolute top-12 right-28 w-14 h-14 rounded-full border border-white/10" />
           <div className="absolute top-16 right-24 w-6 h-6 rounded-full bg-white/10" />
           <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full border border-white/10" />
+          {/* 미니 캔들스틱 차트 — 우측 */}
+          <div className="absolute right-8 top-1/2 -translate-y-1/2 hidden sm:block">
+            <svg viewBox="0 0 100 64" className="w-24 h-16" aria-hidden="true">
+              {/* 기준선 */}
+              <line x1="0" y1="48" x2="100" y2="48" stroke="white" strokeWidth="0.4" opacity="0.15"/>
+              <line x1="0" y1="32" x2="100" y2="32" stroke="white" strokeWidth="0.4" opacity="0.1"/>
+              <line x1="0" y1="16" x2="100" y2="16" stroke="white" strokeWidth="0.4" opacity="0.1"/>
+              {/* 캔들 1 — 상승 */}
+              <g style={{ transformOrigin:'10px 48px', animation:'charts-bar 2.4s ease-in-out infinite' }}>
+                <line x1="10" y1="28" x2="10" y2="52" stroke="white" strokeWidth="0.8" opacity="0.5"/>
+                <rect x="7" y="33" width="6" height="14" rx="1" fill="white" opacity="0.5"/>
+              </g>
+              {/* 캔들 2 — 하락 */}
+              <g style={{ transformOrigin:'24px 48px', animation:'charts-bar 2.4s ease-in-out infinite', animationDelay:'0.4s' }}>
+                <line x1="24" y1="30" x2="24" y2="54" stroke="rgba(255,180,180,0.6)" strokeWidth="0.8"/>
+                <rect x="21" y="36" width="6" height="16" rx="1" fill="rgba(255,180,180,0.4)"/>
+              </g>
+              {/* 캔들 3 — 상승 (큰) */}
+              <g style={{ transformOrigin:'38px 48px', animation:'charts-bar 2.8s ease-in-out infinite', animationDelay:'0.8s' }}>
+                <line x1="38" y1="18" x2="38" y2="52" stroke="white" strokeWidth="0.8" opacity="0.55"/>
+                <rect x="35" y="22" width="6" height="26" rx="1" fill="white" opacity="0.55"/>
+              </g>
+              {/* 캔들 4 — 하락 */}
+              <g style={{ transformOrigin:'52px 48px', animation:'charts-bar 2.4s ease-in-out infinite', animationDelay:'1.2s' }}>
+                <line x1="52" y1="32" x2="52" y2="56" stroke="rgba(255,180,180,0.55)" strokeWidth="0.8"/>
+                <rect x="49" y="38" width="6" height="14" rx="1" fill="rgba(255,180,180,0.35)"/>
+              </g>
+              {/* 캔들 5 — 상승 (최대) */}
+              <g style={{ transformOrigin:'66px 48px', animation:'charts-bar 3s ease-in-out infinite', animationDelay:'1.6s' }}>
+                <line x1="66" y1="12" x2="66" y2="52" stroke="white" strokeWidth="0.8" opacity="0.65"/>
+                <rect x="63" y="16" width="6" height="30" rx="1" fill="white" opacity="0.65"/>
+              </g>
+              {/* 캔들 6 — 상승 */}
+              <g style={{ transformOrigin:'80px 48px', animation:'charts-bar 2.6s ease-in-out infinite', animationDelay:'2s' }}>
+                <line x1="80" y1="22" x2="80" y2="52" stroke="white" strokeWidth="0.8" opacity="0.5"/>
+                <rect x="77" y="26" width="6" height="22" rx="1" fill="white" opacity="0.5"/>
+              </g>
+              {/* 추세선 */}
+              <polyline
+                points="10,42 24,44 38,30 52,40 66,20 80,28"
+                fill="none" stroke="rgba(200,180,255,0.5)" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"
+                strokeDasharray="120"
+                style={{ animation:'charts-line 3s ease-out forwards, charts-glow 3s ease-in-out 3s infinite' }}
+              />
+            </svg>
+          </div>
+          {/* 바닥 티커 */}
+          <div className="absolute bottom-0 left-0 right-0 h-6 overflow-hidden flex items-center" style={{ background: 'rgba(0,0,0,0.15)' }}>
+            <div className="flex gap-6 whitespace-nowrap text-[10px] font-mono px-4" style={{ animation: 'charts-ticker 18s linear infinite' }}>
+              {['KOSPI +0.8%', 'S&P500 +1.2%', 'BTC +3.4%', 'ETH +2.1%', 'GOLD +0.5%', 'KOSPI +0.8%', 'S&P500 +1.2%', 'BTC +3.4%', 'ETH +2.1%', 'GOLD +0.5%'].map((t, i) => (
+                <span key={i} style={{ color: 'rgba(200,220,255,0.5)' }}>{t}</span>
+              ))}
+            </div>
+          </div>
           <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
+          {/* AnimatedLogo — 심장박동처럼 맥박치는 애니메이션 */}
+          <style>{`
+            @keyframes charts-logo-pulse {
+              0%,100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 6px rgba(139,92,246,0.4)); }
+              20% { transform: scale(1.15) rotate(-3deg); filter: drop-shadow(0 0 24px rgba(139,92,246,0.9)); }
+              35% { transform: scale(0.93) rotate(2deg); filter: drop-shadow(0 0 4px rgba(139,92,246,0.2)); }
+              50% { transform: scale(1.1) rotate(-2deg); filter: drop-shadow(0 0 18px rgba(167,139,250,0.7)); }
+              65% { transform: scale(0.97) rotate(1deg); }
+            }
+          `}</style>
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-75 hidden sm:block"
+            style={{ animation: 'charts-logo-pulse 2.4s ease-in-out infinite' }}>
+            <AnimatedLogo size={108} />
+          </div>
         </div>
         <div className="relative space-y-2">
           <div className="flex items-center gap-1.5 text-violet-200 text-xs font-semibold tracking-widest uppercase">

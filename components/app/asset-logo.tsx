@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { BarChart2, Bitcoin, BookOpen, Building2, PiggyBank, TrendingUp, ShieldCheck, Gem, CreditCard, type LucideIcon } from 'lucide-react';
 
@@ -127,13 +128,13 @@ export function AssetLogo({ ticker, name, assetType, size = 24, className }: Pro
 
   return (
     <span className={wrapperCls} style={{ width: size, height: size }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
+      <Image
         src={url}
         alt=""
         width={size}
         height={size}
         onError={() => setFailed(true)}
+        loading="lazy"
         className="object-cover w-full h-full"
       />
     </span>

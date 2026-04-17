@@ -1,10 +1,11 @@
 import { Suspense } from 'react'
+import { after } from 'next/server'
 import { redirect } from 'next/navigation'
 import { Wallet } from 'lucide-react'
 import { getAuthUser } from '@/utils/supabase/server'
-import { refreshAllPrices } from '@/app/actions/prices'
+import { AnimatedLogo } from '@/components/app/animated-logo'
+import { refreshAllPricesInternal } from '@/app/actions/prices'
 import { loadPerformances } from '@/lib/server/load-performances'
-import { fetchSparklinesForTickers } from '@/lib/price/sparkline'
 import { getAllSnapshotsWithBreakdowns } from '@/db/queries/portfolio-snapshots'
 import { toMonthlyData, toAnnualData, toDailyData, snapshotsForType } from '@/lib/snapshot/aggregation'
 import { AssetsPageClient } from '@/components/app/assets-page-client'
@@ -31,6 +32,20 @@ export default async function AssetsPage() {
             <div className="hero-ring-3 absolute inset-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/10" />
           </div>
 
+          {/* AnimatedLogo — 신나게 튀어오르는 애니메이션 */}
+          <style>{`
+            @keyframes assets-logo-bounce {
+              0%,100% { transform: translateY(0) scale(1) rotate(0deg); filter: drop-shadow(0 0 6px rgba(52,211,153,0.3)); }
+              30% { transform: translateY(-16px) scale(1.1) rotate(-5deg); filter: drop-shadow(0 0 20px rgba(52,211,153,0.7)); }
+              50% { transform: translateY(-10px) scale(1.05) rotate(3deg); }
+              70% { transform: translateY(-18px) scale(1.12) rotate(-3deg); filter: drop-shadow(0 0 22px rgba(52,211,153,0.8)); }
+            }
+          `}</style>
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-75 hidden sm:block"
+            style={{ animation: 'assets-logo-bounce 2.8s ease-in-out infinite' }}>
+            <AnimatedLogo size={108} />
+          </div>
+
           {/* 실시간 바 차트 */}
           <div className="absolute right-6 bottom-0 flex items-end gap-[3px] h-[72px] opacity-20">
             <div className="hero-bar-1 w-2 bg-white rounded-t-sm" style={{ height: '28%' }} />
@@ -54,13 +69,32 @@ export default async function AssetsPage() {
               보유 자산을 등록하고 <span className="text-emerald-100/90 font-medium">실시간 수익률을 추적</span>합니다
             </p>
           </div>
-          <Link
-            href="/assets/new"
-            className="group shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/25 text-white text-sm font-semibold transition-all duration-200 hover:shadow-lg active:scale-95"
-          >
-            <PlusCircle className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />
-            자산 추가
-          </Link>
+          <div className="shrink-0 flex flex-col items-center gap-1.5">
+            <style>{`
+              @keyframes cta-bounce {
+                0%, 100% { transform: translateY(0); opacity: 0.9; }
+                50% { transform: translateY(-4px); opacity: 1; }
+              }
+              @keyframes cta-arrow {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(3px); }
+              }
+            `}</style>
+            <div
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 border border-white/40 text-white text-[11px] font-semibold"
+              style={{ animation: 'cta-bounce 1.8s ease-in-out infinite' }}
+            >
+              ✨ 자산을 등록해보세요
+            </div>
+            <div className="text-white/60 text-xs" style={{ animation: 'cta-arrow 1.8s ease-in-out infinite' }}>↓</div>
+            <Link
+              href="/assets/new"
+              className="group flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-white/90 border-2 border-emerald-700 text-emerald-700 text-sm font-semibold transition-all duration-200 hover:shadow-lg active:scale-95"
+            >
+              <PlusCircle className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />
+              자산 추가
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -74,21 +108,13 @@ export default async function AssetsPage() {
 }
 
 async function AssetsContent({ userId }: { userId: string }) {
-  await refreshAllPrices()
+  // Fire-and-forget: refresh prices in the background after response is sent
+  after(() => { void refreshAllPricesInternal().catch(() => {}) })
+
   const [{ performances }, snapshots] = await Promise.all([
     loadPerformances(userId),
     getAllSnapshotsWithBreakdowns(userId),
   ])
-
-  const liveTickers = [
-    ...new Set(
-      performances
-        .filter((p) => p.priceType === 'live' && p.ticker)
-        .map((p) => p.ticker!)
-    ),
-  ]
-  const sparklines = await fetchSparklinesForTickers(liveTickers)
-  const sparklinesObj = Object.fromEntries(sparklines)
 
   const monthlyData = toMonthlyData(snapshots)
   const annualData = toAnnualData(snapshots)
@@ -107,7 +133,7 @@ async function AssetsContent({ userId }: { userId: string }) {
   return (
     <AssetsPageClient
       performances={performances}
-      sparklines={sparklinesObj}
+      sparklines={{}}
       monthlyData={monthlyData}
       annualData={annualData}
       monthlyByType={monthlyByType}

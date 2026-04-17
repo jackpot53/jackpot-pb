@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { db } from '@/db'
 import { assets } from '@/db/schema/assets'
-import { and, eq, isNotNull, or } from 'drizzle-orm'
+import { priceCache } from '@/db/schema/price-cache'
+import { and, eq, isNotNull, or, sql } from 'drizzle-orm'
 import { getPriceCacheByTickers, upsertPriceCache } from '@/db/queries/price-cache'
 import { fetchYahooQuote } from '@/lib/price/yahoo'
 import { refreshFxIfStale } from '@/lib/price/cache'
@@ -11,9 +12,9 @@ import { fetchFunetfNav } from '@/lib/price/funetf'
 
 const PRICE_TTL_MS = 5 * 60 * 1000
 const KR_ASSET_TYPES = ['stock_kr', 'etf_kr']
-// Process-level guard: skip redundant DB round-trips when prices were recently refreshed.
-// Half of PRICE_TTL_MS (150 s) keeps prices fresh while avoiding repeated checks on warm containers.
-let lastRefreshedAt = 0
+// Dedup window: skip refresh if any price was cached within the last 150 s.
+// Uses DB MAX(cached_at) so all serverless instances share the same guard.
+const DEDUP_MS = 150_000
 
 async function requireUser() {
   const supabase = await createClient()
@@ -23,21 +24,23 @@ async function requireUser() {
 }
 
 /**
- * Refreshes all LIVE asset prices and the USD/KRW exchange rate.
- * Strategy: one bulk DB read to check staleness, then parallel API calls for stale tickers only.
- * This avoids N sequential DB round-trips while keeping connection pool usage low.
+ * Internal bulk refresh — no auth check.
+ * Used by both the user-facing `refreshAllPrices` Server Action and the cron route handler.
+ * Strategy: one MAX(cached_at) check → one bulk DB read → parallel API calls for stale tickers.
  */
-export async function refreshAllPrices(): Promise<void> {
-  if (Date.now() - lastRefreshedAt < 150_000) return
+export async function refreshAllPricesInternal(): Promise<void> {
+  // Global dedup: if any ticker was refreshed within DEDUP_MS, skip entirely.
+  // MAX(cached_at) is shared across all serverless instances — no per-process state.
+  const [{ maxCachedAt }] = await db
+    .select({ maxCachedAt: sql<Date | null>`MAX(${priceCache.cachedAt})` })
+    .from(priceCache)
 
-  await requireUser()
+  if (maxCachedAt && Date.now() - new Date(maxCachedAt).getTime() < DEDUP_MS) return
 
   // Step 1: Refresh FX rate (TTL 1 hour)
   await refreshFxIfStale()
 
   // Step 2: Fetch all priceable assets with a ticker (one query).
-  // Includes: all priceType='live' assets AND fund assets with a ticker regardless of priceType
-  // (existing fund assets may still have priceType='manual' from before live pricing was supported)
   const liveAssets = await db
     .select({ ticker: assets.ticker, assetType: assets.assetType })
     .from(assets)
@@ -47,9 +50,9 @@ export async function refreshAllPrices(): Promise<void> {
     ))
 
   const tickers = liveAssets.filter((a) => a.ticker).map((a) => a.ticker!)
-  if (tickers.length === 0) { lastRefreshedAt = Date.now(); return }
+  if (tickers.length === 0) return
 
-  // Step 3: Bulk-fetch cache for all tickers (one query), including USD_KRW for FX conversion
+  // Step 3: Bulk-fetch cache for all tickers (one query)
   const cacheMap = await getPriceCacheByTickers([...tickers, 'USD_KRW'])
   const now = Date.now()
 
@@ -59,13 +62,13 @@ export async function refreshAllPrices(): Promise<void> {
     return !cached || now - cached.cachedAt.getTime() > PRICE_TTL_MS
   }) as { ticker: string; assetType: string }[]
 
-  if (staleAssets.length === 0) { lastRefreshedAt = Date.now(); return }
+  if (staleAssets.length === 0) return
 
   // Step 4: Fetch FX rate from cache (needed for USD→KRW conversion)
   const fxCache = cacheMap.get('USD_KRW')
   const fxRate = fxCache ? fxCache.priceKrw / 10000 : null
 
-  // Step 5: Parallel API calls for stale tickers only (no DB calls inside)
+  // Step 5: Parallel API calls for stale tickers only
   await Promise.allSettled(
     staleAssets.map(async ({ ticker, assetType }) => {
       try {
@@ -94,5 +97,13 @@ export async function refreshAllPrices(): Promise<void> {
       }
     })
   )
-  lastRefreshedAt = Date.now()
+}
+
+/**
+ * User-facing Server Action: refreshes all LIVE asset prices and the USD/KRW FX rate.
+ * Validates auth before delegating to the shared internal implementation.
+ */
+export async function refreshAllPrices(): Promise<void> {
+  await requireUser()
+  await refreshAllPricesInternal()
 }

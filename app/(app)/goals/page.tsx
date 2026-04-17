@@ -1,7 +1,7 @@
-import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
-import { Loader2, Target } from 'lucide-react'
+import { Target } from 'lucide-react'
 import { getAuthUser } from '@/utils/supabase/server'
+import { AnimatedLogo } from '@/components/app/animated-logo'
 import { listGoals } from '@/db/queries/goals'
 import { getAllSnapshots } from '@/db/queries/portfolio-snapshots'
 import { GoalProgressChart } from '@/components/app/goal-progress-chart'
@@ -10,32 +10,19 @@ import { GoalListClient } from '@/components/app/goal-list-client'
 import { GoalCreateButton } from '@/components/app/goal-create-button'
 import { formatKrwCompact } from '@/lib/snapshot/formatters'
 
-async function GoalAchievementChartAsync({ userId }: { userId: string }) {
-  const [goals, snapshots] = await Promise.all([listGoals(userId), getAllSnapshots(userId)])
-  return <GoalAchievementChart goals={goals} snapshots={snapshots} />
-}
-
-async function GoalProgressChartAsync({ userId }: { userId: string }) {
-  const [goals, snapshots] = await Promise.all([listGoals(userId), getAllSnapshots(userId)])
-  const currentValueKrw = snapshots[snapshots.length - 1]?.totalValueKrw ?? 0
-  return <GoalProgressChart goals={goals} currentValueKrw={currentValueKrw} />
-}
-
 export default async function GoalsPage() {
   const user = await getAuthUser()
   if (!user) redirect('/login')
 
-  const goals = await listGoals(user.id)
+  const [goals, snapshots] = await Promise.all([
+    listGoals(user.id),
+    getAllSnapshots(user.id),
+  ])
+  const currentValueKrw = snapshots[snapshots.length - 1]?.totalValueKrw ?? 0
   const totalTarget = goals.reduce((s, g) => s + g.targetAmountKrw, 0)
   const nearestDeadline = [...goals]
     .filter(g => g.targetDate)
     .sort((a, b) => (a.targetDate ?? '').localeCompare(b.targetDate ?? ''))[0]?.targetDate ?? null
-
-  const chartFallback = (
-    <div className="flex items-center justify-center h-48 rounded-lg border bg-card">
-      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-    </div>
-  )
 
   return (
     <div className="relative space-y-6">
@@ -43,14 +30,29 @@ export default async function GoalsPage() {
       <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 p-8 text-white shadow-xl">
         {/* 배경 장식 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+          <style>{`
+            @keyframes goals-radar { 0%{opacity:.45;transform:scale(.7)} 100%{opacity:0;transform:scale(1.9)} }
+            @keyframes goals-ring-pulse { 0%,100%{opacity:.15;transform:scale(1)} 50%{opacity:.4;transform:scale(1.06)} }
+            @keyframes goals-dot-float { 0%,100%{transform:translateY(0);opacity:.35} 50%{transform:translateY(-9px);opacity:.75} }
+            @keyframes goals-star { 0%,100%{opacity:0;transform:scale(.4) rotate(0deg)} 50%{opacity:.8;transform:scale(1) rotate(20deg)} }
+          `}</style>
           <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
           <div className="absolute bottom-0 left-1/3 w-80 h-48 rounded-full bg-violet-900/40 blur-3xl" />
-          <div className="absolute top-6 right-20 w-28 h-28 rounded-full border border-white/10" />
-          <div className="absolute top-12 right-28 w-14 h-14 rounded-full border border-white/10" />
-          <div className="absolute top-16 right-24 w-6 h-6 rounded-full bg-white/10" />
+          {/* 레이더 타겟 링 — 정적 */}
+          <div className="absolute top-6 right-20 w-28 h-28 rounded-full border border-white/20" style={{ animation: 'goals-ring-pulse 3s ease-in-out infinite' }} />
+          <div className="absolute top-12 right-28 w-14 h-14 rounded-full border border-white/25" style={{ animation: 'goals-ring-pulse 3s ease-in-out infinite', animationDelay: '1s' }} />
+          <div className="absolute top-16 right-24 w-6 h-6 rounded-full bg-white/25" style={{ animation: 'goals-ring-pulse 2.5s ease-in-out infinite', animationDelay: '2s' }} />
+          {/* 레이더 스윕 — 퍼져나가며 사라짐 */}
+          <div className="absolute top-6 right-20 w-28 h-28 rounded-full border border-blue-300/50" style={{ animation: 'goals-radar 2.8s ease-out infinite' }} />
+          <div className="absolute top-6 right-20 w-28 h-28 rounded-full border border-indigo-200/35" style={{ animation: 'goals-radar 2.8s ease-out infinite', animationDelay: '1.4s' }} />
           <div className="absolute -bottom-8 -left-8 w-40 h-40 rounded-full border border-white/10" />
-          <div className="absolute bottom-6 left-6 w-3 h-3 rounded-full bg-blue-300/30" />
-          <div className="absolute bottom-10 left-14 w-2 h-2 rounded-full bg-violet-300/30" />
+          {/* 떠오르는 반짝이 점들 */}
+          <div className="absolute bottom-6 left-6 w-3 h-3 rounded-full bg-blue-300/60" style={{ animation: 'goals-dot-float 2.4s ease-in-out infinite' }} />
+          <div className="absolute bottom-10 left-14 w-2 h-2 rounded-full bg-violet-300/60" style={{ animation: 'goals-dot-float 2.8s ease-in-out infinite', animationDelay: '0.8s' }} />
+          <div className="absolute bottom-14 left-9 w-1.5 h-1.5 rounded-full bg-indigo-200/50" style={{ animation: 'goals-dot-float 3.2s ease-in-out infinite', animationDelay: '1.6s' }} />
+          {/* 별 반짝임 */}
+          <div className="absolute top-4 right-16 text-white/50 text-xs" style={{ animation: 'goals-star 2.5s ease-in-out infinite' }}>✦</div>
+          <div className="absolute top-10 right-10 text-white/40 text-[10px]" style={{ animation: 'goals-star 3s ease-in-out infinite', animationDelay: '1.2s' }}>✦</div>
           {/* 도트 패턴 */}
           <div
             className="absolute inset-0 opacity-[0.035]"
@@ -66,6 +68,17 @@ export default async function GoalsPage() {
               backgroundImage: 'repeating-linear-gradient(45deg, white 0px, white 1px, transparent 1px, transparent 36px)',
             }}
           />
+          {/* AnimatedLogo — 꿈꾸듯 떠오르는 애니메이션 */}
+          <style>{`
+            @keyframes goals-logo-dream {
+              0%,100% { transform: translateY(0) rotate(-4deg) scale(1); filter: drop-shadow(0 0 8px rgba(167,139,250,0.4)); }
+              50% { transform: translateY(-14px) rotate(4deg) scale(1.07); filter: drop-shadow(0 0 18px rgba(167,139,250,0.7)); }
+            }
+          `}</style>
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-75 hidden sm:block"
+            style={{ animation: 'goals-logo-dream 4s ease-in-out infinite' }}>
+            <AnimatedLogo size={108} />
+          </div>
         </div>
 
         <div className="relative flex items-start justify-between gap-6">
@@ -123,16 +136,12 @@ export default async function GoalsPage() {
         </div>
         <div className="hidden lg:block w-px bg-border" />
         <div className="flex-1 min-w-0 flex flex-col">
-          <Suspense fallback={chartFallback}>
-            <GoalProgressChartAsync userId={user.id} />
-          </Suspense>
+          <GoalProgressChart goals={goals} currentValueKrw={currentValueKrw} />
         </div>
       </div>
 
       {/* 하단: 날짜별 달성률 (접기/펼치기) */}
-      <Suspense fallback={chartFallback}>
-        <GoalAchievementChartAsync userId={user.id} />
-      </Suspense>
+      <GoalAchievementChart goals={goals} snapshots={snapshots} />
     </div>
   )
 }

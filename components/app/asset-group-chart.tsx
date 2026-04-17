@@ -179,13 +179,13 @@ export function AssetGroupChart({ assets, sparklines = {}, monthlyData = [], ann
 
   return (
     <div className="flex flex-col gap-3 h-full">
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+      <div className="flex gap-1 bg-white/10 rounded-lg p-1 w-fit">
         {TABS.map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
             className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${
-              tab === t ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'
+              tab === t ? 'bg-white/20 shadow text-white' : 'text-white/50 hover:text-white/80'
             }`}
           >
             {t}
@@ -195,7 +195,7 @@ export function AssetGroupChart({ assets, sparklines = {}, monthlyData = [], ann
 
       <div className="flex-1 min-h-0">
         {isEmpty ? (
-          <div className="h-full flex items-center justify-center text-xs text-gray-400 text-center px-4">
+          <div className="h-full flex items-center justify-center text-xs text-white/40 text-center px-4">
             {tab === '일별' ? '시세 데이터 없음' : '스냅샷 데이터 부족'}
           </div>
         ) : (

@@ -1,6 +1,8 @@
+import { Suspense } from 'react'
+import { after } from 'next/server'
 import { redirect } from 'next/navigation'
 import { getAuthUser } from '@/utils/supabase/server'
-import { refreshAllPrices } from '@/app/actions/prices'
+import { refreshAllPricesInternal } from '@/app/actions/prices'
 import { listGoals } from '@/db/queries/goals'
 import { loadPerformances } from '@/lib/server/load-performances'
 import {
@@ -17,15 +19,19 @@ import { AllocationPieChart, type AllocationSlice } from '@/components/app/alloc
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { DashboardGoalsSection } from '@/components/app/dashboard-goals-section'
 import { TodayReport } from '@/components/app/today-report'
+import { fetchMarketNewsForTypes } from '@/lib/market-news/fetch'
+import type { AssetPerformance } from '@/lib/portfolio/portfolio'
 
 export default async function DashboardPage() {
   const user = await getAuthUser()
   if (!user) redirect('/login')
 
-  // Step 1: Refresh all prices on-demand (D-01, D-03)
-  await refreshAllPrices()
+  // Fire-and-forget price refresh: schedules after the response is sent.
+  // The page renders immediately with cached prices (stale badge shown if needed).
+  // Next request will have fresh prices.
+  after(() => { void refreshAllPricesInternal().catch(() => {}) })
 
-  // Step 2: Load performances + goals in parallel (goals don't depend on prices)
+  // Load performances + goals in parallel from DB cache — no external API wait
   const [{ performances, priceMap }, goalsList] = await Promise.all([
     loadPerformances(user.id),
     listGoals(user.id),
@@ -145,11 +151,19 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* Row 3: Today's Report */}
-      <TodayReport performances={performances} />
+      {/* Row 3: Today's Report — news streamed via Suspense (no TTFB block) */}
+      <Suspense fallback={<TodayReport performances={performances} />}>
+        <TodayReportWithNews performances={performances} />
+      </Suspense>
 
       {/* Row 4: Goals Section — hidden when no goals (D-03, D-04) */}
       <DashboardGoalsSection goals={goalsList} totalValueKrw={summary.totalValueKrw} />
     </div>
   )
+}
+
+async function TodayReportWithNews({ performances }: { performances: AssetPerformance[] }) {
+  const assetTypes = [...new Set(performances.map((a) => a.assetType))]
+  const news = await fetchMarketNewsForTypes(assetTypes)
+  return <TodayReport performances={performances} news={news} />
 }

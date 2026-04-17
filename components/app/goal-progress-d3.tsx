@@ -1,6 +1,8 @@
 'use client'
 import { useRef, useEffect, useCallback, useState } from 'react'
-import * as d3 from 'd3'
+import { scaleLinear } from 'd3-scale'
+import { select } from 'd3-selection'
+import { easeCubicOut } from 'd3-ease'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { GoalRow } from '@/db/queries/goals'
 import { formatKrw } from '@/lib/portfolio'
@@ -37,7 +39,7 @@ export function GoalProgressD3({ goals, currentValueKrw }: GoalProgressD3Props) 
     const chartW = Math.max(W - ML - MR, 80)
     const H = goals.length * ROW_H + MT + MB
 
-    const svg = d3.select(svgRef.current)
+    const svg = select(svgRef.current)
     svg.selectAll('*').remove()
     svg.attr('width', W).attr('height', H)
 
@@ -46,7 +48,7 @@ export function GoalProgressD3({ goals, currentValueKrw }: GoalProgressD3Props) 
     const maxTarget = Math.max(...goals.map(g => g.targetAmountKrw))
     const maxVal = Math.max(maxTarget, currentValueKrw) * 1.06
 
-    const xScale = d3.scaleLinear().domain([0, maxVal]).range([0, chartW])
+    const xScale = scaleLinear().domain([0, maxVal]).range([0, chartW])
 
     const chart = svg.append('g').attr('transform', `translate(${ML},${MT})`)
 
@@ -92,7 +94,7 @@ export function GoalProgressD3({ goals, currentValueKrw }: GoalProgressD3Props) 
         .style('opacity', 0.85)
         .transition()
         .duration(900)
-        .ease(d3.easeCubicOut)
+        .ease(easeCubicOut)
         .attr('width', fillW)
 
       // Percentage label
@@ -224,7 +226,7 @@ export function GoalProgressD3({ goals, currentValueKrw }: GoalProgressD3Props) 
             <p className="font-semibold text-foreground">{tooltip.goal.name}</p>
             <p className="text-muted-foreground">현재: {formatKrw(currentValueKrw)}</p>
             <p className="text-muted-foreground">목표: {formatKrw(tooltip.goal.targetAmountKrw)}</p>
-            <p className={achieved ? 'text-emerald-500' : 'text-blue-400'}>
+            <p className={achieved ? 'text-emerald-400' : 'text-blue-400'}>
               {pct.toFixed(1)}% 달성{achieved ? ' ✓' : ''}
             </p>
             {tooltip.goal.targetDate && (
