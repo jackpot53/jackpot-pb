@@ -15,7 +15,7 @@ export default async function AppLayout({
 
   return (
     <MobileSidebarProvider>
-    <div className="flex h-screen overflow-hidden">
+      <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Header />
@@ -110,7 +110,7 @@ export default async function AppLayout({
           </footer>
         </main>
       </div>
-    </div>
+      </div>
     </MobileSidebarProvider>
   )
 }
