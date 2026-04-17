@@ -224,7 +224,7 @@ async function ChartsPageContent({ userId }: { userId: string }) {
             <TakeSnapshotButton />
           )}
         </div>
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {dailyCandles.length > 0 ? (
             <Card className="border-l-4 border-l-blue-500 shadow-sm">
               <CardHeader className="pb-3 border-b bg-gradient-to-r from-blue-500/10 to-transparent rounded-tl-[calc(var(--radius)-1px)]">
@@ -319,7 +319,7 @@ export default async function ChartsPage() {
   return (
     <div className="space-y-6">
       {/* 히어로 배너 */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8 text-white shadow-xl">
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-6 sm:p-8 text-white shadow-xl">
         <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
           <style>{`
             @keyframes charts-bar { 0%,100%{transform:scaleY(1);opacity:.35} 50%{transform:scaleY(1.18);opacity:.6} }
@@ -414,7 +414,7 @@ export default async function ChartsPage() {
         </div>
       </div>
       <Suspense fallback={
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <ChartSkeleton />
           <ChartSkeleton />
           <ChartSkeleton />
