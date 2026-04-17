@@ -9,7 +9,7 @@ export default async function NewAssetPage() {
   if (!user) redirect('/login')
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-3xl mx-auto">
       <div>
         <h1 className="flex items-center gap-2 text-xl font-semibold">
           <PlusCircle className="h-5 w-5" />

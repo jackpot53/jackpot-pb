@@ -39,6 +39,10 @@ export interface AssetPerformance extends AssetHoldingInput {
   dailyChangeBps: number | null
   /** true when priceType==='manual' but no valuation row exists — UI should flag this asset */
   missingValuation: boolean
+  /** savings 전용: 만기일 'YYYY-MM-DD', 없으면 null */
+  maturityDate: string | null
+  /** savings 전용: 연이자율 bp×100 (e.g. 52500 = 5.25%), 없으면 null */
+  interestRateBp: number | null
 }
 
 export interface PortfolioSummary {
@@ -114,6 +118,8 @@ export function computeAssetPerformance(params: {
       cachedAt: null,
       dailyChangeBps: null,
       missingValuation,
+      maturityDate: savingsDetails?.maturityDate ?? null,
+      interestRateBp: savingsDetails?.interestRateBp ?? null,
     }
   }
 
@@ -175,6 +181,8 @@ export function computeAssetPerformance(params: {
     cachedAt,
     dailyChangeBps,
     missingValuation,
+    maturityDate: savingsDetails?.maturityDate ?? null,
+    interestRateBp: savingsDetails?.interestRateBp ?? null,
   }
 }
 

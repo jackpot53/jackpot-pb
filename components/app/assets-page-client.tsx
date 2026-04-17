@@ -217,11 +217,11 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
     : null
 
   const accountBadge = mergedCount > 1 ? (
-    <span className="text-[10px] text-muted-foreground/80 bg-white/[0.08] border border-white/[0.08] px-1.5 py-0.5 rounded-full leading-tight text-center">
+    <span className="text-[10px] text-foreground/70 bg-white/[0.15] border border-white/25 px-1.5 py-0.5 rounded-full leading-tight text-center font-medium">
       {mergedCount}계좌
     </span>
   ) : asset.accountType && ACCOUNT_TYPE_LABELS[asset.accountType] ? (
-    <span className="text-[10px] rounded-full px-1.5 py-0.5 bg-white/[0.08] border border-white/[0.08] text-muted-foreground/80 font-medium leading-tight text-center">
+    <span className="text-[10px] rounded-full px-1.5 py-0.5 bg-white/[0.15] border border-white/25 text-foreground/70 font-medium leading-tight text-center">
       {ACCOUNT_TYPE_LABELS[asset.accountType]}
     </span>
   ) : null
@@ -229,9 +229,32 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
   const brokerageLabel = asset.brokerageId && BROKERAGE_LABELS[asset.brokerageId]
     ? BROKERAGE_LABELS[asset.brokerageId] : null
 
+  const isSavings = asset.assetType === 'savings'
+  const isRealEstate = asset.assetType === 'real_estate'
+  const hideQty = isSavings || isRealEstate
+
+  const maturityBadge = (() => {
+    if (!isSavings || !asset.maturityDate) return null
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const maturity = new Date(asset.maturityDate)
+    maturity.setHours(0, 0, 0, 0)
+    const days = Math.round((maturity.getTime() - today.getTime()) / 86400000)
+    const isExpired = days < 0
+    const isDueSoon = days >= 0 && days <= 30
+    const label = isExpired ? '만기 경과' : days === 0 ? 'D-Day' : `D-${days}`
+    return (
+      <span className={`ml-auto shrink-0 inline-flex items-center text-[11px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums ${isExpired ? 'bg-muted text-muted-foreground' : isDueSoon ? 'bg-orange-500/15 text-orange-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+        <span className="font-normal opacity-70">만기일 {asset.maturityDate.replace(/-/g, '.')}</span>
+        <span className="opacity-40 mx-0.5">·</span>
+        <span>{label}</span>
+      </span>
+    )
+  })()
+
   const nameBlock = (
     <div className="flex-1 min-w-0">
-      {/* Row1: 이름 + 티커 + 오늘 변동 */}
+      {/* Row1: 이름 + 티커 + 오늘 변동 + (savings) 만기 배지 */}
       <div className="flex items-center gap-2 min-w-0 flex-wrap">
         <span className="font-bold text-[15px] leading-snug break-all text-foreground">{asset.name}</span>
         {asset.ticker && (
@@ -242,16 +265,24 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
             오늘 {dailyChangePct >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
           </span>
         )}
+        {maturityBadge}
       </div>
-      {/* Row2: 수량 · 매수가 · 현재가 */}
+      {/* Row2: 수량 · 매수가 · 현재가 (savings·real_estate는 수량 미표시) */}
       {hasHolding && (
         <div className="flex items-center gap-2 mt-2 pt-2 border-t border-white/[0.08] text-xs text-foreground/70 flex-wrap">
-          <span className="tabular-nums"><span className="text-foreground/55">수량</span> <span className="font-semibold text-foreground/85">{formatQty(asset.totalQuantity, isCrypto)}</span></span>
+          {!hideQty && (
+            <span className="tabular-nums"><span className="text-foreground/55">수량</span> <span className="font-semibold text-foreground/85">{formatQty(asset.totalQuantity, isCrypto)}</span></span>
+          )}
           {asset.avgCostPerUnit > 0 && (
-            <><span className="text-foreground/30">|</span><span className="tabular-nums"><span className="text-foreground/55">매수</span> <span className="font-semibold text-foreground/85">{asset.avgCostPerUnitOriginal != null ? formatUsd(asset.avgCostPerUnitOriginal / 100) : formatKrw(asset.avgCostPerUnit)}</span></span></>
+            <>{!hideQty && <span className="text-foreground/30">|</span>}<span className="tabular-nums"><span className="text-foreground/55">매수</span> <span className="font-semibold text-foreground/85">{asset.avgCostPerUnitOriginal != null ? formatUsd(asset.avgCostPerUnitOriginal / 100) : formatKrw(asset.avgCostPerUnit)}</span></span></>
           )}
           {asset.currentPriceKrw > 0 && (asset.priceType === 'live' || asset.assetType === 'fund') && (
             <><span className="text-foreground/30">|</span><span className="inline-flex items-center gap-1 tabular-nums"><span className="text-foreground/55">현재</span> <span className="font-semibold text-foreground/85">{asset.currentPriceUsd != null ? formatUsd(asset.currentPriceUsd) : formatKrw(asset.currentPriceKrw)}</span>{asset.isStale && asset.cachedAt && <StalePriceBadge cachedAt={asset.cachedAt} />}</span></>
+          )}
+          {isSavings && asset.interestRateBp != null && asset.interestRateBp > 0 && (
+            <span className="ml-auto tabular-nums font-semibold text-emerald-400">
+              연 {(asset.interestRateBp / 10000).toFixed(2)}%
+            </span>
           )}
         </div>
       )}
@@ -323,11 +354,11 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
     <div className="flex items-stretch gap-2">
       {/* 종목 카드 */}
       <div className={cn("flex items-start gap-3 flex-1 min-w-0 rounded-xl border border-white/50 px-4 py-3.5 border-l-4 hover:bg-white/[0.03] transition-colors bg-white/[0.04]", ASSET_TYPE_ACCENT[asset.assetType] ?? 'border-l-border')}>
-        <div className="shrink-0 flex flex-col items-center gap-1.5 mt-0.5">
+        <div className="shrink-0 flex flex-col items-center gap-1.5 self-center">
           <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={40} />
           <div className="flex flex-col items-center gap-1">
             {brokerageLabel && (
-              <span className="text-[10px] rounded-full px-1.5 py-0.5 bg-white/[0.08] border border-white/[0.08] text-muted-foreground/80 font-medium leading-tight text-center">{brokerageLabel}</span>
+              <span className="text-[10px] rounded-full px-1.5 py-0.5 bg-white/[0.15] border border-white/25 text-foreground/70 font-medium leading-tight text-center">{brokerageLabel}</span>
             )}
             {accountBadge}
             {asset.owner && (

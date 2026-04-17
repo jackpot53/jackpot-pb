@@ -19,7 +19,7 @@ const assetSchema = z.object({
   assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal', 'cma']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
-  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire']).optional().nullable(),
+  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire']).optional().nullable(),
   brokerageId: z.string().max(50).optional().nullable(),
   withdrawalBankId: z.string().max(50).optional().nullable(),
   owner: z.string().max(20).optional().nullable(),
@@ -81,11 +81,15 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
 
   // Savings: 초기 원금/납입액 → buy tx (qty=1e8), 예적금 메타 → savings_details
   if (rest.assetType === 'savings') {
+    // 빈 문자열을 null로 정규화 (date input 초기화 시 '' 가 넘어올 수 있음)
+    const normalizedDepositStartDate = depositStartDate || null
+    const normalizedMaturityDate = maturityDate || null
+
     if (initialPricePerUnit && !isNaN(parseFloat(initialPricePerUnit)) && parseFloat(initialPricePerUnit) > 0) {
       const principalKrw = Math.round(parseFloat(initialPricePerUnit))
       const txNotes = savingsKind === 'term' ? '초기예치' : '1차 납입'
       // 가입일을 buy tx 날짜로 사용 (이자 기산점이 가입일이므로)
-      const savingsTxDate = depositStartDate ?? txDate
+      const savingsTxDate = normalizedDepositStartDate ?? txDate
       await db.insert(transactions).values({
         assetId: newAsset.id,
         userId: user.id,
@@ -114,8 +118,8 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
         userId: user.id,
         kind: savingsKind,
         interestRateBp: rateBp,
-        depositStartDate: depositStartDate ?? null,
-        maturityDate: maturityDate ?? null,
+        depositStartDate: normalizedDepositStartDate,
+        maturityDate: normalizedMaturityDate,
         monthlyContributionKrw: monthlyKrw,
         compoundType: compoundType ?? 'simple',
         taxType: taxType ?? 'taxable',
@@ -292,6 +296,8 @@ export async function updateAsset(
 
   // savings_details upsert (메타 필드가 전달된 경우)
   if (rest.assetType === 'savings' && savingsKind) {
+    const normalizedDepositStartDate = depositStartDate || null
+    const normalizedMaturityDate = maturityDate || null
     const rateBp = interestRatePct && !isNaN(parseFloat(interestRatePct))
       ? Math.round(parseFloat(interestRatePct) * 10000)
       : null
@@ -303,8 +309,8 @@ export async function updateAsset(
       userId: user.id,
       kind: savingsKind,
       interestRateBp: rateBp,
-      depositStartDate: depositStartDate ?? null,
-      maturityDate: maturityDate ?? null,
+      depositStartDate: normalizedDepositStartDate,
+      maturityDate: normalizedMaturityDate,
       monthlyContributionKrw: monthlyKrw,
       compoundType: compoundType ?? 'simple',
       taxType: taxType ?? 'taxable',
@@ -314,8 +320,8 @@ export async function updateAsset(
       set: {
         kind: savingsKind,
         interestRateBp: rateBp,
-        depositStartDate: depositStartDate ?? null,
-        maturityDate: maturityDate ?? null,
+        depositStartDate: normalizedDepositStartDate,
+        maturityDate: normalizedMaturityDate,
         monthlyContributionKrw: monthlyKrw,
         compoundType: compoundType ?? 'simple',
         taxType: taxType ?? 'taxable',

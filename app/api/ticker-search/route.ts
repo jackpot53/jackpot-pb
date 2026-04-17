@@ -212,6 +212,30 @@ async function searchYahooKr(q: string, type: string): Promise<{ name: string; t
   }
 }
 
+const FUND_SEARCH_CACHE_TTL = 5 * 60 * 1000
+const FUND_SEARCH_CACHE_MAX = 200
+const fundSearchCache = new Map<string, { results: { name: string; ticker: string }[]; ts: number }>()
+
+function getCachedFundSearch(key: string): { name: string; ticker: string }[] | null {
+  const hit = fundSearchCache.get(key)
+  if (!hit) return null
+  if (Date.now() - hit.ts > FUND_SEARCH_CACHE_TTL) {
+    fundSearchCache.delete(key)
+    return null
+  }
+  fundSearchCache.delete(key)
+  fundSearchCache.set(key, hit)
+  return hit.results
+}
+
+function setCachedFundSearch(key: string, results: { name: string; ticker: string }[]) {
+  if (fundSearchCache.size >= FUND_SEARCH_CACHE_MAX) {
+    const firstKey = fundSearchCache.keys().next().value
+    if (firstKey !== undefined) fundSearchCache.delete(firstKey)
+  }
+  fundSearchCache.set(key, { results, ts: Date.now() })
+}
+
 // Cache funetf session (CSRF token + cookies) for 10 minutes
 let funetfSessionCache: { csrf: string; cookies: string; ts: number } | null = null
 
@@ -277,17 +301,22 @@ async function funetfFetchPage(schVal: string, session: { csrf: string; cookies:
   }
 }
 
+const FUNETF_PAGE_CAP = 3
+
 async function funetfQuery(schVal: string, session: { csrf: string; cookies: string }): Promise<{ name: string; ticker: string }[]> {
+  const first = await funetfFetchPage(schVal, session, 1)
+  if (!first) return []
+
+  const lastPage = Math.min(first.totalPages, FUNETF_PAGE_CAP)
+  const restPageNums: number[] = []
+  for (let p = 2; p <= lastPage; p++) restPageNums.push(p)
+
+  const rest = await Promise.all(restPageNums.map((p) => funetfFetchPage(schVal, session, p)))
+
   const seen = new Set<string>()
   const results: { name: string; ticker: string }[] = []
-
-  let page = 1
-  let totalPages = 1
-  // Fetch pages sequentially to avoid CSRF conflicts (cap at 10 pages)
-  while (page <= Math.min(totalPages, 10)) {
-    const data = await funetfFetchPage(schVal, session, page)
-    if (!data) break
-    totalPages = data.totalPages
+  for (const data of [first, ...rest]) {
+    if (!data) continue
     for (const item of data.content as { fundFnm?: string; repFundNm?: string; fundCd?: string; repFundCd?: string }[]) {
       const name = item.fundFnm ?? item.repFundNm
       const ticker = item.fundCd ?? item.repFundCd
@@ -295,15 +324,21 @@ async function funetfQuery(schVal: string, session: { csrf: string; cookies: str
       seen.add(ticker)
       results.push({ name: name ?? ticker, ticker })
     }
-    page++
   }
   return results
 }
 
 async function searchFund(q: string): Promise<{ name: string; ticker: string }[]> {
+  const cacheKey = `fund:${q}`
+  const cached = getCachedFundSearch(cacheKey)
+  if (cached) return cached
+
   try {
     const session = await getFunetfSession(q)
-    if (!session) return []
+    if (!session) {
+      setCachedFundSearch(cacheKey, [])
+      return []
+    }
 
     // Try full query first; if no results, retry with progressively shorter prefix
     // (funetf API tokenizes fund names and fails on number boundaries like "투자100세")
@@ -329,11 +364,16 @@ async function searchFund(q: string): Promise<{ name: string; ticker: string }[]
         // Filter by original query if we fell back to a shorter one
         if (qry !== q) {
           const filtered = results.filter(r => r.name.includes(q) || q.includes(r.name.slice(0, 6)))
-          if (filtered.length > 0) return filtered
+          if (filtered.length > 0) {
+            setCachedFundSearch(cacheKey, filtered)
+            return filtered
+          }
         }
+        setCachedFundSearch(cacheKey, results)
         return results
       }
     }
+    setCachedFundSearch(cacheKey, [])
     return []
   } catch {
     return []

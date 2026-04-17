@@ -1,4 +1,3 @@
-<!-- GSD:project-start source:PROJECT.md -->
 ## Project
 
 **jackpot-pb**
@@ -12,114 +11,40 @@
 - **플랫폼**: 웹 브라우저 — 모바일 네이티브 불필요
 - **사용자 규모**: 싱글 유저 — 복잡한 멀티테넌시 불필요
 - **데이터 입력**: 주식/코인 시세는 외부 API, 부동산/예적금은 수동 — 증권사 스크래핑 없음
-- **Tech stack**: 미정 — 기획 단계에서 결정
-<!-- GSD:project-end -->
 
-<!-- GSD:stack-start source:codebase/STACK.md -->
 ## Technology Stack
 
-## Status
-## Host Environment
-| Item | Value |
-|------|-------|
-| Node.js | v23.10.0 |
-| Shell | zsh |
-| OS | macOS (darwin) |
-## Application Stack
-## GSD Framework (tooling only)
-| Component | Detail |
-|-----------|--------|
-| GSD version | v1.34.2 |
-| Runtime | Node.js CJS scripts |
-| Hooks | Bash + Node.js |
-## Configuration Files
-| File | Purpose |
-|------|---------|
-| `.claude/settings.json` | Claude Code permissions, hooks, statusline |
-## Languages
-## To Be Determined
-<!-- GSD:stack-end -->
+| Layer | Tech |
+|-------|------|
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Language | TypeScript 5 (strict mode) |
+| UI | React 19, Tailwind CSS 4, shadcn/ui (Base UI), Lucide |
+| Charts | Recharts, D3 |
+| Forms | React Hook Form + Zod |
+| Database | Supabase (Postgres) + Drizzle ORM |
+| Testing | Vitest + Testing Library |
+| Linting | ESLint 9 (eslint-config-next) |
 
-<!-- GSD:conventions-start source:CONVENTIONS.md -->
+**Import alias:** `@/` → project root
+
 ## Conventions
 
-## Status
-- `README.md` — Project name and one-line description (Korean: "personal asset management application")
-- `docs/개발일지.md` — Empty development journal
-## Naming Patterns
-- Use `kebab-case` for file and directory names (e.g., `asset-service.ts`, `portfolio-chart.tsx`)
-- Co-locate related files by feature, not by type
-- Use `camelCase` for all function and method names
-- Use descriptive verbs: `getPortfolio`, `calculateReturn`, `formatCurrency`
-- Use `camelCase` for local variables and parameters
-- Use `UPPER_SNAKE_CASE` for module-level constants
-- Use `PascalCase` for types, interfaces, enums, and classes
-- Prefix interfaces with `I` is not recommended — use plain names like `Asset`, `Portfolio`
-## Code Style
-- Not yet configured — no `.prettierrc`, `.eslintrc`, or `biome.json` detected
-- Recommended: establish Prettier with 2-space indent, single quotes, trailing commas
-- Not yet configured
-- Recommended: ESLint with TypeScript rules, or Biome for combined lint + format
-## Import Organization
-- Not yet configured — establish `@/` pointing to `src/` once project scaffolding begins
-## Error Handling
-- Not yet established
-- Recommended: use `Result<T, E>` pattern or typed error classes for domain errors
-- Avoid silent `catch` blocks that swallow errors
-## Logging
-- Recommended: `console` for development, structured logger (e.g., `pino`) for production
-## Comments
-- Comment non-obvious business logic (e.g., financial calculations, rounding rules)
-- Do not comment what the code already says
-- Use for public-facing functions and service methods
-## Function Design
-## Module Design
-<!-- GSD:conventions-end -->
+### Naming
+- `kebab-case` — 파일·디렉터리
+- `camelCase` — 함수, 변수, 파라미터
+- `PascalCase` — 타입, 인터페이스, 열거형, 클래스
+- `UPPER_SNAKE_CASE` — 모듈 레벨 상수
+- 인터페이스 `I` 접두사 금지 — `Asset`, `Portfolio` 형태로
+- 기능 단위로 파일 배치 (타입별 분리 지양)
 
-<!-- GSD:architecture-start source:ARCHITECTURE.md -->
-## Architecture
+### Code Style
+- Prettier 미설정 — 수동 2-space indent, single quotes, trailing commas 권장
+- ESLint 설정됨 (`eslint.config.mjs`)
 
-## Status
-- `README.md` — project description
-- `docs/개발일지.md` — empty development journal
-- `.claude/` — GSD agent framework
-- `.agent/` — agent configuration
-- `.planning/codebase/` — codebase map (this document)
-## Intended Purpose
-## Pattern
-- CRUD-based data model (assets, valuations, transactions)
-- Client-server or local-first architecture
-- Authentication layer (personal/single-user or multi-user)
-## Entry Points
-## Data Flow
-## Abstractions
-## Layers
-<!-- GSD:architecture-end -->
+### Error Handling
+- 도메인 오류는 타입 에러 클래스 또는 `Result<T, E>` 패턴 권장
+- 빈 `catch` 블록으로 오류 무시 금지
 
-<!-- GSD:skills-start source:skills/ -->
-## Project Skills
-
-No project skills found. Add skills to any of: `.claude/skills/`, `.agents/skills/`, `.cursor/skills/`, or `.github/skills/` with a `SKILL.md` index file.
-<!-- GSD:skills-end -->
-
-<!-- GSD:workflow-start source:GSD defaults -->
-## GSD Workflow Enforcement
-
-Before using Edit, Write, or other file-changing tools, start work through a GSD command so planning artifacts and execution context stay in sync.
-
-Use these entry points:
-- `/gsd-quick` for small fixes, doc updates, and ad-hoc tasks
-- `/gsd-debug` for investigation and bug fixing
-- `/gsd-execute-phase` for planned phase work
-
-Do not make direct repo edits outside a GSD workflow unless the user explicitly asks to bypass it.
-<!-- GSD:workflow-end -->
-
-
-
-<!-- GSD:profile-start -->
-## Developer Profile
-
-> Profile not yet configured. Run `/gsd-profile-user` to generate your developer profile.
-> This section is managed by `generate-claude-profile` -- do not edit manually.
-<!-- GSD:profile-end -->
+### Comments
+- 비즈니스 로직의 비직관적인 부분만 주석 (금융 계산, 반올림 규칙 등)
+- 코드가 이미 말하는 것은 주석 불필요
