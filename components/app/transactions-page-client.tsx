@@ -48,10 +48,10 @@ function formatUsd(v: number) { return USD_FMT.format(v) }
 
 function NoTransactionCard({ asset }: { asset: AssetOption }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-dashed border-white/20 transition-colors opacity-70 hover:opacity-100">
+    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-dashed border-border/20 transition-colors opacity-70 hover:opacity-100">
       <AssetLogo ticker={null} name={asset.name} assetType={asset.assetType} size={40} />
       <div className="flex-1 min-w-0">
-        <span className="text-base text-foreground leading-snug" style={{ fontFamily: "'Sunflower', sans-serif", fontWeight: 700 }}>{asset.name}</span>
+        <span className="text-base font-bold text-foreground leading-snug">{asset.name}</span>
         <p className="text-xs text-muted-foreground mt-0.5">거래 내역 없음</p>
       </div>
       <div className="flex items-center gap-1 shrink-0">
@@ -79,15 +79,15 @@ function TransactionCard({ tx, onDeleted }: { tx: TransactionWithAsset; onDelete
 
   return (
     <div className={cn(
-      'flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-white/40 hover:bg-muted/30 transition-colors',
+      'flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/60 border border-foreground/20 hover:bg-muted/80 transition-colors',
       tx.isVoided && 'opacity-50',
-    )}>
+    )} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <AssetLogo ticker={tx.ticker} name={tx.assetName} assetType={tx.assetType as Parameters<typeof AssetLogo>[0]['assetType']} size={40} />
       <div className="flex-1 min-w-0">
         {/* Row1: 이름 + 매수/매도 배지 */}
         <div className="flex items-center gap-1.5">
           <span className={cn('inline-block', tx.isVoided && 'line-through')}>
-            <span className="text-base text-foreground leading-snug" style={{ fontFamily: "'Sunflower', sans-serif", fontWeight: 700 }}>{tx.assetName}</span>
+            <span className="text-sm font-semibold text-foreground leading-snug">{tx.assetName}</span>
             <span className="block h-[2px] w-full rounded-full" style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #f59e0b, #10b981)', backgroundSize: '200% 100%', animation: 'shimmer-underline 3s linear infinite' }} />
           </span>
           <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${
