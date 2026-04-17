@@ -507,7 +507,7 @@ function AssetCardList({ assets, title, sparklines }: {
           )}
         </div>
       )}
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-1.5">
         {displayAssets.map((asset) => (
           <AssetCard
             key={'mergedCount' in asset && (asset as MergedAsset).mergedCount > 1

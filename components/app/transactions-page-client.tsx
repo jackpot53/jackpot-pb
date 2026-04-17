@@ -320,7 +320,7 @@ export function TransactionsPageClient({ transactions, assetOptions, sparklines:
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-1.5">
           {paginated.map((tx) => (
             <TransactionCard key={tx.id} tx={tx} sparklineData={tx.ticker ? sparklines[tx.ticker] : undefined} />
           ))}
