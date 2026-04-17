@@ -464,14 +464,14 @@ export function NewAssetForm({ onSubmit }: {
   // ── Style helpers ────────────────────────────────────────────────────────
 
   const tileClass = (active: boolean) =>
-    `rounded-md border py-2.5 px-1.5 text-[11px] text-center leading-snug transition-all duration-150 cursor-pointer flex flex-col items-center gap-1.5 ${
+    `rounded-md border py-2.5 px-1.5 text-[11px] text-center leading-snug transition-colors duration-150 cursor-pointer flex flex-col items-center gap-1.5 ${
       active
         ? 'bg-foreground text-background border-foreground font-semibold'
         : 'text-foreground/55 border-border hover:border-foreground/35 hover:text-foreground/90'
     }`
 
   const pillClass = (active: boolean) =>
-    `px-3 py-1 rounded-full text-xs border transition-all duration-150 inline-flex items-center gap-1.5 ${
+    `px-3 py-1 rounded-full text-xs border transition-colors duration-150 inline-flex items-center gap-1.5 ${
       active
         ? 'bg-foreground text-background border-foreground font-medium'
         : 'text-muted-foreground border-border hover:border-foreground/35 hover:text-foreground'
@@ -571,7 +571,7 @@ export function NewAssetForm({ onSubmit }: {
                             type="button"
                             onClick={() => field.onChange(val)}
                             className={cn(
-                              'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border-2 transition-all duration-150 cursor-pointer',
+                              'flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border-2 transition-colors duration-150 cursor-pointer',
                               active
                                 ? cn(ASSET_TYPE_ACTIVE[val]?.border, ASSET_TYPE_ACTIVE[val]?.bg, 'shadow-sm ring-1 ring-inset ring-current/10')
                                 : 'border-border bg-card hover:border-foreground/30 hover:bg-muted/30'
@@ -618,7 +618,7 @@ export function NewAssetForm({ onSubmit }: {
                                 const active = field.value === val
                                 return (
                                   <button key={val} type="button" onClick={() => field.onChange(active ? null : val)}
-                                    className={cn('flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border-2 transition-all duration-150 cursor-pointer',
+                                    className={cn('flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border-2 transition-colors duration-150 cursor-pointer',
                                       active ? 'border-indigo-400 bg-indigo-50 text-indigo-700 shadow-sm' : 'border-border bg-card text-foreground/60 hover:border-foreground/30 hover:text-foreground hover:bg-muted/30'
                                     )}>
                                     <DomainLogo value={val} size={26} />
@@ -655,7 +655,7 @@ export function NewAssetForm({ onSubmit }: {
                                 const active = field.value === val
                                 return (
                                   <button key={val} type="button" onClick={() => field.onChange(active ? null : val)}
-                                    className={cn('flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border-2 transition-all duration-150 cursor-pointer',
+                                    className={cn('flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border-2 transition-colors duration-150 cursor-pointer',
                                       active ? 'border-indigo-400 bg-indigo-50 text-indigo-700 shadow-sm' : 'border-border bg-card text-foreground/60 hover:border-foreground/30 hover:text-foreground hover:bg-muted/30'
                                     )}>
                                     <DomainLogo value={val} size={26} />
@@ -699,7 +699,7 @@ export function NewAssetForm({ onSubmit }: {
                               const active = field.value === val
                               return (
                                 <button key={val} type="button" onClick={() => field.onChange(active ? null : val)}
-                                  className={cn('flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border-2 transition-all duration-150 cursor-pointer',
+                                  className={cn('flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border-2 transition-colors duration-150 cursor-pointer',
                                     active ? 'border-indigo-400 bg-indigo-50 text-indigo-700 shadow-sm' : 'border-border bg-card text-foreground/60 hover:border-foreground/30 hover:text-foreground hover:bg-muted/30'
                                   )}>
                                   <span className={cn('flex items-center justify-center rounded-lg p-1.5', active ? 'bg-indigo-100' : color?.bg)}>
@@ -738,7 +738,7 @@ export function NewAssetForm({ onSubmit }: {
                                   const active = field.value === val
                                   return (
                                     <button key={val} type="button" onClick={() => field.onChange(active ? null : val)}
-                                      className={cn('flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border-2 transition-all duration-150 cursor-pointer',
+                                      className={cn('flex flex-col items-center justify-center gap-1.5 px-2 py-3 rounded-xl border-2 transition-colors duration-150 cursor-pointer',
                                         active ? 'border-indigo-400 bg-indigo-50 text-indigo-700 shadow-sm' : 'border-border bg-card text-foreground/60 hover:border-foreground/30 hover:text-foreground hover:bg-muted/30'
                                       )}>
                                       <DomainLogo value={val} size={26} />
@@ -779,7 +779,7 @@ export function NewAssetForm({ onSubmit }: {
                         const active = field.value === val
                         return (
                           <button key={val} type="button" onClick={() => field.onChange(active ? null : val)}
-                            className={cn('flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 text-sm font-medium transition-all duration-150 cursor-pointer',
+                            className={cn('flex items-center justify-center gap-2 px-3 py-3 rounded-xl border-2 text-sm font-medium transition-colors duration-150 cursor-pointer',
                               active ? 'border-indigo-400 bg-indigo-50 text-indigo-700 shadow-sm' : 'border-border bg-card text-foreground/60 hover:border-foreground/30 hover:text-foreground hover:bg-muted/30'
                             )}>
                             <span className="text-xl leading-none">{OWNER_ICONS[val]}</span>
@@ -854,7 +854,7 @@ export function NewAssetForm({ onSubmit }: {
                             type="button"
                             onClick={() => selectSuggestion(s)}
                             className={cn(
-                              'flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all duration-150 cursor-pointer active:scale-[0.99]',
+                              'flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors duration-150 cursor-pointer active:scale-[0.99]',
                               isSelected
                                 ? 'border-indigo-400 bg-indigo-50 shadow-sm ring-1 ring-indigo-200'
                                 : 'border-border bg-white shadow-sm hover:border-indigo-300 hover:bg-indigo-50/40 hover:shadow'
@@ -1165,6 +1165,8 @@ export function NewAssetForm({ onSubmit }: {
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-muted-foreground">만기 자동갱신</p>
                     <button type="button"
+                      role="switch"
+                      aria-checked={form.watch('autoRenew') ?? false}
                       onClick={() => form.setValue('autoRenew', !form.getValues('autoRenew'))}
                       className={cn('relative inline-flex h-5 w-9 items-center rounded-full transition-colors',
                         form.watch('autoRenew') ? 'bg-yellow-400' : 'bg-muted'

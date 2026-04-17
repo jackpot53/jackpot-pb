@@ -26,7 +26,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'h-screen bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transition-all duration-300 overflow-hidden',
+        'h-screen bg-sidebar border-r border-sidebar-border flex flex-col shrink-0 transition-[width,border] duration-300 overflow-hidden',
         collapsed ? 'w-14' : 'w-60'
       )}
     >
@@ -44,7 +44,7 @@ export function Sidebar() {
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="p-1 text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors shrink-0 rounded"
-          title={collapsed ? '펼치기' : '접기'}
+          aria-label={collapsed ? '펼치기' : '접기'}
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>

@@ -1,5 +1,17 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setReduced(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setReduced(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return reduced
+}
 import { Pencil, Trash2, Target } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,6 +26,7 @@ interface GoalListClientProps {
 }
 
 export function GoalListClient({ goals }: GoalListClientProps) {
+  const reducedMotion = useReducedMotion()
   const [dialogMode, setDialogMode] = useState<'create' | 'edit' | null>(null)
   const [selectedGoal, setSelectedGoal] = useState<GoalRow | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -43,19 +56,19 @@ export function GoalListClient({ goals }: GoalListClientProps) {
               <div className="flex flex-col items-center gap-2 py-5">
                 <div
                   className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/40"
-                  style={{ animation: 'goal-bounce 2s ease-in-out infinite' }}
+                  style={reducedMotion ? {} : { animation: 'goal-bounce 2s ease-in-out infinite' }}
                 >
                   <Target className="h-5 w-5 text-blue-400" />
                 </div>
                 <p
                   className="text-sm font-medium text-foreground/70"
-                  style={{ animation: 'goal-fadein 0.6s ease-out both' }}
+                  style={reducedMotion ? {} : { animation: 'goal-fadein 0.6s ease-out both' }}
                 >
                   목표를 추가해보세요
                 </p>
                 <p
                   className="text-xs text-muted-foreground"
-                  style={{ animation: 'goal-fadein 0.6s 0.15s ease-out both' }}
+                  style={reducedMotion ? {} : { animation: 'goal-fadein 0.6s 0.15s ease-out both' }}
                 >
                   상단 + 버튼으로 첫 목표를 만들어보세요
                 </p>
