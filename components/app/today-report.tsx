@@ -227,7 +227,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
             <div className="px-6 py-4">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-[11px] font-semibold text-muted-foreground mb-3">
                 <BarChart2 className="h-3 w-3" />
-                자산별 등락
+                <span className="font-bold">자산별 등락</span>
               </div>
               <div className="space-y-1.5">
                 {typeStats.map((t) => {
@@ -281,7 +281,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
             <div className="px-6 py-4">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-[11px] font-semibold text-muted-foreground mb-3">
                 <TrendingUp className="h-3 w-3" />
-                주요 종목
+                <span className="font-bold">주요 종목</span>
               </div>
               <div className="space-y-1.5">
                 {topMovers.map((m) => {
@@ -296,7 +296,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                         size={36}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs truncate leading-tight" style={{ fontFamily: "'Sunflower', sans-serif", fontWeight: 700 }}>{m.name}</p>
+                        <p className="text-xs truncate leading-tight font-bold">{m.name}</p>
                         <p className="text-[11px] text-muted-foreground mt-0.5">
                           {m.dailyChangeKrw >= 0 ? '+' : ''}{fmtKrw(m.dailyChangeKrw)}
                         </p>
@@ -319,7 +319,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
             <div className="px-6 py-4">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-[11px] font-semibold text-muted-foreground mb-3">
                 <Newspaper className="h-3 w-3" />
-                증시 뉴스
+                <span className="font-bold">증시 뉴스</span>
               </div>
               {newsLoading ? (
                 <div className="space-y-2.5">

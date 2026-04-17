@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { searchInsuranceProducts } from '@/lib/insurance/catalog'
 
 interface YahooQuote {
   symbol: string
@@ -468,59 +469,6 @@ async function searchYahoo(q: string, type: string): Promise<{ name: string; tic
     .map((q) => ({ name: q.longname ?? q.shortname ?? q.symbol, ticker: q.symbol }))
 }
 
-const INSURANCE_PRODUCTS: { name: string; ticker: string }[] = [
-  // 삼성생명
-  { name: '삼성생명 종신보험', ticker: '' }, { name: '삼성생명 연금보험', ticker: '' },
-  { name: '삼성생명 암보험', ticker: '' }, { name: '삼성생명 CI보험', ticker: '' },
-  { name: '삼성생명 변액연금보험', ticker: '' }, { name: '삼성생명 변액종신보험', ticker: '' },
-  // 한화생명
-  { name: '한화생명 종신보험', ticker: '' }, { name: '한화생명 연금보험', ticker: '' },
-  { name: '한화생명 암보험', ticker: '' }, { name: '한화생명 변액보험', ticker: '' },
-  // 교보생명
-  { name: '교보생명 종신보험', ticker: '' }, { name: '교보생명 연금보험', ticker: '' },
-  { name: '교보생명 CI보험', ticker: '' }, { name: '교보생명 암보험', ticker: '' },
-  { name: '교보생명 변액연금보험', ticker: '' },
-  // 신한라이프
-  { name: '신한라이프 종신보험', ticker: '' }, { name: '신한라이프 연금보험', ticker: '' },
-  { name: '신한라이프 암보험', ticker: '' },
-  // NH농협생명
-  { name: 'NH농협생명 종신보험', ticker: '' }, { name: 'NH농협생명 연금보험', ticker: '' },
-  // KB라이프
-  { name: 'KB라이프 종신보험', ticker: '' }, { name: 'KB라이프 연금보험', ticker: '' },
-  // AIA·메트라이프·푸르덴셜
-  { name: 'AIA생명 종신보험', ticker: '' }, { name: 'AIA생명 CI보험', ticker: '' },
-  { name: '메트라이프 종신보험', ticker: '' }, { name: '메트라이프 변액보험', ticker: '' },
-  { name: '푸르덴셜 종신보험', ticker: '' },
-  // 삼성화재
-  { name: '삼성화재 실손보험', ticker: '' }, { name: '삼성화재 운전자보험', ticker: '' },
-  { name: '삼성화재 어린이보험', ticker: '' }, { name: '삼성화재 암보험', ticker: '' },
-  { name: '삼성화재 치아보험', ticker: '' },
-  // 현대해상
-  { name: '현대해상 실손보험', ticker: '' }, { name: '현대해상 운전자보험', ticker: '' },
-  { name: '현대해상 어린이보험', ticker: '' }, { name: '현대해상 암보험', ticker: '' },
-  // DB손보
-  { name: 'DB손보 실손보험', ticker: '' }, { name: 'DB손보 운전자보험', ticker: '' },
-  { name: 'DB손보 어린이보험', ticker: '' }, { name: 'DB손보 암보험', ticker: '' },
-  // KB손보
-  { name: 'KB손보 실손보험', ticker: '' }, { name: 'KB손보 운전자보험', ticker: '' },
-  { name: 'KB손보 암보험', ticker: '' },
-  // 메리츠화재
-  { name: '메리츠화재 실손보험', ticker: '' }, { name: '메리츠화재 암보험', ticker: '' },
-  { name: '메리츠화재 운전자보험', ticker: '' },
-  // 공통 상품 유형
-  { name: '종신보험', ticker: '' }, { name: '정기보험', ticker: '' },
-  { name: '연금보험', ticker: '' }, { name: '변액연금보험', ticker: '' },
-  { name: '변액종신보험', ticker: '' }, { name: '실손의료보험', ticker: '' },
-  { name: '암보험', ticker: '' }, { name: 'CI보험', ticker: '' },
-  { name: '치아보험', ticker: '' }, { name: '운전자보험', ticker: '' },
-  { name: '어린이보험', ticker: '' }, { name: '태아보험', ticker: '' },
-  { name: '노인장기요양보험', ticker: '' }, { name: '저축보험', ticker: '' },
-]
-
-function searchInsurance(q: string): { name: string; ticker: string }[] {
-  const lower = q.toLowerCase()
-  return INSURANCE_PRODUCTS.filter((p) => p.name.toLowerCase().includes(lower))
-}
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get('q')?.trim()
@@ -538,7 +486,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ results: await searchFund(q) })
     }
     if (type === 'insurance') {
-      return NextResponse.json({ results: searchInsurance(q) })
+      const products = await searchInsuranceProducts(q)
+      return NextResponse.json({ results: products.map(p => ({ name: p.name, ticker: '' })) })
     }
     if (type === 'crypto') {
       return NextResponse.json({ results: await searchCrypto(q) })

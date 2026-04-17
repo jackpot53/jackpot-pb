@@ -49,7 +49,7 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   ins_aia: 'AIA생명', ins_metlife: '메트라이프', ins_prudential: '푸르덴셜',
   ins_samsung_fire: '삼성화재', ins_hyundai: '현대해상', ins_db_fire: 'DB손보',
   ins_kb_fire: 'KB손보', ins_meritz: '메리츠화재', ins_hanwha_fire: '한화손보',
-  ins_lotte_fire: '롯데손보',
+  ins_lotte_fire: '롯데손보', ins_im_life: 'IM라이프',
 }
 const ACCOUNT_TYPE_ICONS: Record<string, LucideIcon> = {
   isa: Shield, irp: PiggyBank, pension: Heart, dc: Building2, brokerage: Store, spot: Banknote, cma: CreditCard, insurance: ShieldCheck,
@@ -69,7 +69,7 @@ const ACCOUNT_TYPE_ICONS: Record<string, LucideIcon> = {
   ins_aia: Heart, ins_metlife: Heart, ins_prudential: Heart,
   ins_samsung_fire: ShieldCheck, ins_hyundai: ShieldCheck, ins_db_fire: ShieldCheck,
   ins_kb_fire: ShieldCheck, ins_meritz: ShieldCheck, ins_hanwha_fire: ShieldCheck,
-  ins_lotte_fire: ShieldCheck,
+  ins_lotte_fire: ShieldCheck, ins_im_life: Heart,
 }
 const ACCOUNT_TYPE_COLORS: Record<string, { icon: string; bg: string }> = {
   isa:       { icon: 'text-blue-400',    bg: 'bg-blue-500/10' },
@@ -91,7 +91,7 @@ const ACCOUNT_TYPE_BY_ASSET: Record<string, string[]> = {
   crypto: ['upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx'],
   savings: ['bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul'],
   cma: ['bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb'],
-  insurance: ['ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire'],
+  insurance: ['ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_im_life', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire'],
 }
 const EXCHANGE_GROUPS = [
   { label: '국내', items: ['upbit', 'bithumb', 'coinone', 'korbit'] },
@@ -111,7 +111,7 @@ const BANK_GROUPS = [
   { label: '협동조합', items: ['bank_shincom', 'bank_saemaul'] },
 ]
 const INSURANCE_GROUPS = [
-  { label: '생명보험', items: ['ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential'] },
+  { label: '생명보험', items: ['ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_im_life'] },
   { label: '손해보험', items: ['ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire'] },
 ]
 const DOMAIN_LOGO_MAP: Record<string, string> = {
@@ -135,7 +135,7 @@ const DOMAIN_LOGO_MAP: Record<string, string> = {
   ins_aia: 'aia.co.kr', ins_metlife: 'metlife.co.kr', ins_prudential: 'prudential.co.kr',
   ins_samsung_fire: 'samsungfire.com', ins_hyundai: 'hi.co.kr', ins_db_fire: 'db-ins.com',
   ins_kb_fire: 'kbinsure.co.kr', ins_meritz: 'meritzfire.com', ins_hanwha_fire: 'hanwhainsurance.com',
-  ins_lotte_fire: 'lotteins.co.kr',
+  ins_lotte_fire: 'lotteins.co.kr', ins_im_life: 'imlife.co.kr',
   sec_mirae: 'miraeasset.com', sec_samsung: 'samsungpop.com', sec_korea: 'truefriend.com',
   sec_kb: 'kbsec.com', sec_nh: 'nhqv.com', sec_shinhan: 'shinhaninvest.com',
   sec_kiwoom: 'kiwoom.com', sec_daishin: 'daishin.com', sec_hana: 'hanaw.com',
@@ -246,7 +246,7 @@ const assetSchema = z.object({
   assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal', 'cma']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
-  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire']).optional().nullable(),
+  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_im_life', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire']).optional().nullable(),
   brokerageId: z.string().max(50).optional().nullable(),
   withdrawalBankId: z.string().max(50).optional().nullable(),
   owner: z.string().max(20).optional().nullable(),
@@ -257,6 +257,8 @@ const assetSchema = z.object({
   initialTransactionDate: z.string().optional().nullable(),
   initialExchangeRate: z.string().optional().nullable(),
   initialSurrenderValue: z.string().optional().nullable(),
+  // Insurance-specific fields
+  insuranceType: z.string().max(50).optional().nullable(),
   // Savings-specific fields
   savingsKind: z.enum(['term', 'recurring', 'free']).optional().nullable(),
   interestRatePct: z.string().optional().nullable(),
@@ -285,6 +287,15 @@ const assetSchema = z.object({
   if (data.assetType === 'crypto' && !data.withdrawalBankId) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: '실명확인 입출금계좌 은행을 선택해주세요.', path: ['withdrawalBankId'] })
   }
+  // 적금 가입일·만기일 필수
+  if (data.assetType === 'savings') {
+    if (!data.depositStartDate || data.depositStartDate.trim() === '') {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: '가입일을 입력해주세요.', path: ['depositStartDate'] })
+    }
+    if (!data.maturityDate || data.maturityDate.trim() === '') {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: '만기일을 입력해주세요.', path: ['maturityDate'] })
+    }
+  }
   // 초기 매수 필수값 (insurance/savings는 수량·단가 쌍 검증 skip)
   if (data.assetType !== 'insurance' && data.assetType !== 'savings' && (TRADEABLE_TYPES as readonly string[]).includes(data.assetType)) {
     if (!data.initialQuantity || data.initialQuantity.trim() === '') {
@@ -308,7 +319,7 @@ const INSURANCE_COMPANY_KEY: [string, string][] = [
   ['AIA생명', 'ins_aia'], ['메트라이프', 'ins_metlife'], ['푸르덴셜', 'ins_prudential'],
   ['삼성화재', 'ins_samsung_fire'], ['현대해상', 'ins_hyundai'], ['DB손보', 'ins_db_fire'],
   ['KB손보', 'ins_kb_fire'], ['메리츠화재', 'ins_meritz'], ['한화손보', 'ins_hanwha_fire'],
-  ['롯데손보', 'ins_lotte_fire'],
+  ['롯데손보', 'ins_lotte_fire'], ['IM라이프', 'ins_im_life'],
 ]
 
 function getInsuranceCompanyKey(name: string): string | null {
@@ -849,6 +860,39 @@ export function NewAssetForm({ onSubmit }: {
                     </span>
                     {getNameLabel(assetType)}
                   </FormLabel>
+                  {/* 보험 유형 카드 선택 */}
+                  {assetType === 'insurance' && (
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {([
+                        ['종신보험', Shield,      'text-violet-400', 'whole_life' ],
+                        ['정기보험', Calendar,    'text-blue-400',   'term_life'  ],
+                        ['연금보험', TrendingUp,  'text-emerald-400','annuity'    ],
+                        ['변액보험', BarChart2,   'text-orange-400', 'variable'   ],
+                        ['저축보험', Banknote,    'text-cyan-400',   'savings_ins'],
+                        ['실손보험', Heart,       'text-rose-400',   'actual_loss'],
+                        ['건강보험', ShieldCheck, 'text-pink-400',   'health'     ],
+                      ] as const).map(([label, Icon, iconColor, typeVal]) => {
+                        const active = form.watch('insuranceType') === typeVal
+                        return (
+                          <button
+                            key={typeVal}
+                            type="button"
+                            onClick={() => form.setValue('insuranceType', active ? null : typeVal)}
+                            className={cn(
+                              'flex flex-col items-center gap-1.5 rounded-lg border py-2.5 text-xs font-medium transition-colors duration-100 cursor-pointer',
+                              active
+                                ? 'bg-indigo-500/20 border-indigo-400/60 text-indigo-300'
+                                : 'border-white/20 bg-white/[0.04] text-white/60 hover:border-white/40 hover:text-white/90 hover:bg-white/[0.08]',
+                            )}
+                          >
+                            <Icon className={cn('h-3.5 w-3.5', active ? 'text-indigo-300' : iconColor)} />
+                            {label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+
                   {/* 예적금 상품 유형 카드 선택 */}
                   {assetType === 'savings' && (
                     <div className="grid grid-cols-3 gap-1.5">
@@ -1231,7 +1275,6 @@ export function NewAssetForm({ onSubmit }: {
                       <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
                         <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
                           <Calendar className="h-3.5 w-3.5 shrink-0" />만기일
-                          <span className="ml-auto text-[11px] font-normal text-white/30 bg-white/[0.06] rounded-full px-2 py-0.5">선택</span>
                         </FormLabel>
                         <FormControl>
                           <Input type="date" {...field} value={field.value ?? ''} />
@@ -1362,7 +1405,7 @@ export function NewAssetForm({ onSubmit }: {
                     render={({ field }) => (
                       <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
                         <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
-                          <Calendar className="h-3.5 w-3.5 shrink-0" />매수일
+                          <Calendar className="h-3.5 w-3.5 shrink-0" />{(assetType as string) === 'savings' ? '가입날짜' : '매수일'}
                         </FormLabel>
                         <FormControl>
                           <Input type="date" {...field} value={field.value ?? ''} />

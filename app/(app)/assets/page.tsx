@@ -11,6 +11,7 @@ import { toMonthlyData, toAnnualData, toDailyData, snapshotsForType } from '@/li
 import { AssetsPageClient } from '@/components/app/assets-page-client'
 import Link from 'next/link'
 import { PlusCircle } from 'lucide-react'
+import { timed } from '@/lib/perf'
 
 export default async function AssetsPage() {
   const user = await getAuthUser()
@@ -19,10 +20,10 @@ export default async function AssetsPage() {
   return (
     <div className="space-y-6">
       {/* 히어로 배너 — 정적 콘텐츠, 즉시 스트리밍 */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-8 text-white shadow-xl">
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#0f0f0f] via-[#1a1a1a] to-[#111111] p-8 text-white shadow-xl">
         <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
-          <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
-          <div className="absolute bottom-0 left-1/3 w-80 h-48 rounded-full bg-cyan-900/40 blur-3xl" />
+          <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-[#FEE500]/5 blur-3xl" />
+          <div className="absolute bottom-0 left-1/3 w-80 h-48 rounded-full bg-[#FEE500]/10 blur-3xl" />
           <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
 
           {/* 펄스 링 */}
@@ -35,10 +36,10 @@ export default async function AssetsPage() {
           {/* AnimatedLogo — 신나게 튀어오르는 애니메이션 */}
           <style>{`
             @keyframes assets-logo-bounce {
-              0%,100% { transform: translateY(0) scale(1) rotate(0deg); filter: drop-shadow(0 0 6px rgba(52,211,153,0.3)); }
-              30% { transform: translateY(-16px) scale(1.1) rotate(-5deg); filter: drop-shadow(0 0 20px rgba(52,211,153,0.7)); }
+              0%,100% { transform: translateY(0) scale(1) rotate(0deg); filter: drop-shadow(0 0 6px rgba(254,229,0,0.3)); }
+              30% { transform: translateY(-16px) scale(1.1) rotate(-5deg); filter: drop-shadow(0 0 20px rgba(254,229,0,0.7)); }
               50% { transform: translateY(-10px) scale(1.05) rotate(3deg); }
-              70% { transform: translateY(-18px) scale(1.12) rotate(-3deg); filter: drop-shadow(0 0 22px rgba(52,211,153,0.8)); }
+              70% { transform: translateY(-18px) scale(1.12) rotate(-3deg); filter: drop-shadow(0 0 22px rgba(254,229,0,0.8)); }
             }
           `}</style>
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-75 hidden sm:block"
@@ -61,12 +62,12 @@ export default async function AssetsPage() {
         </div>
         <div className="relative flex items-start justify-between gap-6">
           <div className="space-y-2">
-            <div className="flex items-center gap-1.5 text-emerald-200 text-xs font-semibold tracking-widest uppercase">
+            <div className="flex items-center gap-1.5 text-[#FEE500]/70 text-xs font-semibold tracking-widest uppercase">
               <Wallet className="h-3.5 w-3.5" />자산 관리
             </div>
             <h1 className="text-3xl font-bold tracking-tight">내 자산</h1>
-            <p className="text-emerald-100/70 text-sm">
-              보유 자산을 등록하고 <span className="text-emerald-100/90 font-medium">실시간 수익률을 추적</span>합니다
+            <p className="text-white/60 text-sm">
+              보유 자산을 등록하고 <span className="text-[#FEE500] font-medium">실시간 수익률을 추적</span>합니다
             </p>
           </div>
           <div className="shrink-0 flex flex-col items-center gap-1.5">
@@ -81,7 +82,7 @@ export default async function AssetsPage() {
               }
             `}</style>
             <div
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 border border-white/40 text-white text-[11px] font-semibold"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FEE500]/20 border border-[#FEE500]/40 text-[#FEE500] text-[11px] font-semibold"
               style={{ animation: 'cta-bounce 1.8s ease-in-out infinite' }}
             >
               ✨ 자산을 등록해보세요
@@ -89,7 +90,7 @@ export default async function AssetsPage() {
             <div className="text-white/60 text-xs" style={{ animation: 'cta-arrow 1.8s ease-in-out infinite' }}>↓</div>
             <Link
               href="/assets/new"
-              className="group flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-white/90 border-2 border-emerald-700 text-emerald-700 text-sm font-semibold transition-all duration-200 hover:shadow-lg active:scale-95"
+              className="group flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#FEE500] hover:bg-[#FFD600] border-2 border-[#FEE500] text-black text-sm font-semibold transition-all duration-200 hover:shadow-lg active:scale-95"
             >
               <PlusCircle className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />
               자산 추가
@@ -108,13 +109,17 @@ export default async function AssetsPage() {
 }
 
 async function AssetsContent({ userId }: { userId: string }) {
+  const pageStart = performance.now()
   // Fire-and-forget: refresh prices in the background after response is sent
   after(() => { void refreshAllPricesInternal().catch(() => {}) })
 
-  const [{ performances }, snapshots] = await Promise.all([
+  const [{ performances }, snapshots] = await timed('AssetsPage data', () => Promise.all([
     loadPerformances(userId),
     getAllSnapshotsWithBreakdowns(userId),
-  ])
+  ]))
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[perf] AssetsPage total                     ${(performance.now() - pageStart).toFixed(0).padStart(5)}ms`)
+  }
 
   const monthlyData = toMonthlyData(snapshots)
   const annualData = toAnnualData(snapshots)

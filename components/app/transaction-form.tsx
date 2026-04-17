@@ -98,7 +98,7 @@ export function TransactionForm({
     defaultValues: {
       type: 'buy',
       transactionDate: new Date().toISOString().split('T')[0],
-      quantity: '',
+      quantity: assetType === 'savings' ? '1' : '',
       pricePerUnit: '',
       fee: '0',
       exchangeRate: '',
@@ -150,6 +150,8 @@ export function TransactionForm({
     })
   }
 
+  const isSavings = assetType === 'savings'
+
   return (
     <Form {...form}>
       <form id={formId} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2">
@@ -159,11 +161,13 @@ export function TransactionForm({
             <div className="flex-1">
               <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
-                  <SelectTrigger className="w-full border-0 bg-transparent shadow-none focus:ring-0 p-0 h-auto"><SelectValue>{field.value === 'buy' ? '매수' : '매도'}</SelectValue></SelectTrigger>
+                  <SelectTrigger className="w-full border-0 bg-transparent shadow-none focus:ring-0 p-0 h-auto">
+                    <SelectValue>{isSavings ? (field.value === 'buy' ? '납입' : '해지출금') : (field.value === 'buy' ? '매수' : '매도')}</SelectValue>
+                  </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="buy">매수</SelectItem>
-                  <SelectItem value="sell">매도</SelectItem>
+                  <SelectItem value="buy">{isSavings ? '납입' : '매수'}</SelectItem>
+                  <SelectItem value="sell">{isSavings ? '해지출금' : '매도'}</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -173,7 +177,7 @@ export function TransactionForm({
 
         <FormField control={form.control} name="transactionDate" render={({ field }) => (
           <FormItem className="flex flex-row items-center gap-4 rounded-xl border border-border bg-muted/20 px-4 py-2.5">
-            <FormLabel className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40"><CalendarDays className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />날짜</FormLabel>
+            <FormLabel className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40"><CalendarDays className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />{isSavings ? '납입일' : '날짜'}</FormLabel>
             <div className="flex-1">
               <FormControl><Input type="date" className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-auto" {...field} /></FormControl>
               <FormMessage />
@@ -181,26 +185,28 @@ export function TransactionForm({
           </FormItem>
         )} />
 
-        <FormField control={form.control} name="quantity" render={({ field }) => (
-          <FormItem className="flex flex-row items-center gap-4 rounded-xl border border-border bg-muted/20 px-4 py-2.5">
-            <FormLabel className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40"><Hash className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />수량</FormLabel>
-            <div className="flex-1">
-              <FormControl>
-                <Input
-                  className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-auto"
-                  {...field}
-                  inputMode="decimal"
-                  onBlur={() => { field.onBlur(); computeKrwPreview() }}
-                />
-              </FormControl>
-              <FormMessage />
-            </div>
-          </FormItem>
-        )} />
+        {!isSavings && (
+          <FormField control={form.control} name="quantity" render={({ field }) => (
+            <FormItem className="flex flex-row items-center gap-4 rounded-xl border border-border bg-muted/20 px-4 py-2.5">
+              <FormLabel className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40"><Hash className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />수량</FormLabel>
+              <div className="flex-1">
+                <FormControl>
+                  <Input
+                    className="border-0 bg-transparent shadow-none focus-visible:ring-0 p-0 h-auto"
+                    {...field}
+                    inputMode="decimal"
+                    onBlur={() => { field.onBlur(); computeKrwPreview() }}
+                  />
+                </FormControl>
+                <FormMessage />
+              </div>
+            </FormItem>
+          )} />
+        )}
 
         <FormField control={form.control} name="pricePerUnit" render={({ field }) => (
           <FormItem className="flex flex-row items-center gap-4 rounded-xl border border-border bg-muted/20 px-4 py-2.5">
-            <FormLabel className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40"><CircleDollarSign className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />단가 {isUSD ? '(USD)' : '(₩)'}</FormLabel>
+            <FormLabel className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40"><CircleDollarSign className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />{isSavings ? '납입액 (₩)' : `단가 ${isUSD ? '(USD)' : '(₩)'}`}</FormLabel>
             <div className="flex-1">
               <FormControl>
                 <Input

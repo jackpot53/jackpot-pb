@@ -21,8 +21,10 @@ import { DashboardGoalsSection } from '@/components/app/dashboard-goals-section'
 import { TodayReport } from '@/components/app/today-report'
 import { fetchMarketNewsForTypes } from '@/lib/market-news/fetch'
 import type { AssetPerformance } from '@/lib/portfolio/portfolio'
+import { timed } from '@/lib/perf'
 
 export default async function DashboardPage() {
+  const pageStart = performance.now()
   const user = await getAuthUser()
   if (!user) redirect('/login')
 
@@ -32,10 +34,13 @@ export default async function DashboardPage() {
   after(() => { void refreshAllPricesInternal().catch(() => {}) })
 
   // Load performances + goals in parallel from DB cache — no external API wait
-  const [{ performances, priceMap }, goalsList] = await Promise.all([
+  const [{ performances, priceMap }, goalsList] = await timed('DashboardPage data', () => Promise.all([
     loadPerformances(user.id),
     listGoals(user.id),
-  ])
+  ]))
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[perf] DashboardPage total                  ${(performance.now() - pageStart).toFixed(0).padStart(5)}ms`)
+  }
 
   // Step 3: Extract FX rate from price map
   const fxCache = priceMap.get('USD_KRW')
@@ -70,7 +75,7 @@ export default async function DashboardPage() {
           <div className="flex items-center gap-1.5 text-indigo-200 text-xs font-semibold tracking-widest uppercase">
             <span>💼</span>포트폴리오 요약
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">내 자산 현황</h1>
+          <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "'Sunflower', sans-serif" }}>내 자산 현황</h1>
           <p className="text-indigo-100/70 text-sm">
             총 자산 <span className="text-white font-semibold">{formatKrw(summary.totalValueKrw)}</span>
             {summary.returnPct !== 0 && (

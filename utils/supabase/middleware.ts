@@ -25,13 +25,14 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // CRITICAL: use getUser(), NEVER getSession() — getSession() does not re-validate
-  // the token server-side and will accept revoked sessions
-  const { data: { user } } = await supabase.auth.getUser()
+  // getClaims(): local JWT verification when asymmetric keys are used (no network call).
+  // Falls back to JWKS cache for symmetric keys — far cheaper than getUser() network round-trip.
+  const { data: claimsData, error: claimsError } = await supabase.auth.getClaims()
+  const isAuthed = !claimsError && claimsData?.claims?.sub != null
 
   const isLoginPage = request.nextUrl.pathname === '/login'
 
-  if (!user && !isLoginPage) {
+  if (!isAuthed && !isLoginPage) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('redirect', request.nextUrl.pathname)

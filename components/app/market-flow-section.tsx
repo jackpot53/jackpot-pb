@@ -35,8 +35,8 @@ function FlowRow({
   const isPositive = (entry.changePercent ?? 0) >= 0
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:bg-muted/30 transition-colors">
-      <span className="text-[10px] font-bold text-muted-foreground/50 w-4 shrink-0 text-right">
+    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-white/10 hover:border-[#FEE500]/30 hover:bg-[#FEE500]/5 transition-colors">
+      <span className="text-[10px] font-bold text-muted-foreground/40 w-4 shrink-0 text-right">
         {rank}
       </span>
       <AssetLogo ticker={entry.ticker} name={entry.name} assetType={assetType} size={28} />
@@ -76,7 +76,7 @@ function FlowColumn({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5">
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <Icon className="h-4 w-4 text-[#FEE500]/70" />
         <div>
           <div className="text-sm font-semibold">{title}</div>
           <div className="text-[10px] text-muted-foreground">{subtitle}</div>
@@ -102,7 +102,7 @@ function TrendingChip({ entry }: { entry: FlowEntry }) {
   const isPositive = (pct ?? 0) >= 0
 
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-card border border-border shrink-0 hover:bg-muted/30 transition-colors">
+    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-card border border-white/10 shrink-0 hover:border-[#FEE500]/30 hover:bg-[#FEE500]/5 transition-colors">
       <AssetLogo ticker={entry.ticker} name={entry.name} assetType={assetType} size={20} />
       <div className="text-xs font-medium">{entry.ticker}</div>
       {pct !== undefined && (
@@ -123,72 +123,77 @@ export function MarketFlowSection({ data }: Props) {
 
   return (
     <div className="space-y-4">
-      <Separator className="bg-foreground" />
+      <Separator className="bg-border" />
 
-      {/* 섹션 헤더 */}
-      <div className="flex items-center gap-2">
-        <Flame className="h-5 w-5" />
-        <div>
-          <h2 className="text-xl font-semibold">시장 동향</h2>
-          <p className="text-xs text-muted-foreground">오늘 외국인·기관 순매수 상위 + 거래량 HOT 종목</p>
+      {/* 섹션 컨테이너 */}
+      <div className="rounded-2xl border border-[#FEE500]/20 bg-[#FEE500]/[0.03] p-5 space-y-4">
+        {/* 섹션 헤더 */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#FEE500]/15">
+            <Flame className="h-4 w-4 text-[#FEE500]" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold">시장 동향</h2>
+            <p className="text-[10px] text-muted-foreground">오늘 외국인·기관 순매수 상위 + 거래량 HOT 종목</p>
+          </div>
         </div>
-      </div>
 
-      {/* KR 3열 */}
-      <div className="grid grid-cols-3 gap-4">
-        <FlowColumn
-          icon={Globe}
-          title="외국인 순매수"
-          subtitle="오늘 기준"
-          entries={kr.foreign}
-          showAmount={true}
-          emptyLabel="데이터 없음"
-        />
-        <FlowColumn
-          icon={Building2}
-          title="기관 순매수"
-          subtitle="오늘 기준"
-          entries={kr.institutional}
-          showAmount={true}
-          emptyLabel="데이터 없음"
-        />
-        <FlowColumn
-          icon={Users}
-          title="거래량 HOT"
-          subtitle="개인 관심 종목"
-          entries={kr.hotStocks.slice(0, 5)}
-          showAmount={false}
-          emptyLabel="데이터 없음"
-        />
-      </div>
+        {/* KR 3열 */}
+        <div className="grid grid-cols-3 gap-4">
+          <FlowColumn
+            icon={Globe}
+            title="외국인 순매수"
+            subtitle="오늘 기준"
+            entries={kr.foreign}
+            showAmount={true}
+            emptyLabel="데이터 없음"
+          />
+          <FlowColumn
+            icon={Building2}
+            title="기관 순매수"
+            subtitle="오늘 기준"
+            entries={kr.institutional}
+            showAmount={true}
+            emptyLabel="데이터 없음"
+          />
+          <FlowColumn
+            icon={Users}
+            title="거래량 HOT"
+            subtitle="개인 관심 종목"
+            entries={kr.hotStocks.slice(0, 5)}
+            showAmount={false}
+            emptyLabel="데이터 없음"
+          />
+        </div>
 
-      {/* US 트렌딩 */}
-      {us.trending.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center gap-1.5">
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            <div>
-              <span className="text-sm font-semibold">US 트렌딩</span>
-              <span className="text-[10px] text-muted-foreground ml-1.5">Yahoo Finance 기준</span>
+        {/* US 트렌딩 */}
+        {us.trending.length > 0 && (
+          <div className="space-y-2 pt-2 border-t border-[#FEE500]/10">
+            <div className="flex items-center gap-1.5">
+              <TrendingUp className="h-4 w-4 text-[#FEE500]/70" />
+              <div>
+                <span className="text-sm font-semibold">US 트렌딩</span>
+                <span className="text-[10px] text-muted-foreground ml-1.5">Yahoo Finance 기준</span>
+              </div>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {us.trending.map((entry) => (
+                <TrendingChip key={entry.code} entry={entry} />
+              ))}
             </div>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {us.trending.map((entry) => (
-              <TrendingChip key={entry.code} entry={entry} />
-            ))}
-          </div>
-        </div>
-      )}
+        )}
 
-      {/* 하락 종목 (거래량 상위 중 하락) */}
-      {kr.hotStocks.some((e) => (e.changePercent ?? 0) < 0) && (
-        <div className="flex items-center gap-1.5">
-          <TrendingDown className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-          <p className="text-[10px] text-muted-foreground">
-            거래량 HOT은 개인 투자자 관심 종목 대리지표입니다. 등락률로 매수/매도 방향을 가늠해보세요.
-          </p>
-        </div>
-      )}
+        {/* 하락 종목 (거래량 상위 중 하락) */}
+        {kr.hotStocks.some((e) => (e.changePercent ?? 0) < 0) && (
+          <div className="flex items-center gap-1.5">
+            <TrendingDown className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+            <p className="text-[10px] text-muted-foreground">
+              거래량 HOT은 개인 투자자 관심 종목 대리지표입니다. 등락률로 매수/매도 방향을 가늠해보세요.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

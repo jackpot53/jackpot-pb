@@ -5,13 +5,12 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { PlusCircle, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ArrowRightLeft } from 'lucide-react'
-import { Label } from '@/components/ui/label'
+import { PlusCircle, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, ArrowRightLeft, Pencil } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { DeleteTransactionDialog } from '@/components/app/delete-transaction-dialog'
 import { EditTransactionDialog } from '@/components/app/edit-transaction-dialog'
+import { DeleteAssetDialog } from '@/components/app/delete-asset-dialog'
 import { AssetLogo } from '@/components/app/asset-logo'
-import { SparklineChart } from '@/components/app/sparkline-chart'
 import { cn } from '@/lib/utils'
 import type { TransactionWithAsset } from '@/db/queries/transactions'
 import { MarketFlowSection } from '@/components/app/market-flow-section'
@@ -31,7 +30,6 @@ interface AssetOption {
 interface Props {
   transactions: TransactionWithAsset[]
   assetOptions: AssetOption[]
-  sparklines?: Record<string, number[]>
   marketFlow: MarketFlowData
 }
 
@@ -51,9 +49,27 @@ function decodeQuantity(stored: number): string {
 const USD_FMT = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 })
 function formatUsd(v: number) { return USD_FMT.format(v) }
 
-function TransactionCard({ tx, sparklineData }: { tx: TransactionWithAsset; sparklineData?: number[] }) {
-  const total = Math.round((tx.quantity / 1e8) * tx.pricePerUnit)
+function NoTransactionCard({ asset }: { asset: AssetOption }) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-dashed border-white/20 transition-colors opacity-70 hover:opacity-100">
+      <AssetLogo ticker={null} name={asset.name} assetType={asset.assetType} size={40} />
+      <div className="flex-1 min-w-0">
+        <span className="text-base text-foreground leading-snug" style={{ fontFamily: "'Sunflower', sans-serif", fontWeight: 700 }}>{asset.name}</span>
+        <p className="text-xs text-muted-foreground mt-0.5">거래 내역 없음</p>
+      </div>
+      <div className="flex items-center gap-1 shrink-0">
+        <Link href={`/assets/${asset.id}/edit`}>
+          <Button variant="ghost" size="sm" className="p-2" aria-label="자산 편집">
+            <Pencil className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </Link>
+        <DeleteAssetDialog assetId={asset.id} assetName={asset.name} />
+      </div>
+    </div>
+  )
+}
 
+function TransactionCard({ tx, onDeleted }: { tx: TransactionWithAsset; onDeleted: (id: string) => void }) {
   const isUsAsset = tx.assetType === 'stock_us' || tx.assetType === 'etf_us'
   const isKrwPurchase = isUsAsset && tx.currency === 'KRW'
   const isUsdPurchase = isUsAsset && tx.currency === 'USD'
@@ -61,39 +77,40 @@ function TransactionCard({ tx, sparklineData }: { tx: TransactionWithAsset; spar
   // 달러매수: pricePerUnit은 KRW 환산값 — USD 원래 단가 역산
   const fxRate = tx.exchangeRateAtTime != null ? tx.exchangeRateAtTime / 10000 : null
   const priceUsd = isUsdPurchase && fxRate ? tx.pricePerUnit / fxRate : null
-  const totalUsd = priceUsd != null ? (tx.quantity / 1e8) * priceUsd : null
 
   const hasSecondaryRow = isUsAsset || tx.fee > 0 || !!tx.notes
 
   return (
     <div className={cn(
-      'flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-border hover:bg-muted/30 transition-colors',
+      'flex items-center gap-3 px-4 py-3 rounded-xl bg-card border border-white/40 hover:bg-muted/30 transition-colors',
       tx.isVoided && 'opacity-50',
     )}>
       <AssetLogo ticker={tx.ticker} name={tx.assetName} assetType={tx.assetType as Parameters<typeof AssetLogo>[0]['assetType']} size={40} />
       <div className="flex-1 min-w-0">
         {/* Row1: 이름 + 매수/매도 배지 */}
         <div className="flex items-center gap-1.5">
-          <Link
-            href={`/assets/${tx.assetId}`}
-            className={cn('font-medium text-sm truncate hover:underline', tx.isVoided && 'line-through')}
-          >
-            {tx.assetName}
-          </Link>
+          <span className={cn('inline-block', tx.isVoided && 'line-through')}>
+            <span className="text-base text-foreground leading-snug" style={{ fontFamily: "'Sunflower', sans-serif", fontWeight: 700 }}>{tx.assetName}</span>
+            <span className="block h-[2px] w-full rounded-full" style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #f59e0b, #10b981)', backgroundSize: '200% 100%', animation: 'shimmer-underline 3s linear infinite' }} />
+          </span>
           <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${
             tx.type === 'buy' ? 'bg-red-500/15 text-red-400' : 'bg-blue-500/15 text-blue-400'
           }`}>
-            {tx.type === 'buy'
-              ? <><TrendingUp className="h-3 w-3" />매수</>
-              : <><TrendingDown className="h-3 w-3" />매도</>}
+            {tx.assetType === 'savings'
+              ? tx.type === 'buy'
+                ? <><TrendingUp className="h-3 w-3" />납입</>
+                : <><TrendingDown className="h-3 w-3" />해지출금</>
+              : tx.type === 'buy'
+                ? <><TrendingUp className="h-3 w-3" />매수</>
+                : <><TrendingDown className="h-3 w-3" />매도</>}
           </span>
         </div>
         {/* Row2: 날짜 · 수량 · 단가 (핵심 정보) */}
-        <div className={cn('flex items-center gap-2 text-xs text-muted-foreground mt-0.5', tx.isVoided && 'line-through')}>
-          <span>{tx.transactionDate}</span>
-          <span className="opacity-30">·</span>
+        <div className={cn('flex items-center gap-2 text-sm text-muted-foreground mt-0.5', tx.isVoided && 'line-through')}>
+          <span><span className="text-muted-foreground/50 text-xs mr-1">{tx.assetType === 'savings' ? '가입날짜' : tx.type === 'buy' ? '매수일' : '매도일'}</span>{(tx.assetType === 'savings' ? tx.depositStartDate : null) ?? tx.transactionDate ?? '-'}</span>
+          <span className="opacity-30">|</span>
           <span>수량 {decodeQuantity(tx.quantity)}</span>
-          <span className="opacity-30">·</span>
+          <span className="opacity-30">|</span>
           <span>단가 {priceUsd != null ? formatUsd(priceUsd) : `₩${formatKrw(tx.pricePerUnit)}`}</span>
         </div>
         {/* Row3: 원화매수/달러매수 + 환율 · 수수료 · 메모 (보조 정보) */}
@@ -116,69 +133,45 @@ function TransactionCard({ tx, sparklineData }: { tx: TransactionWithAsset; spar
           </div>
         )}
       </div>
-      {sparklineData && (
-        <div className="shrink-0 w-20 flex items-center justify-center">
-          <SparklineChart data={sparklineData} width={80} height={36} />
-        </div>
-      )}
-      <div className={cn('text-right shrink-0', tx.isVoided && 'line-through')}>
-        <div className={cn('text-sm font-semibold tabular-nums', tx.type === 'buy' ? 'text-red-400' : 'text-blue-400')}>
-          {tx.type === 'sell' ? '+' : ''}{totalUsd != null ? formatUsd(totalUsd) : `₩${formatKrw(total)}`}
-        </div>
-        {totalUsd != null && (
-          <div className="text-[10px] text-muted-foreground/60 tabular-nums">
-            ₩{formatKrw(total)}
-          </div>
-        )}
-      </div>
       <div className="flex items-center gap-1 shrink-0">
         <EditTransactionDialog tx={tx} />
         <DeleteTransactionDialog
           transactionId={tx.id}
           assetId={tx.assetId}
           label={`${tx.transactionDate} ${tx.assetName} ${tx.type === 'buy' ? '매수' : '매도'}`}
+          onDeleted={onDeleted}
         />
       </div>
     </div>
   )
 }
 
-const NO_SPARKLINE_TYPES = new Set(['fund', 'real_estate', 'savings'])
-
-export function TransactionsPageClient({ transactions, assetOptions, sparklines: initialSparklines, marketFlow }: Props) {
-  const [sparklines, setSparklines] = useState<Record<string, number[]>>(initialSparklines ?? {})
+export function TransactionsPageClient({ transactions, assetOptions, marketFlow }: Props) {
   const [assetFilter, setAssetFilter] = useState<string>('전체')
   const [typeFilter, setTypeFilter] = useState<string>('전체')
-  const [showVoided, setShowVoided] = useState(false)
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
+
+  const handleDeleted = (id: string) => setDeletedIds(prev => new Set(prev).add(id))
+
+  const assetIdsWithTx = useMemo(() => new Set(transactions.filter(tx => !tx.isVoided).map(tx => tx.assetId)), [transactions])
+  const assetsWithNoTx = useMemo(() => assetOptions.filter(a => !assetIdsWithTx.has(a.id)), [assetOptions, assetIdsWithTx])
 
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 10
 
-  useEffect(() => {
-    const tickers = [...new Set(
-      transactions
-        .filter((tx) => tx.ticker && !NO_SPARKLINE_TYPES.has(tx.assetType))
-        .map((tx) => tx.ticker!)
-    )]
-    if (tickers.length === 0) return
-    fetch(`/api/sparklines?tickers=${tickers.join(',')}`)
-      .then((r) => r.json())
-      .then((data: Record<string, number[]>) => setSparklines(data))
-      .catch(() => {})
-  }, [transactions])
-
   const filtered = useMemo(() => {
     return transactions.filter((tx) => {
-      if (!showVoided && tx.isVoided) return false
+      if (tx.isVoided) return false
+      if (deletedIds.has(tx.id)) return false
       if (assetFilter !== '전체' && tx.assetId !== assetFilter) return false
       if (typeFilter !== '전체' && tx.type !== typeFilter) return false
       return true
     })
-  }, [transactions, assetFilter, typeFilter, showVoided])
+  }, [transactions, deletedIds, assetFilter, typeFilter])
 
   useEffect(() => {
     setPage(1)
-  }, [assetFilter, typeFilter, showVoided])
+  }, [assetFilter, typeFilter])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
@@ -248,7 +241,7 @@ export function TransactionsPageClient({ transactions, assetOptions, sparklines:
               <ArrowRightLeft className="h-3.5 w-3.5" />매수 · 매도
             </div>
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">거래내역</h1>
+              <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "'Sunflower', sans-serif" }}>거래내역</h1>
               {filtered.length > 0 && (
                 <span className="text-sm font-semibold bg-white/20 rounded-full px-2.5 py-0.5 tabular-nums">
                   {filtered.length}건
@@ -265,50 +258,42 @@ export function TransactionsPageClient({ transactions, assetOptions, sparklines:
           </Link>
         </div>
       </div>
-      {/* Filters + add button */}
-      <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
-        <div className="flex items-center gap-2">
-          <Label className="text-sm text-muted-foreground shrink-0">자산</Label>
-          <Select value={assetFilter} onValueChange={(v) => setAssetFilter(v ?? '전체')}>
-            <SelectTrigger className="w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="전체">전체</SelectItem>
-              {assetOptions.map((a) => (
-                <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Filters */}
+      <div className="flex items-center gap-1 p-1 bg-muted/40 border border-border rounded-xl w-fit">
+        <Select value={assetFilter} onValueChange={(v) => setAssetFilter(v ?? '전체')}>
+          <SelectTrigger className="h-8 w-40 bg-transparent border-none shadow-none text-sm focus:ring-0 focus:ring-offset-0">
+            <SelectValue placeholder="전체 종목">
+              {assetFilter === '전체' ? '전체 종목' : (assetOptions.find(a => a.id === assetFilter)?.name ?? '전체 종목')}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="전체">전체 종목</SelectItem>
+            {assetOptions.map((a) => (
+              <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <div className="flex items-center gap-2">
-          <Label className="text-sm text-muted-foreground shrink-0">유형</Label>
-          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v ?? '전체')}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="전체">전체</SelectItem>
-              <SelectItem value="buy">매수</SelectItem>
-              <SelectItem value="sell">매도</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <div className="h-5 w-px bg-border mx-0.5" />
 
-        <div className="flex items-center gap-2">
-          <input
-            id="show-voided"
-            type="checkbox"
-            checked={showVoided}
-            onChange={(e) => setShowVoided(e.target.checked)}
-            className="h-4 w-4 cursor-pointer"
-          />
-          <Label htmlFor="show-voided" className="text-sm text-muted-foreground cursor-pointer">
-            취소된 거래 표시
-          </Label>
+        <div className="flex items-center gap-0.5 px-0.5">
+          {(['전체', 'buy', 'sell'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTypeFilter(t)}
+              className={cn(
+                'px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors',
+                typeFilter === t
+                  ? t === 'buy' ? 'bg-red-500/20 text-red-400'
+                    : t === 'sell' ? 'bg-blue-500/20 text-blue-400'
+                    : 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {t === '전체' ? '전체' : t === 'buy' ? '매수' : '매도'}
+            </button>
+          ))}
         </div>
-
       </div>
 
       {/* Card list */}
@@ -322,7 +307,10 @@ export function TransactionsPageClient({ transactions, assetOptions, sparklines:
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-1.5">
           {paginated.map((tx) => (
-            <TransactionCard key={tx.id} tx={tx} sparklineData={tx.ticker ? sparklines[tx.ticker] : undefined} />
+            <TransactionCard key={tx.id} tx={tx} onDeleted={handleDeleted} />
+          ))}
+          {assetFilter === '전체' && assetsWithNoTx.map((a) => (
+            <NoTransactionCard key={a.id} asset={a} />
           ))}
         </div>
       )}

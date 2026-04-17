@@ -19,7 +19,7 @@ const assetSchema = z.object({
   assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal', 'cma']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
-  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire']).optional().nullable(),
+  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire', 'ins_im_life']).optional().nullable(),
   brokerageId: z.string().max(50).optional().nullable(),
   withdrawalBankId: z.string().max(50).optional().nullable(),
   owner: z.string().max(20).optional().nullable(),
@@ -32,6 +32,7 @@ const assetSchema = z.object({
   initialExchangeRate: z.string().optional().nullable(),
   // Insurance-specific fields
   initialSurrenderValue: z.string().optional().nullable(),
+  insuranceType: z.string().max(50).optional().nullable(),
   // Savings-specific fields
   savingsKind: z.enum(['term', 'recurring', 'free']).optional().nullable(),
   interestRatePct: z.string().optional().nullable(),  // e.g. "5.25"
@@ -60,7 +61,7 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
   const {
     ticker, notes, brokerageId, withdrawalBankId, owner,
     initialQuantity, initialPricePerUnit, initialTransactionDate, initialExchangeRate,
-    initialSurrenderValue,
+    initialSurrenderValue, insuranceType,
     savingsKind, interestRatePct, depositStartDate, maturityDate,
     monthlyContributionKrw, compoundType, taxType, autoRenew,
     ...rest
@@ -75,6 +76,7 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
     withdrawalBankId: withdrawalBankId ?? null,
     owner: owner ?? null,
     notes: notes ?? null,
+    insuranceType: insuranceType ?? null,
   }).returning({ id: assets.id })
 
   const txDate = initialTransactionDate || new Date().toISOString().split('T')[0]
@@ -85,8 +87,10 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
     const normalizedDepositStartDate = depositStartDate || null
     const normalizedMaturityDate = maturityDate || null
 
-    if (initialPricePerUnit && !isNaN(parseFloat(initialPricePerUnit)) && parseFloat(initialPricePerUnit) > 0) {
-      const principalKrw = Math.round(parseFloat(initialPricePerUnit))
+    // 정기적금(recurring)은 initialPricePerUnit 대신 monthlyContributionKrw를 첫 납입액으로 사용
+    const initialAmountStr = initialPricePerUnit || (savingsKind === 'recurring' ? monthlyContributionKrw : null)
+    if (initialAmountStr && !isNaN(parseFloat(initialAmountStr)) && parseFloat(initialAmountStr) > 0) {
+      const principalKrw = Math.round(parseFloat(initialAmountStr))
       const txNotes = savingsKind === 'term' ? '초기예치' : '1차 납입'
       // 가입일을 buy tx 날짜로 사용 (이자 기산점이 가입일이므로)
       const savingsTxDate = normalizedDepositStartDate ?? txDate
@@ -234,7 +238,7 @@ export async function updateAsset(
   const {
     ticker, notes, brokerageId, withdrawalBankId, owner,
     initialQuantity, initialPricePerUnit, initialTransactionDate, initialExchangeRate,
-    initialSurrenderValue: _surrender,
+    initialSurrenderValue: _surrender, insuranceType,
     savingsKind, interestRatePct, depositStartDate, maturityDate,
     monthlyContributionKrw, compoundType, taxType, autoRenew,
     ...rest
@@ -248,6 +252,7 @@ export async function updateAsset(
     withdrawalBankId: withdrawalBankId ?? null,
     owner: owner ?? null,
     notes: notes ?? null,
+    insuranceType: insuranceType ?? null,
   }).where(and(eq(assets.id, id), eq(assets.userId, user.id)))
 
   // Optionally add a new buy transaction if quantity and price are provided

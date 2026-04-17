@@ -9,6 +9,7 @@ import { getPriceCacheByTickers, upsertPriceCache } from '@/db/queries/price-cac
 import { fetchYahooQuote } from '@/lib/price/yahoo'
 import { refreshFxIfStale } from '@/lib/price/cache'
 import { fetchFunetfNav } from '@/lib/price/funetf'
+import { timed } from '@/lib/perf'
 
 const PRICE_TTL_MS = 5 * 60 * 1000
 const KR_ASSET_TYPES = ['stock_kr', 'etf_kr']
@@ -29,6 +30,7 @@ async function requireUser() {
  * Strategy: one MAX(cached_at) check → one bulk DB read → parallel API calls for stale tickers.
  */
 export async function refreshAllPricesInternal(): Promise<void> {
+  return timed('refreshAllPricesInternal', async () => {
   // Global dedup: if any ticker was refreshed within DEDUP_MS, skip entirely.
   // MAX(cached_at) is shared across all serverless instances — no per-process state.
   const [{ maxCachedAt }] = await db
@@ -69,7 +71,7 @@ export async function refreshAllPricesInternal(): Promise<void> {
   const fxRate = fxCache ? fxCache.priceKrw / 10000 : null
 
   // Step 5: Parallel API calls for stale tickers only
-  await Promise.allSettled(
+  await timed(`  fetch ${staleAssets.length} stale tickers`, () => Promise.allSettled(
     staleAssets.map(async ({ ticker, assetType }) => {
       try {
         if (assetType === 'fund') {
@@ -96,7 +98,8 @@ export async function refreshAllPricesInternal(): Promise<void> {
         // stale fallback: skip on error, existing cache preserved
       }
     })
-  )
+  ))
+  })
 }
 
 /**

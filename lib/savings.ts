@@ -138,6 +138,22 @@ export function computeAccruedInterestKrw({
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
+ * 정기적금 월복리 세전 이자
+ * 각 회차 납입액이 (n+1-i)개월 복리 성장: Σ_{i=1}^{n} M×(1+r)^(n+1-i)
+ * 기하급수 공식으로 단순화: M×(1+r)×((1+r)^n - 1) / r
+ */
+function recurringMonthlyCompoundGrossInterest(
+  monthlyAmount: number,
+  monthlyRate: number,
+  n: number,
+): number {
+  if (n <= 0 || monthlyRate <= 0) return 0
+  const principalWithInterest =
+    (monthlyAmount * (1 + monthlyRate) * (Math.pow(1 + monthlyRate, n) - 1)) / monthlyRate
+  return Math.floor(principalWithInterest - monthlyAmount * n)
+}
+
+/**
  * 경과일수 계산 (startDate → asOf, 일 단위 정수)
  */
 function daysBetween(startDateStr: string, asOf: Date): number {
@@ -180,6 +196,9 @@ export function computeCurrentSavingsValueKrw({
   compoundType,
   taxType,
   autoRenew,
+  kind = 'term',
+  monthlyContributionKrw,
+  depositStartDate,
   asOf = new Date(),
 }: {
   buys: SavingsBuy[]
@@ -188,8 +207,37 @@ export function computeCurrentSavingsValueKrw({
   compoundType: CompoundType
   taxType: TaxType
   autoRenew: boolean
+  kind?: 'term' | 'recurring' | 'free'
+  monthlyContributionKrw?: number | null
+  depositStartDate?: string | null
   asOf?: Date
 }): number {
+  const annualRate = interestRateBp / 1_000_000
+
+  // 정기적금: 월납입 × (연이율/12) × m(m+1)/2
+  if (kind === 'recurring' && monthlyContributionKrw && depositStartDate) {
+    const [sy, sm] = depositStartDate.split('-').map(Number)
+    const endDate = (() => {
+      if (maturityDate) {
+        const maturity = new Date(maturityDate)
+        maturity.setHours(0, 0, 0, 0)
+        const today = new Date(asOf)
+        today.setHours(0, 0, 0, 0)
+        if (!autoRenew && today > maturity) return maturity
+      }
+      return new Date(asOf)
+    })()
+    const m = (endDate.getFullYear() - sy) * 12 + (endDate.getMonth() - (sm - 1))
+    if (m <= 0) return 0
+    const monthlyRate = annualRate / 12
+    const grossInterest = compoundType === 'monthly'
+      ? recurringMonthlyCompoundGrossInterest(monthlyContributionKrw, monthlyRate, m)
+      : Math.floor(monthlyContributionKrw * monthlyRate * (m * (m + 1) / 2))
+    const netInterest = applyTax(grossInterest, taxType)
+    return monthlyContributionKrw * m + netInterest
+  }
+
+  // 정기예금 / 자유적금: 납입건별 일수 × 이자
   if (buys.length === 0 || interestRateBp <= 0) {
     return buys.reduce((sum, b) => sum + b.amountKrw, 0)
   }
@@ -229,6 +277,9 @@ export function computeExpectedMaturityValueKrw({
   maturityDate,
   compoundType,
   taxType,
+  kind = 'term',
+  monthlyContributionKrw,
+  depositStartDate,
   asOf = new Date(),
 }: {
   buys: SavingsBuy[]
@@ -236,23 +287,41 @@ export function computeExpectedMaturityValueKrw({
   maturityDate: string | null
   compoundType: CompoundType
   taxType: TaxType
+  kind?: 'term' | 'recurring' | 'free'
+  monthlyContributionKrw?: number | null
+  depositStartDate?: string | null
   asOf?: Date
 }): number | null {
-  if (!maturityDate || interestRateBp <= 0 || buys.length === 0) return null
+  if (!maturityDate || interestRateBp <= 0) return null
 
+  const annualRate = interestRateBp / 1_000_000
   const maturityAsDate = new Date(maturityDate)
   maturityAsDate.setHours(0, 0, 0, 0)
+
+  // 정기적금: 단리 = 월납입 × (연이율/12) × n(n+1)/2, 월복리 = 회차별 복리 합산
+  if (kind === 'recurring' && monthlyContributionKrw && depositStartDate) {
+    const [sy, sm] = depositStartDate.split('-').map(Number)
+    const n = (maturityAsDate.getFullYear() - sy) * 12 + (maturityAsDate.getMonth() - (sm - 1))
+    if (n <= 0) return null
+    const monthlyRate = annualRate / 12
+    const grossInterest = compoundType === 'monthly'
+      ? recurringMonthlyCompoundGrossInterest(monthlyContributionKrw, monthlyRate, n)
+      : Math.floor(monthlyContributionKrw * monthlyRate * (n * (n + 1) / 2))
+    const netInterest = applyTax(grossInterest, taxType)
+    return monthlyContributionKrw * n + netInterest
+  }
+
+  // 정기예금 / 자유적금: 납입건별 일수 × 이자
+  if (buys.length === 0) return null
 
   let totalValue = 0
   for (const buy of buys) {
     const buyDate = new Date(buy.transactionDate)
     buyDate.setHours(0, 0, 0, 0)
-    // 아직 납입 안 된 미래 건은 스킵
     if (buyDate > asOf) continue
 
     const days = daysBetween(buy.transactionDate, maturityAsDate)
     if (days <= 0) {
-      // 만기일이 납입일보다 이전 — 이자 없이 원금만
       totalValue += buy.amountKrw
       continue
     }

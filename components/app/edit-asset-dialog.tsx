@@ -30,6 +30,7 @@ export function EditAssetDialog({ asset }: EditAssetDialogProps) {
     accountType: asset.accountType,
     ticker: asset.ticker,
     notes: asset.notes,
+    insuranceType: asset.insuranceType,
   }
 
   return (

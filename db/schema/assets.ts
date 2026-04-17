@@ -21,7 +21,7 @@ export const accountTypeEnum = pgEnum('account_type', [
   'bank_shincom', 'bank_saemaul',
   'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life',
   'ins_aia', 'ins_metlife', 'ins_prudential',
-  'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire',
+  'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire', 'ins_im_life',
 ])
 
 export const assets = pgTable('assets', {
@@ -37,5 +37,6 @@ export const assets = pgTable('assets', {
   withdrawalBankId: varchar('withdrawal_bank_id', { length: 50 }),
   owner: varchar('owner', { length: 20 }),
   notes: varchar('notes', { length: 1000 }),
+  insuranceType: varchar('insurance_type', { length: 50 }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 })

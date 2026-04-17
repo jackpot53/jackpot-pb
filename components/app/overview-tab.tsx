@@ -81,6 +81,9 @@ function SavingsInfoSection({
     compoundType: (details.compoundType ?? 'simple') as 'simple' | 'monthly',
     taxType: (details.taxType ?? 'taxable') as 'taxable' | 'tax_free' | 'preferential',
     autoRenew: details.autoRenew,
+    kind: details.kind as 'term' | 'recurring' | 'free',
+    monthlyContributionKrw: details.monthlyContributionKrw,
+    depositStartDate: details.depositStartDate,
   }) : null
 
   const currentValueKrw = latestManualKrw ?? autoValueKrw
@@ -96,6 +99,9 @@ function SavingsInfoSection({
     maturityDate: details.maturityDate,
     compoundType: (details.compoundType ?? 'simple') as 'simple' | 'monthly',
     taxType: (details.taxType ?? 'taxable') as 'taxable' | 'tax_free' | 'preferential',
+    kind: details.kind as 'term' | 'recurring' | 'free',
+    monthlyContributionKrw: details.monthlyContributionKrw,
+    depositStartDate: details.depositStartDate,
   }) : null
 
   const daysLeft = details.maturityDate ? remainingDays(details.maturityDate) : null
@@ -392,10 +398,9 @@ function decodeQuantity(stored: number): string {
 
 export function OverviewTab({ asset, valuations, holding, savingsDetails = null, savingsBuys = [] }: OverviewTabProps) {
   const [showUpdateForm, setShowUpdateForm] = useState(false)
-  const isFundAsset = asset.assetType === 'fund'
   const isRealEstate = asset.assetType === 'real_estate'
-  const usesUnitPrice = isFundAsset || isRealEstate
-  const isManual = asset.priceType === 'manual' || usesUnitPrice
+  const usesUnitPrice = isRealEstate
+  const isManual = asset.priceType === 'manual' || isRealEstate
 
   const latestValuationKrw = valuations[0]?.valueKrw ?? null  // fund/real_estate: 단가; others: 총값
   const hasPosition = holding !== null && holding.totalQuantity > 0
@@ -526,7 +531,7 @@ export function OverviewTab({ asset, valuations, holding, savingsDetails = null,
                 <TableHeader>
                   <TableRow>
                     <TableHead>날짜</TableHead>
-                    <TableHead>{isFundAsset ? '기준가 (₩/좌)' : isRealEstate ? '단가 (₩/개)' : asset.assetType === 'savings' ? '실지급액 (₩)' : '평가금액 (₩)'}</TableHead>
+                    <TableHead>{isRealEstate ? '단가 (₩/개)' : asset.assetType === 'savings' ? '실지급액 (₩)' : '평가금액 (₩)'}</TableHead>
                     <TableHead>메모</TableHead>
                   </TableRow>
                 </TableHeader>

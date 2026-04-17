@@ -20,6 +20,7 @@ describe('computeAssetPerformance', () => {
     brokerageId: null,
     owner: null,
     notes: null,
+    insuranceType: null,
     totalQuantity: 200_00000000, // 200.00000000 units (×10^8)
     avgCostPerUnit: 1_000_000,   // ₩1,000,000 per unit
     avgCostPerUnitOriginal: null,

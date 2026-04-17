@@ -15,6 +15,7 @@ export interface AssetWithHolding {
   brokerageId: string | null
   owner: string | null
   notes: string | null
+  insuranceType: string | null
   totalQuantity: number | null
   avgCostPerUnit: number | null
   avgCostPerUnitOriginal: number | null
@@ -40,6 +41,7 @@ export const getAssetsWithHoldings = cache(async (userId: string): Promise<Asset
       brokerageId: assets.brokerageId,
       owner: assets.owner,
       notes: assets.notes,
+      insuranceType: assets.insuranceType,
       totalQuantity: holdings.totalQuantity,
       avgCostPerUnit: holdings.avgCostPerUnit,
       avgCostPerUnitOriginal: holdings.avgCostPerUnitOriginal,

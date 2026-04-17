@@ -16,6 +16,7 @@ export interface AssetHoldingInput {
   brokerageId: string | null
   owner: string | null
   notes: string | null
+  insuranceType: string | null
   totalQuantity: number    // ×10^8 integer
   avgCostPerUnit: number   // KRW per unit
   avgCostPerUnitOriginal: number | null  // USD cents for USD assets, null for KRW
@@ -39,6 +40,8 @@ export interface AssetPerformance extends AssetHoldingInput {
   dailyChangeBps: number | null
   /** true when priceType==='manual' but no valuation row exists — UI should flag this asset */
   missingValuation: boolean
+  /** savings 전용: 가입일 'YYYY-MM-DD', 없으면 null */
+  initialTransactionDate: string | null
   /** savings 전용: 만기일 'YYYY-MM-DD', 없으면 null */
   maturityDate: string | null
   /** savings 전용: 연이자율 bp×100 (e.g. 52500 = 5.25%), 없으면 null */
@@ -83,11 +86,11 @@ export function computeAssetPerformance(params: {
 }): AssetPerformance {
   const { holding, currentPriceKrw, currentPriceUsd = null, currentFxRate = null, isStale, cachedAt, latestManualValuationKrw, dailyChangeBps = null, savingsDetails = null, savingsBuys = [] } = params
 
-  // 정기적금(recurring): 실제 거래 내역이 없을 때 가상 납입 내역 생성
+  // 정기적금(recurring): 가입일 기준 월납입 × 경과월수로 항상 가상 납입 내역 생성
+  // 실제 거래 내역 여부와 무관하게 계약 금액 기준으로 평가액 산출
   const effectiveBuys: SavingsBuy[] = (() => {
     if (
       savingsDetails?.kind === 'recurring' &&
-      savingsBuys.length === 0 &&
       savingsDetails.monthlyContributionKrw != null &&
       savingsDetails.monthlyContributionKrw > 0 &&
       savingsDetails.depositStartDate
@@ -122,6 +125,9 @@ export function computeAssetPerformance(params: {
       compoundType: savingsDetails.compoundType,
       taxType: savingsDetails.taxType,
       autoRenew: savingsDetails.autoRenew,
+      kind: savingsDetails.kind,
+      monthlyContributionKrw: savingsDetails.monthlyContributionKrw,
+      depositStartDate: savingsDetails.depositStartDate,
     })
     const currentValueKrw = latestManualValuationKrw ?? autoValue
     // savings 자동계산 자산은 메타가 없거나 이자율이 0일 때만 missingValuation
@@ -144,6 +150,7 @@ export function computeAssetPerformance(params: {
       cachedAt: null,
       dailyChangeBps: null,
       missingValuation,
+      initialTransactionDate: effectiveBuys.length > 0 ? [...effectiveBuys].sort((a, b) => a.transactionDate.localeCompare(b.transactionDate))[0].transactionDate : null,
       maturityDate: savingsDetails?.maturityDate ?? null,
       interestRateBp: savingsDetails?.interestRateBp ?? null,
       monthlyContributionKrw: savingsDetails?.monthlyContributionKrw ?? null,
@@ -208,6 +215,7 @@ export function computeAssetPerformance(params: {
     cachedAt,
     dailyChangeBps,
     missingValuation,
+    initialTransactionDate: savingsBuys.length > 0 ? [...savingsBuys].sort((a, b) => a.transactionDate.localeCompare(b.transactionDate))[0].transactionDate : null,
     maturityDate: savingsDetails?.maturityDate ?? null,
     interestRateBp: savingsDetails?.interestRateBp ?? null,
     monthlyContributionKrw: savingsDetails?.monthlyContributionKrw ?? null,

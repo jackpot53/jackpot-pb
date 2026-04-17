@@ -17,10 +17,12 @@ export function DeleteTransactionDialog({
   transactionId,
   assetId,
   label,
+  onDeleted,
 }: {
   transactionId: string
   assetId: string
   label: string
+  onDeleted?: (id: string) => void
 }) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -29,6 +31,7 @@ export function DeleteTransactionDialog({
     startTransition(async () => {
       await deleteTransaction(transactionId, assetId)
       setOpen(false)
+      onDeleted?.(transactionId)
     })
   }
 
@@ -41,14 +44,14 @@ export function DeleteTransactionDialog({
       >
         <Trash2 className="h-4 w-4 text-destructive" />
       </DialogTrigger>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="sm:max-w-sm" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>거래 삭제</DialogTitle>
           <DialogDescription>
             {label} 거래를 영구 삭제합니다. 삭제하면 보유수량과 투자금액이 재계산됩니다. 계속하시겠습니까?
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <DialogFooter className="flex-row justify-end">
           <Button variant="outline" onClick={() => setOpen(false)} disabled={isPending}>
             취소
           </Button>

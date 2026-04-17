@@ -22,7 +22,7 @@ const storyScript = Story_Script({
   variable: '--font-story-script',
 })
 const sunflower = Sunflower({
-  weight: '300',
+  weight: ['300', '500', '700'],
   display: 'swap',
   variable: '--font-sunflower',
 })

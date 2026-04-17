@@ -65,7 +65,7 @@ const assetSchema = z.object({
   assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal', 'cma']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
-  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire']).optional().nullable(),
+  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_im_life', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire']).optional().nullable(),
   brokerageId: z.string().max(50).optional().nullable(),
   withdrawalBankId: z.string().max(50).optional().nullable(),
   owner: z.string().max(20).optional().nullable(),
@@ -75,6 +75,7 @@ const assetSchema = z.object({
   initialPricePerUnit: z.string().optional().nullable(),
   initialTransactionDate: z.string().optional().nullable(),
   initialExchangeRate: z.string().optional().nullable(),
+  insuranceType: z.string().max(50).optional().nullable(),
 })
 
 const TICKER_HINTS: Record<string, { placeholder: string; hint: string }> = {
@@ -192,6 +193,7 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
       initialPricePerUnit: null,
       initialTransactionDate: new Date().toISOString().split('T')[0],
       initialExchangeRate: null,
+      insuranceType: null,
       ...defaultValues,
     },
     mode: 'onBlur',
@@ -425,6 +427,39 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
               )}
             />
 
+            {/* 보험 유형 */}
+            {assetType === 'insurance' && (
+              <FormItem className={row}>
+                <FormLabel className={lbl}><Shield className="h-3.5 w-3.5 shrink-0" />보험유형</FormLabel>
+                <div className={`${cell} pr-4`}>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {([
+                      ['종신보험', 'whole_life' ],
+                      ['정기보험', 'term_life'  ],
+                      ['연금보험', 'annuity'    ],
+                      ['변액보험', 'variable'   ],
+                      ['저축보험', 'savings_ins'],
+                      ['실손보험', 'actual_loss'],
+                      ['건강보험', 'health'     ],
+                    ] as const).map(([label, typeVal]) => {
+                      const active = form.watch('insuranceType') === typeVal
+                      return (
+                        <button
+                          key={typeVal}
+                          type="button"
+                          onClick={() => form.setValue('insuranceType', active ? null : typeVal)}
+                          className={tileClass(active)}
+                        >
+                          {label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <FormMessage />
+                </div>
+              </FormItem>
+            )}
+
             {/* 종목코드 */}
             <FormField
               control={form.control}
@@ -513,7 +548,7 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
                   render={({ field }) => (
                     <FormItem className="flex flex-col gap-1.5">
                       <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-                        <Calendar className="h-3.5 w-3.5 shrink-0" />매수일
+                        <Calendar className="h-3.5 w-3.5 shrink-0" />{assetType === 'savings' ? '가입날짜' : '매수일'}
                       </FormLabel>
                       <FormControl>
                         <Input type="date" {...field} value={field.value ?? ''} />

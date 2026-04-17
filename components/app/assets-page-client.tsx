@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useTransition, useRef, useCallback } from 'react'
+import confetti from 'canvas-confetti'
 import { useRouter } from 'next/navigation'
 import { Layers, LayoutGrid, TrendingUp, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown, HelpCircle, ShieldCheck, Gem, CreditCard, Plus, RefreshCw, Wallet } from 'lucide-react'
 
@@ -111,17 +112,17 @@ const ASSET_TYPE_BG: Record<string, string> = {
 }
 
 const ASSET_TYPE_NAME_BADGE: Record<string, string> = {
-  stock_kr:       'bg-blue-50 text-blue-700 ring-blue-200',
-  stock_us:       'bg-cyan-50 text-cyan-700 ring-cyan-200',
-  etf_kr:         'bg-indigo-50 text-indigo-700 ring-indigo-200',
-  etf_us:         'bg-violet-50 text-violet-700 ring-violet-200',
-  crypto:         'bg-orange-50 text-orange-700 ring-orange-200',
-  fund:           'bg-teal-50 text-teal-700 ring-teal-200',
-  savings:        'bg-emerald-50 text-emerald-700 ring-emerald-200',
-  real_estate:    'bg-amber-50 text-amber-700 ring-amber-200',
-  insurance:      'bg-slate-100 text-slate-600 ring-slate-200',
-  precious_metal: 'bg-yellow-50 text-yellow-700 ring-yellow-200',
-  cma:            'bg-rose-50 text-rose-700 ring-rose-200',
+  stock_kr:       'bg-blue-500/15 text-blue-400 ring-blue-500/30',
+  stock_us:       'bg-cyan-500/15 text-cyan-400 ring-cyan-500/30',
+  etf_kr:         'bg-indigo-500/15 text-indigo-400 ring-indigo-500/30',
+  etf_us:         'bg-violet-500/15 text-violet-400 ring-violet-500/30',
+  crypto:         'bg-orange-500/15 text-orange-400 ring-orange-500/30',
+  fund:           'bg-teal-500/15 text-teal-400 ring-teal-500/30',
+  savings:        'bg-emerald-500/15 text-emerald-400 ring-emerald-500/30',
+  real_estate:    'bg-amber-500/15 text-amber-400 ring-amber-500/30',
+  insurance:      'bg-slate-500/15 text-slate-400 ring-slate-500/30',
+  precious_metal: 'bg-yellow-500/15 text-yellow-400 ring-yellow-500/30',
+  cma:            'bg-rose-500/15 text-rose-400 ring-rose-500/30',
 }
 
 const NO_SPARKLINE_TYPES = new Set(['fund', 'real_estate', 'savings', 'insurance', 'precious_metal', 'cma'])
@@ -137,6 +138,121 @@ const BROKERAGE_LABELS: Record<string, string> = {
 const OWNER_ICONS: Record<string, string> = {
   개인: '👤', 엄마: '👩', 아빠: '👨', 동생: '🧒', 누나: '👱‍♀️',
   형: '👱‍♂️', 아내: '👰', 남편: '🤵', 딸: '👧', 아들: '👦',
+}
+
+function useCountUp(target: number, duration = 1200): number {
+  const [value, setValue] = useState(0)
+  const rafRef = useRef<number>(0)
+
+  useEffect(() => {
+    if (target === 0) { setValue(0); return }
+    const start = performance.now()
+    const from = 0
+
+    function tick(now: number) {
+      const elapsed = now - start
+      const t = Math.min(elapsed / duration, 1)
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - t, 3)
+      setValue(Math.round(from + (target - from) * eased))
+      if (t < 1) rafRef.current = requestAnimationFrame(tick)
+    }
+
+    rafRef.current = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(rafRef.current)
+  }, [target, duration])
+
+  return value
+}
+
+function ThunderOverlay({ active }: { active: boolean }) {
+  if (!active) return null
+  return (
+    <>
+      <style>{`
+        @keyframes thunder-flash {
+          0%   { opacity: 0 }
+          4%   { opacity: 0.85 }
+          8%   { opacity: 0 }
+          12%  { opacity: 0.6 }
+          16%  { opacity: 0 }
+          40%  { opacity: 0 }
+          42%  { opacity: 0.9 }
+          46%  { opacity: 0 }
+          48%  { opacity: 0.4 }
+          52%  { opacity: 0 }
+          100% { opacity: 0 }
+        }
+        @keyframes bolt-drop {
+          0%   { opacity: 0; transform: translateY(-40px) scaleY(0.6) }
+          10%  { opacity: 1; transform: translateY(0) scaleY(1) }
+          30%  { opacity: 1 }
+          50%  { opacity: 0.7 }
+          70%  { opacity: 0 }
+          100% { opacity: 0 }
+        }
+        @keyframes bolt-drop2 {
+          0%   { opacity: 0 }
+          38%  { opacity: 0; transform: translateY(-30px) scaleY(0.7) }
+          48%  { opacity: 1; transform: translateY(0) scaleY(1) }
+          65%  { opacity: 0.8 }
+          80%  { opacity: 0 }
+          100% { opacity: 0 }
+        }
+        @keyframes thunder-shake {
+          0%,100% { transform: translate(0,0) }
+          10% { transform: translate(-6px, 3px) }
+          20% { transform: translate(6px, -3px) }
+          30% { transform: translate(-4px, 4px) }
+          40% { transform: translate(4px, -2px) }
+          42% { transform: translate(-8px, 2px) }
+          44% { transform: translate(8px, -4px) }
+          46% { transform: translate(-4px, 2px) }
+          48% { transform: translate(2px, -2px) }
+          50% { transform: translate(0,0) }
+        }
+      `}</style>
+
+      {/* 화면 흔들림 */}
+      <div className="fixed inset-0 pointer-events-none z-[9998]"
+        style={{ animation: 'thunder-shake 2.2s ease-out forwards' }} />
+
+      {/* 번개 플래시 */}
+      <div className="fixed inset-0 pointer-events-none z-[9999] bg-blue-100/30"
+        style={{ animation: 'thunder-flash 2.2s ease-out forwards' }} />
+
+      {/* 번개 볼트 1 — 중앙 */}
+      <div className="fixed inset-0 pointer-events-none z-[9999] flex items-start justify-center"
+        style={{ animation: 'bolt-drop 2.2s ease-out forwards', paddingTop: '8vh' }}>
+        <svg width="80" height="260" viewBox="0 0 80 260" fill="none">
+          <path d="M52 0L8 140H38L22 260L78 100H46L52 0Z" fill="white" stroke="#93c5fd" strokeWidth="2" />
+          <path d="M52 0L8 140H38L22 260L78 100H46L52 0Z" fill="url(#bolt-glow)" />
+          <defs>
+            <radialGradient id="bolt-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#bfdbfe" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.2" />
+            </radialGradient>
+          </defs>
+        </svg>
+      </div>
+
+      {/* 번개 볼트 2 — 좌측 */}
+      <div className="fixed inset-0 pointer-events-none z-[9999] flex items-start justify-center"
+        style={{ animation: 'bolt-drop2 2.2s ease-out forwards', paddingTop: '12vh', paddingRight: '38vw' }}>
+        <svg width="50" height="180" viewBox="0 0 80 260" fill="none">
+          <path d="M52 0L8 140H38L22 260L78 100H46L52 0Z" fill="white" stroke="#93c5fd" strokeWidth="2" opacity="0.8" />
+        </svg>
+      </div>
+
+      {/* 번개 볼트 3 — 우측 */}
+      <div className="fixed inset-0 pointer-events-none z-[9999] flex items-start justify-center"
+        style={{ animation: 'bolt-drop2 2.2s ease-out forwards', paddingTop: '6vh', paddingLeft: '40vw' }}>
+        <svg width="45" height="160" viewBox="0 0 80 260" fill="none">
+          <path d="M52 0L8 140H38L22 260L78 100H46L52 0Z" fill="white" stroke="#93c5fd" strokeWidth="2" opacity="0.7" />
+        </svg>
+      </div>
+    </>
+  )
 }
 
 type MergedAsset = AssetPerformance & { mergedCount: number }
@@ -227,11 +343,11 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
     : null
 
   const accountBadge = mergedCount > 1 ? (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-500 ring-1 ring-gray-200">
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/10 text-foreground/60 ring-1 ring-white/20">
       {mergedCount}계좌
     </span>
   ) : asset.accountType && ACCOUNT_TYPE_LABELS[asset.accountType] ? (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-500 ring-1 ring-gray-200">
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/10 text-foreground/60 ring-1 ring-white/20">
       {ACCOUNT_TYPE_LABELS[asset.accountType]}
     </span>
   ) : null
@@ -254,7 +370,7 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
     const isDueSoon = days >= 0 && days <= 30
     const label = isExpired ? '만기 경과' : days === 0 ? 'D-Day' : `D-${days}`
     return (
-      <span className={`shrink-0 inline-flex items-center text-[11px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums ${isExpired ? 'bg-gray-100 text-gray-500' : isDueSoon ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600'}`}>
+      <span className={`shrink-0 inline-flex items-center text-[11px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums ${isExpired ? 'bg-white/10 text-foreground/50' : isDueSoon ? 'bg-orange-500/15 text-orange-400' : 'bg-[#FEE500]/15 text-[#FEE500]'}`}>
         <span className="font-normal opacity-70">만기일 {asset.maturityDate.replace(/-/g, '.')}</span>
         <span className="opacity-40 mx-0.5">·</span>
         <span>{label}</span>
@@ -267,7 +383,7 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
       {/* Row1: 이름 + 계좌 badge + 만기 배지 */}
       <div className="flex items-center gap-2 min-w-0 flex-wrap">
         <span className="inline-block">
-          <span className="text-xl text-gray-900 leading-snug" style={{ fontFamily: "'Sunflower', sans-serif", fontWeight: 700 }}>{asset.name}</span>
+          <span className="text-xl font-bold text-foreground leading-snug">{asset.name}</span>
           <span className="block h-[2px] w-full rounded-full" style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #f59e0b, #10b981)', backgroundSize: '200% 100%', animation: 'shimmer-underline 3s linear infinite' }} />
         </span>
         {accountBadge}
@@ -275,41 +391,56 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
       </div>
       {/* Row2: 수량 · 매수가 · 현재가 · 상승률 */}
       {hasHolding && (
-        <div className="flex items-center gap-2 mt-1.5 text-xs text-gray-500 flex-wrap">
+        <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground flex-wrap">
           {!hideQty && (
-            <span className="tabular-nums"><span className="text-gray-400">수량</span> <span className="font-medium text-gray-700">{formatQty(asset.totalQuantity, isCrypto)}</span></span>
+            <span className="tabular-nums"><span className="text-muted-foreground">수량</span> <span className="font-medium text-foreground/90">{formatQty(asset.totalQuantity, isCrypto)}</span></span>
           )}
-          {asset.avgCostPerUnit > 0 && (
-            <>{(!hideQty) && <span className="text-gray-200">|</span>}<span className="tabular-nums"><span className="text-gray-400">{isSavings ? '예치원금' : '매수가'}</span> <span className="font-medium text-gray-700">{asset.avgCostPerUnitOriginal != null ? formatUsd(asset.avgCostPerUnitOriginal / 100) : formatKrw(asset.avgCostPerUnit)}</span></span></>
+          {asset.avgCostPerUnit > 0 && !(isSavings && asset.monthlyContributionKrw != null) && (
+            <>{(!hideQty) && <span className="text-border/60">|</span>}<span className="tabular-nums"><span className="text-muted-foreground">{isSavings ? '예치원금' : '매수가'}</span> <span className="font-medium text-foreground/90">{asset.avgCostPerUnitOriginal != null ? formatUsd(asset.avgCostPerUnitOriginal / 100) : formatKrw(asset.avgCostPerUnit)}</span></span></>
           )}
           {asset.totalCostKrw > 0 && !isSavings && (
-            <><span className="text-gray-200">|</span><span className="tabular-nums"><span className="text-gray-400">투자금</span> <span className="font-medium text-gray-700">{formatKrw(asset.totalCostKrw)}</span></span></>
+            <><span className="text-border/60">|</span><span className="tabular-nums"><span className="text-muted-foreground">투자금</span> <span className="font-medium text-foreground/90">{formatKrw(asset.totalCostKrw)}</span></span></>
           )}
-{isSavings && asset.monthlyContributionKrw != null && asset.monthlyContributionKrw > 0 && (
-            <>
-              <span className="tabular-nums"><span className="text-gray-400">월납입</span> <span className="font-medium text-gray-700">{formatKrw(asset.monthlyContributionKrw)}</span></span>
-              {asset.totalCostKrw > 0 && <><span className="text-gray-200">|</span><span className="tabular-nums"><span className="text-gray-400">총납입</span> <span className="font-medium text-gray-700">{formatKrw(asset.totalCostKrw)}</span></span></>}
-            </>
-          )}
+{isSavings && asset.monthlyContributionKrw != null && asset.monthlyContributionKrw > 0 && (() => {
+              const months = asset.initialTransactionDate
+                ? (() => {
+                    const start = new Date(asset.initialTransactionDate)
+                    const today = new Date()
+                    return (today.getFullYear() - start.getFullYear()) * 12 + (today.getMonth() - start.getMonth())
+                  })()
+                : null
+              const calculatedTotal = months != null ? asset.monthlyContributionKrw * months : null
+              return (
+                <>
+                  <span className="tabular-nums"><span className="text-muted-foreground">월납입</span> <span className="font-medium text-foreground/90">{formatKrw(asset.monthlyContributionKrw)}</span></span>
+                  {calculatedTotal != null && (
+                    <><span className="text-border/60">|</span><span className="tabular-nums"><span className="text-muted-foreground">총납입</span> <span className="font-medium text-foreground/90">{formatKrw(calculatedTotal)}</span>{months != null && <span className="text-muted-foreground ml-1">({months}개월)</span>}</span></>
+                  )}
+                </>
+              )
+            })()}
           {isSavings && asset.interestRateBp != null && asset.interestRateBp > 0 && (
-            <><span className="text-gray-200">|</span><span className="tabular-nums font-medium text-emerald-600">연 {(asset.interestRateBp / 10000).toFixed(2)}%</span></>
+            <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-[#FEE500]">연 {(asset.interestRateBp / 10000).toFixed(2)}%</span></>
+          )}
+          {isSavings && asset.initialTransactionDate && (
+            <><span className="text-border/60">|</span><span className="tabular-nums"><span className="text-muted-foreground">가입일</span> <span className="font-medium text-foreground/90">{asset.initialTransactionDate.replace(/-/g, '.')}</span></span></>
           )}
         </div>
       )}
       {/* Row3: 현재가 · 오늘 등락률 */}
-      {(asset.currentPriceKrw > 0 || dailyChangePct !== null) && (
-        <div className="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-gray-100 text-xs flex-wrap">
+      {!isSavings && (asset.currentPriceKrw > 0 || dailyChangePct !== null) && (
+        <div className="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-border/30 text-xs flex-wrap">
           {asset.currentPriceKrw > 0 && (
-            <span className="tabular-nums" style={{ fontFamily: "'Sunflower', sans-serif", fontWeight: 700 }}>
-              <span className="text-gray-400 font-sans font-normal">현재가</span>{' '}
-              <span className="text-gray-800">{asset.currentPriceUsd != null ? formatUsd(asset.currentPriceUsd) : formatKrw(asset.currentPriceKrw)}</span>
+            <span className="tabular-nums font-bold">
+              <span className="font-normal text-muted-foreground">현재가</span>{' '}
+              <span className="text-foreground">{asset.currentPriceUsd != null ? formatUsd(asset.currentPriceUsd) : formatKrw(asset.currentPriceKrw)}</span>
             </span>
           )}
           {dailyChangePct !== null && (
             <>
-              {asset.currentPriceKrw > 0 && <span className="text-gray-200">|</span>}
-              <span className={`tabular-nums ${dailyChangePct >= 0 ? 'text-red-500' : 'text-blue-500'}`} style={{ fontFamily: "'Sunflower', sans-serif", fontWeight: 700 }}>
-                <span className="text-gray-400 font-sans font-normal">오늘</span>{' '}
+              {asset.currentPriceKrw > 0 && <span className="text-border/60">|</span>}
+              <span className={`tabular-nums font-bold ${dailyChangePct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                <span className="font-normal text-muted-foreground">오늘</span>{' '}
                 {dailyChangePct >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
               </span>
             </>
@@ -319,23 +450,23 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
       {/* Row4: US 자산 FX 컨텍스트 */}
       {isUsAsset && (
         <div className="flex items-center gap-1.5 mt-1 text-xs flex-wrap">
-          <span className={`font-semibold shrink-0 ${isKrwPurchase ? 'text-amber-600' : 'text-sky-600'}`}>
+          <span className={`font-semibold shrink-0 ${isKrwPurchase ? 'text-amber-400' : 'text-sky-400'}`}>
             {isKrwPurchase ? '원화매수' : '달러매수'}
           </span>
           {hasFxBreakdown && stockGainKrw != null && fxGainKrw != null ? (
             <>
-              <span className="text-gray-200">|</span>
+              <span className="text-border/60">|</span>
               <span className={stockGainKrw >= 0 ? 'text-red-500' : 'text-blue-500'}>
                 주가 {stockGainKrw >= 0 ? '+' : ''}{formatKrw(stockGainKrw)}
               </span>
-              <span className="text-gray-200">|</span>
+              <span className="text-border/60">|</span>
               <span className={fxGainKrw >= 0 ? 'text-red-500' : 'text-blue-500'}>
                 환차 {fxGainKrw >= 0 ? '+' : ''}{formatKrw(fxGainKrw)}
               </span>
               {avgFxRate != null && asset.currentFxRate != null && (
                 <>
-                  <span className="text-gray-200">|</span>
-                  <span className="text-gray-500">
+                  <span className="text-border/60">|</span>
+                  <span className="text-muted-foreground">
                     환율 ₩{Math.round(avgFxRate).toLocaleString()} → ₩{Math.round(asset.currentFxRate).toLocaleString()}
                   </span>
                   {asset.fxReturnPct != null && (
@@ -348,13 +479,13 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
             </>
           ) : isUsdPurchase && asset.currentFxRate != null ? (
             <>
-              <span className="text-gray-200">|</span>
-              <span className="text-gray-500">₩{Math.round(asset.currentFxRate).toLocaleString()} 기준</span>
+              <span className="text-border/60">|</span>
+              <span className="text-muted-foreground">₩{Math.round(asset.currentFxRate).toLocaleString()} 기준</span>
             </>
           ) : isKrwPurchase ? (
             <>
-              <span className="text-gray-200">|</span>
-              <span className="text-gray-500">주가+환율 변동 반영</span>
+              <span className="text-border/60">|</span>
+              <span className="text-muted-foreground">주가+환율 변동 반영</span>
             </>
           ) : null}
         </div>
@@ -363,25 +494,25 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
   )
 
   const valueFooter = (hasValue || hasCost) && (
-    <div className="mt-2.5 pt-2.5 border-t border-gray-300 flex items-center gap-3 tabular-nums flex-wrap">
+    <div className="mt-2.5 pt-2.5 border-t border-border flex items-center gap-3 tabular-nums flex-wrap">
       <div className="flex items-baseline gap-1">
-        <span className="text-xs text-gray-400 mr-0.5">평가금</span>
-        <span className="text-sm font-semibold text-gray-900">
+        <span className="text-xs text-muted-foreground mr-0.5">평가금</span>
+        <span className="text-sm font-semibold text-foreground">
           {hasValue ? formatKrw(asset.currentValueKrw) : '—'}
           {isUsdPurchase && asset.currentPriceUsd != null && hasHolding && hasValue && (
-            <span className="text-xs text-gray-400 ml-1">({formatUsd(asset.currentPriceUsd * asset.totalQuantity / 1e8)})</span>
+            <span className="text-xs text-muted-foreground ml-1">({formatUsd(asset.currentPriceUsd * asset.totalQuantity / 1e8)})</span>
           )}
         </span>
       </div>
       {hasValue && hasCost && (
         <>
-          <span className="text-gray-200 text-xs">|</span>
+          <span className="text-border/60 text-xs">|</span>
           <div className="flex items-baseline gap-1">
-            <span className="text-xs text-gray-400 mr-0.5">수익금</span>
+            <span className="text-xs text-muted-foreground mr-0.5">수익금</span>
             <span className={`text-sm font-bold ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
               {profit >= 0 ? '+' : ''}{formatKrw(profit)}
             </span>
-            <span className="text-xs text-gray-400 ml-1">수익률</span>
+            <span className="text-xs text-muted-foreground ml-1">수익률</span>
             <span className={`text-xs font-semibold ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
               {formatReturn(asset.returnPct)}
             </span>
@@ -392,7 +523,7 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
   )
 
   return (
-    <div className={cn("flex items-stretch gap-3 rounded-xl border border-gray-200 px-4 py-3.5 border-l-4 hover:shadow-md transition-all bg-white", ASSET_TYPE_ACCENT[asset.assetType] ?? 'border-l-border')}>
+    <div className={cn("flex items-stretch gap-3 rounded-xl border border-[#FEE500]/35 px-4 py-3.5 border-l-4 hover:shadow-md transition-all bg-card", ASSET_TYPE_ACCENT[asset.assetType] ?? 'border-l-border')}>
       {/* 로고 */}
       <div className="shrink-0 self-center">
         <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={40} />
@@ -407,7 +538,7 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
       {/* 스파크라인 + 현재가 + 등락률 (우측) */}
       {showSparkline && (
         <>
-          <div className="w-px self-stretch bg-gray-100 shrink-0" />
+          <div className="w-px self-stretch bg-border/30 shrink-0" />
           <div className="shrink-0 self-center w-[100px] h-[52px] overflow-hidden rounded-lg">
             {sparklineData
               ? <SparklineChart data={sparklineData} positive={asset.returnPct >= 0} width={100} height={52} />
@@ -435,7 +566,7 @@ function AssetGridCard({ asset, sparklineData }: {
     : asset.accountType && ACCOUNT_TYPE_LABELS[asset.accountType] ? ACCOUNT_TYPE_LABELS[asset.accountType] : null
 
   return (
-    <div className={cn("rounded-xl border border-gray-200 p-4 flex flex-col gap-2.5 hover:shadow-md transition-all border-l-4 bg-white", ASSET_TYPE_ACCENT[asset.assetType] ?? 'border-l-border')}>
+    <div className={cn("rounded-xl border border-[#FEE500]/35 p-4 flex flex-col gap-2.5 hover:shadow-md transition-all border-l-4 bg-card", ASSET_TYPE_ACCENT[asset.assetType] ?? 'border-l-border')}>
       {/* 헤더: 로고 */}
       <div className="flex items-start">
         <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={38} />
@@ -444,7 +575,7 @@ function AssetGridCard({ asset, sparklineData }: {
       {/* 종목명 + 티커 */}
       <div className="min-w-0 flex flex-col gap-1">
         <span className="inline-block">
-          <span className="text-xl text-gray-900 leading-snug" style={{ fontFamily: "'Sunflower', sans-serif", fontWeight: 700 }}>{asset.name}</span>
+          <span className="text-xl font-bold text-foreground leading-snug">{asset.name}</span>
           <span className="block h-[2px] w-full rounded-full" style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #f59e0b, #10b981)', backgroundSize: '200% 100%', animation: 'shimmer-underline 3s linear infinite' }} />
         </span>
       </div>
@@ -452,15 +583,15 @@ function AssetGridCard({ asset, sparklineData }: {
       {/* 배지: 증권사 · 계좌 · 소유주 */}
       {(brokerageLabel || accountLabel || asset.owner) && (
         <div className="flex items-center gap-1.5 flex-wrap">
-          {brokerageLabel && <span className="text-xs text-gray-400 font-medium">{brokerageLabel}</span>}
-          {accountLabel && <span className="text-xs text-gray-400 font-medium">{accountLabel}</span>}
-          {asset.owner && <span className="text-xs text-gray-400 font-medium">{OWNER_ICONS[asset.owner] ?? '👤'} {asset.owner}</span>}
+          {brokerageLabel && <span className="text-xs text-muted-foreground font-medium">{brokerageLabel}</span>}
+          {accountLabel && <span className="text-xs text-muted-foreground font-medium">{accountLabel}</span>}
+          {asset.owner && <span className="text-xs text-muted-foreground font-medium">{OWNER_ICONS[asset.owner] ?? '👤'} {asset.owner}</span>}
         </div>
       )}
 
       {/* 스파크라인 */}
       {showSpark && (
-        <div className="rounded-lg border border-gray-100 bg-gray-50 overflow-hidden h-10">
+        <div className="rounded-lg border border-border/30 bg-muted/20 overflow-hidden h-10">
           {sparklineData
             ? <SparklineChart data={sparklineData} positive={asset.returnPct >= 0} width={200} height={40} />
             : <div className="w-full h-full" />
@@ -469,19 +600,19 @@ function AssetGridCard({ asset, sparklineData }: {
       )}
 
       {/* 평가금 | 수익금 */}
-      <div className="mt-auto pt-2.5 border-t border-gray-300 flex items-center gap-2 tabular-nums flex-wrap">
+      <div className="mt-auto pt-2.5 border-t border-border flex items-center gap-2 tabular-nums flex-wrap">
         <div className="flex items-baseline gap-1">
-          <Wallet className="h-3 w-3 text-gray-300 shrink-0" />
-          <span className="text-xs text-gray-400">평가금</span>
-          <span className="text-sm font-semibold text-gray-900">{hasValue ? formatKrw(asset.currentValueKrw) : '—'}</span>
+          <Wallet className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+          <span className="text-xs text-muted-foreground">평가금</span>
+          <span className="text-sm font-semibold text-foreground">{hasValue ? formatKrw(asset.currentValueKrw) : '—'}</span>
         </div>
         {hasValue && hasCost && (
           <>
-            <span className="text-gray-200 text-xs">|</span>
+            <span className="text-border/60 text-xs">|</span>
             <div className="flex items-baseline gap-1">
-              <span className="text-xs text-gray-400">수익금</span>
+              <span className="text-xs text-muted-foreground">수익금</span>
               <span className={`text-sm font-bold ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>{profit >= 0 ? '+' : ''}{formatKrw(profit)}</span>
-              <span className="text-xs text-gray-400 ml-1">수익률</span>
+              <span className="text-xs text-muted-foreground ml-1">수익률</span>
               <span className={`text-xs font-semibold ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>{formatReturn(asset.returnPct)}</span>
             </div>
           </>
@@ -493,7 +624,7 @@ function AssetGridCard({ asset, sparklineData }: {
 
 function AssetGridCardSkeleton({ assetType }: { assetType?: string } = {}) {
   return (
-    <div className={cn("rounded-xl bg-white border border-gray-200 p-3.5 flex flex-col gap-2 border-l-4", assetType ? (ASSET_TYPE_ACCENT[assetType] ?? 'border-l-border') : 'border-l-border')}>
+    <div className={cn("rounded-xl bg-card border border-[#FEE500]/35 p-3.5 flex flex-col gap-2 border-l-4", assetType ? (ASSET_TYPE_ACCENT[assetType] ?? 'border-l-border') : 'border-l-border')}>
       <div className="w-9 h-9 rounded-full bg-muted animate-pulse" />
       <div className="h-3.5 w-3/4 bg-muted animate-pulse rounded" />
       <div className="h-3 w-1/2 bg-muted animate-pulse rounded" />
@@ -656,7 +787,7 @@ function CollapsibleChart({ assets, sparklines, monthlyData, annualData, dailyDa
 }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="bg-card rounded-full overflow-hidden border border-white">
+    <div className="bg-card rounded-xl overflow-hidden border border-[#FEE500]/35">
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
@@ -724,8 +855,47 @@ export function SummaryCards({ grouped, performances, valueCandles }: { grouped:
   const grandReturnPct = valuedCost > 0 ? (grandProfit / valuedCost) * 100 : null
   const grandHasValue = grandTotalValue > 0
 
+  const animatedCost = useCountUp(grandTotalCost)
+  const animatedValue = useCountUp(grandTotalValue, 1400)
+  const animatedProfit = useCountUp(Math.abs(grandProfit), 1600)
+
+  const totalDailyChangeKrw = performances
+    .filter((a) => a.dailyChangeBps !== null && a.currentValueKrw > 0)
+    .reduce((sum, a) => sum + a.currentValueKrw * (a.dailyChangeBps! / 10000), 0)
+
+  const fireworks = useCallback(() => {
+    const burst = (x: number, y: number, delay: number) => setTimeout(() => {
+      confetti({ particleCount: 120, spread: 80, startVelocity: 55, origin: { x, y }, colors: ['#FEE500', '#ff6b6b', '#a78bfa', '#34d399', '#60a5fa', '#f97316'] })
+    }, delay)
+    burst(0.5, 0.4, 0)
+    burst(0.3, 0.5, 200)
+    burst(0.7, 0.5, 200)
+    burst(0.5, 0.35, 500)
+    burst(0.2, 0.4, 700)
+    burst(0.8, 0.4, 700)
+  }, [])
+
+  useEffect(() => {
+    if (totalDailyChangeKrw >= 10_000_000) {
+      const t = setTimeout(fireworks, 1700)
+      return () => clearTimeout(t)
+    }
+  }, [totalDailyChangeKrw, fireworks])
+
+  const [thunder, setThunder] = useState(false)
+  useEffect(() => {
+    if (totalDailyChangeKrw <= -5_000_000) {
+      const t = setTimeout(() => {
+        setThunder(true)
+        setTimeout(() => setThunder(false), 2400)
+      }, 1700)
+      return () => clearTimeout(t)
+    }
+  }, [totalDailyChangeKrw])
+
   return (
     <div className="space-y-3">
+      <ThunderOverlay active={thunder} />
       {/* Hero */}
       <div className="rounded-2xl bg-card border border-white/20 px-8 py-6 relative overflow-hidden">
         <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-violet-500/10 blur-2xl" />
@@ -734,7 +904,7 @@ export function SummaryCards({ grouped, performances, valueCandles }: { grouped:
         <div className="relative flex items-stretch gap-10 flex-wrap">
           <div>
             <p className="text-[11px] font-medium text-foreground/50 uppercase tracking-widest mb-2">총 투자</p>
-            <p className="text-3xl font-bold tabular-nums">{grandTotalCost > 0 ? formatKrw(grandTotalCost) : '—'}</p>
+            <p className="text-3xl font-bold tabular-nums">{grandTotalCost > 0 ? formatKrw(animatedCost) : '—'}</p>
             <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-white/[0.07] text-foreground/50 text-xs">
               <PiggyBank className="h-3 w-3" />투자한 원금 합계
             </span>
@@ -744,7 +914,7 @@ export function SummaryCards({ grouped, performances, valueCandles }: { grouped:
               <div className="w-px bg-white/20 self-stretch" />
               <div>
                 <p className="text-[11px] font-medium text-foreground/50 uppercase tracking-widest mb-2">평가금액</p>
-                <p className="text-3xl font-bold tabular-nums">{formatKrw(grandTotalValue)}</p>
+                <p className="text-3xl font-bold tabular-nums">{formatKrw(animatedValue)}</p>
                 <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-white/[0.07] text-foreground/50 text-xs">
                   <BarChart2 className="h-3 w-3" />현재 시세 기준 총 자산
                 </span>
@@ -753,7 +923,7 @@ export function SummaryCards({ grouped, performances, valueCandles }: { grouped:
               <div className="text-right">
                 <p className="text-[11px] font-medium text-foreground/50 uppercase tracking-widest mb-2">평가손익</p>
                 <p className={`text-3xl font-bold tabular-nums ${grandProfit >= 0 ? 'text-red-400' : 'text-blue-400'}`}>
-                  {grandProfit >= 0 ? '+' : ''}{formatKrw(grandProfit)}
+                  {grandProfit >= 0 ? '+' : '-'}{formatKrw(animatedProfit)}
                 </p>
                 {grandReturnPct !== null && (
                   <div className="flex items-center justify-end gap-2 mt-1">
@@ -795,29 +965,29 @@ export function SummaryCards({ grouped, performances, valueCandles }: { grouped:
           const hasValue = totalValue > 0
 
           return (
-            <div key={type} className={cn("rounded-xl border border-gray-200 px-4 py-3 flex flex-col gap-1.5 border-l-4 bg-white shadow-sm", ASSET_TYPE_ACCENT[type] ?? 'border-l-border')}>
+            <div key={type} className={cn("rounded-xl border border-[#FEE500]/35 px-4 py-3 flex flex-col gap-1.5 border-l-4 bg-card shadow-sm", ASSET_TYPE_ACCENT[type] ?? 'border-l-border')}>
               <div className="flex items-center justify-between mb-0.5">
                 <AssetTypeBadge assetType={type as AssetPerformance['assetType']} light />
-                <span className="text-xs text-gray-400">{assets.length}종목</span>
+                <span className="text-xs text-muted-foreground">{assets.length}종목</span>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-[10px] font-medium text-gray-400 shrink-0">평가금</span>
-                <span className="text-base font-bold tabular-nums text-gray-900">{hasValue ? formatKrw(totalValue) : totalCost > 0 ? formatKrw(totalCost) : '—'}</span>
+                <span className="text-[10px] font-medium text-muted-foreground shrink-0">평가금</span>
+                <span className="text-base font-bold tabular-nums text-foreground">{hasValue ? formatKrw(totalValue) : totalCost > 0 ? formatKrw(totalCost) : '—'}</span>
               </div>
               {hasValue && valuedCostInType > 0 ? (
                 <div className={`text-xs font-semibold tabular-nums flex items-center gap-1 ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                  <span className="text-[10px] font-medium text-gray-400">수익금</span>
+                  <span className="text-[10px] font-medium text-muted-foreground">수익금</span>
                   <span>{profit >= 0 ? '+' : ''}{formatKrw(profit)}</span>
                   {returnPct !== null && (
                     <>
-                      <span className="text-gray-300">|</span>
-                      <span className="text-[10px] font-medium text-gray-400">수익률</span>
+                      <span className="text-border/60">|</span>
+                      <span className="text-[10px] font-medium text-muted-foreground">수익률</span>
                       <span>{formatReturn(returnPct)}</span>
                     </>
                   )}
                 </div>
               ) : (
-                <p className="text-xs text-gray-400">—</p>
+                <p className="text-xs text-muted-foreground">—</p>
               )}
             </div>
           )
@@ -879,11 +1049,11 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
   return (
     <div className="space-y-6">
       <SummaryCards grouped={grouped} performances={performances} />
-      <Separator className="bg-gray-200" />
+      <Separator className="bg-border" />
       <Tabs defaultValue={showAll ? 'all' : defaultTab}>
-        <TabsList className="w-full bg-gray-100 border-gray-200">
+        <TabsList className="w-full bg-muted/30 border-border/40">
           {showAll && (
-            <TabsTrigger value="all" className="flex-1 text-gray-500 hover:text-gray-700 data-active:bg-white data-active:text-gray-900 data-active:border-gray-200 data-active:shadow-sm">
+            <TabsTrigger value="all" className="flex-1 text-muted-foreground hover:text-foreground data-active:bg-card data-active:text-foreground data-active:border-border/60 data-active:shadow-sm">
               <LayoutGrid className="h-3.5 w-3.5" />
               전체
             </TabsTrigger>
@@ -891,7 +1061,7 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
           {types.map((type) => {
             const Icon = ASSET_TYPE_ICONS[type]
             return (
-              <TabsTrigger key={type} value={type} className="flex-1 text-gray-500 hover:text-gray-700 data-active:bg-white data-active:text-gray-900 data-active:border-gray-200 data-active:shadow-sm">
+              <TabsTrigger key={type} value={type} className="flex-1 text-muted-foreground hover:text-foreground data-active:bg-card data-active:text-foreground data-active:border-border/60 data-active:shadow-sm">
                 {Icon && <Icon className="h-3.5 w-3.5" />}
                 {ASSET_TYPE_LABELS[type]}
                 <span className="ml-1 text-xs opacity-60">({grouped[type].length})</span>

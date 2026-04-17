@@ -25,6 +25,7 @@ import type { AssetPerformance } from '@/lib/portfolio'
 import { PortfolioRadialChart } from '@/components/app/portfolio-radial-chart'
 import type { AllocationItem } from '@/components/app/portfolio-radial-chart'
 import { TakeSnapshotButton } from '@/components/app/take-snapshot-button'
+import { timed } from '@/lib/perf'
 
 function ChartSkeleton() {
   return (
@@ -170,13 +171,17 @@ const ASSET_TYPE_ORDER = [
 ] as const
 
 async function ChartsPageContent({ userId }: { userId: string }) {
+  const pageStart = performance.now()
   // Fire-and-forget: refresh prices in the background after response is sent
   after(() => { void refreshAllPricesInternal().catch(() => {}) })
 
-  const [{ performances }, snapshots] = await Promise.all([
+  const [{ performances }, snapshots] = await timed('ChartsPage data', () => Promise.all([
     loadPerformances(userId),
     getAllSnapshotsWithBreakdowns(userId).catch(() => []),
-  ])
+  ]))
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[perf] ChartsPage total                     ${(performance.now() - pageStart).toFixed(0).padStart(5)}ms`)
+  }
 
   const grouped = ASSET_TYPE_ORDER.reduce<Record<string, AssetPerformance[]>>((acc, type) => {
     const items = performances.filter((a) => a.assetType === type)
@@ -407,7 +412,7 @@ export default async function ChartsPage() {
           <div className="flex items-center gap-1.5 text-violet-200 text-xs font-semibold tracking-widest uppercase">
             <LineChart className="h-3.5 w-3.5" />수익률 분석
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">차트</h1>
+          <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "'Sunflower', sans-serif" }}>차트</h1>
           <p className="text-violet-100/70 text-sm">
             자산 성장 추이와 수익률을 <span className="text-violet-100/90 font-medium">캔들스틱 차트로 시각화</span>합니다
           </p>

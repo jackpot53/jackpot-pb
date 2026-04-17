@@ -182,6 +182,68 @@ describe('computeExpectedMaturityValueKrw', () => {
   })
 })
 
+// ─── 정기예금 월복리 스펙 예시 검증 ────────────────────────────────────────────
+
+describe('정기예금 월복리 스펙 예시', () => {
+  // 5,000만원, 연 3.8%, 12개월
+  const RATE_3_8PCT = 38000
+  it('단리: 세전 이자 1,900,000원', () => {
+    // 5000만 × 0.038 × 365/365
+    const interest = computeAccruedInterestKrw({ principal: 50_000_000, annualRateBp: RATE_3_8PCT, daysElapsed: 365, compoundType: 'simple' })
+    expect(interest).toBe(1_900_000)
+  })
+
+  it('월복리: 세전 이자 ≈ 1,931,500원 (±2,000원)', () => {
+    const interest = computeAccruedInterestKrw({ principal: 50_000_000, annualRateBp: RATE_3_8PCT, daysElapsed: 365, compoundType: 'monthly' })
+    expect(interest).toBeGreaterThan(1_929_000)
+    expect(interest).toBeLessThan(1_934_000)
+  })
+})
+
+// ─── 정기적금 월복리 스펙 예시 검증 ────────────────────────────────────────────
+
+describe('정기적금 월복리 스펙 예시', () => {
+  // 월 400만원, 연 3.9%, 11개월
+  const RATE_3_9PCT = 39000
+
+  it('단리: 세전 이자 858,000원', () => {
+    const result = computeExpectedMaturityValueKrw({
+      buys: [], interestRateBp: RATE_3_9PCT, maturityDate: '2026-01-01',
+      compoundType: 'simple', taxType: 'tax_free',
+      kind: 'recurring', monthlyContributionKrw: 4_000_000, depositStartDate: '2025-02-01',
+    })
+    // 총납입 = 4,000,000 × 11 = 44,000,000
+    // 세전이자 = 4,000,000 × (0.039/12) × 11×12/2 = 4,000,000 × 0.00325 × 66 = 858,000
+    expect(result).toBe(44_000_000 + 858_000)
+  })
+
+  it('월복리: 세전 이자 ≈ 867,363원', () => {
+    const result = computeExpectedMaturityValueKrw({
+      buys: [], interestRateBp: RATE_3_9PCT, maturityDate: '2026-01-01',
+      compoundType: 'monthly', taxType: 'tax_free',
+      kind: 'recurring', monthlyContributionKrw: 4_000_000, depositStartDate: '2025-02-01',
+    })
+    // Σ M×(1+r)^(n+1-i) - M×n, r=0.039/12, n=11 → 867,363
+    const interest = result! - 44_000_000
+    expect(interest).toBeGreaterThan(865_000)
+    expect(interest).toBeLessThan(870_000)
+  })
+
+  it('월복리가 단리보다 이자가 많다', () => {
+    const simple = computeExpectedMaturityValueKrw({
+      buys: [], interestRateBp: RATE_3_9PCT, maturityDate: '2026-01-01',
+      compoundType: 'simple', taxType: 'tax_free',
+      kind: 'recurring', monthlyContributionKrw: 4_000_000, depositStartDate: '2025-02-01',
+    })
+    const monthly = computeExpectedMaturityValueKrw({
+      buys: [], interestRateBp: RATE_3_9PCT, maturityDate: '2026-01-01',
+      compoundType: 'monthly', taxType: 'tax_free',
+      kind: 'recurring', monthlyContributionKrw: 4_000_000, depositStartDate: '2025-02-01',
+    })
+    expect(monthly!).toBeGreaterThan(simple!)
+  })
+})
+
 // ─── remainingDays ──────────────────────────────────────────────────────────
 
 describe('remainingDays', () => {

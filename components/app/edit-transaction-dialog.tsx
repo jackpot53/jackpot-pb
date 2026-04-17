@@ -87,9 +87,13 @@ export function EditTransactionDialog({ tx }: { tx: TransactionWithAsset }) {
               <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${
                 tx.type === 'buy' ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-600'
               }`}>
-                {tx.type === 'buy'
-                  ? <><TrendingUp className="h-3 w-3" />매수</>
-                  : <><TrendingDown className="h-3 w-3" />매도</>}
+                {tx.assetType === 'savings'
+                  ? tx.type === 'buy'
+                    ? <><TrendingUp className="h-3 w-3" />납입</>
+                    : <><TrendingDown className="h-3 w-3" />해지출금</>
+                  : tx.type === 'buy'
+                    ? <><TrendingUp className="h-3 w-3" />매수</>
+                    : <><TrendingDown className="h-3 w-3" />매도</>}
               </span>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
