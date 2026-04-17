@@ -490,29 +490,23 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
   )
 
   const valueFooter = (hasValue || hasCost) && (
-    <div className="mt-2.5 pt-2.5 border-t border-border flex items-center gap-3 tabular-nums flex-wrap">
-      <div className="flex items-baseline gap-1">
-        <span className="text-xs text-muted-foreground mr-0.5">평가금</span>
-        <span className="text-sm font-semibold text-foreground">
-          {hasValue ? formatKrw(asset.currentValueKrw) : '—'}
-          {isUsdPurchase && asset.currentPriceUsd != null && hasHolding && hasValue && (
-            <span className="text-xs text-muted-foreground ml-1">({formatUsd(asset.currentPriceUsd * asset.totalQuantity / 1e8)})</span>
-          )}
-        </span>
-      </div>
+    <div className="mt-2.5 pt-2.5 border-t border-border flex items-center gap-2 tabular-nums flex-wrap">
+      <span className="text-xs text-muted-foreground">평가금</span>
+      <span className="text-sm font-semibold text-foreground">
+        {hasValue ? formatKrw(asset.currentValueKrw) : '—'}
+        {isUsdPurchase && asset.currentPriceUsd != null && hasHolding && hasValue && (
+          <span className="text-xs text-muted-foreground ml-1">({formatUsd(asset.currentPriceUsd * asset.totalQuantity / 1e8)})</span>
+        )}
+      </span>
       {hasValue && hasCost && (
         <>
-          <span className="text-border/60 text-xs">|</span>
-          <div className="flex items-baseline gap-1">
-            <span className="text-xs text-muted-foreground mr-0.5">수익금</span>
-            <span className={`text-sm font-bold ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-              {profit >= 0 ? '+' : ''}{formatKrw(profit)}
-            </span>
-            <span className="text-xs text-muted-foreground ml-1">수익률</span>
-            <span className={`text-xs font-semibold ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-              {formatReturn(asset.returnPct)}
-            </span>
-          </div>
+          <span className="text-border/60 text-xs">·</span>
+          <span className={`text-sm font-bold ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+            {profit >= 0 ? '+' : ''}{formatKrw(profit)}
+          </span>
+          <span className={`text-xs font-semibold ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+            ({formatReturn(asset.returnPct)})
+          </span>
         </>
       )}
     </div>
