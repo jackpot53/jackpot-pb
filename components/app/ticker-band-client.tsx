@@ -31,6 +31,7 @@ export function TickerBandClient({ items }: TickerBandClientProps) {
         style={{
           animation: `ticker-scroll ${items.length * 4}s linear infinite`,
           width: 'max-content',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
         }}
       >
         {doubled.map((item, i) => {

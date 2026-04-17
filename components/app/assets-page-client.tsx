@@ -2,7 +2,7 @@
 import { useState, useEffect, useTransition, useRef, useCallback } from 'react'
 import confetti from 'canvas-confetti'
 import { useRouter } from 'next/navigation'
-import { Layers, LayoutGrid, TrendingUp, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown, HelpCircle, ShieldCheck, Gem, CreditCard, Plus, RefreshCw, Wallet } from 'lucide-react'
+import { Layers, LayoutGrid, TrendingUp, TrendingDown, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown, HelpCircle, ShieldCheck, Gem, CreditCard, RefreshCw, Wallet } from 'lucide-react'
 
 import { buttonVariants } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -297,29 +297,13 @@ function mergeAssets(assets: AssetPerformance[]): MergedAsset[] {
 }
 
 
-function AssetCardSkeleton({ assetType }: { assetType?: string }) {
-  const label = assetType ? ASSET_TYPE_LABELS[assetType] : '종목'
-  return (
-    <a
-      href="/assets/new"
-      className="flex flex-col flex-1 min-w-0 rounded-lg border-2 border-dashed border-white/50 bg-white/[0.03] px-3 py-3 items-center justify-center gap-2 hover:border-white/70 hover:bg-white/[0.06] transition-colors cursor-pointer"
-    >
-      <div className="w-9 h-9 rounded-full border-2 border-dashed border-white/50 flex items-center justify-center">
-        <Plus className="h-4 w-4 text-white" />
-      </div>
-      <div className="text-center">
-        <p className="text-xs font-semibold text-white">{label} 추가 시</p>
-        <p className="text-[11px] text-white/70 mt-0.5">이 자리에 표시됩니다</p>
-      </div>
-    </a>
-  )
-}
 
 function AssetCard({ asset, sparklineData, showSparkline }: {
   asset: AssetPerformance & { mergedCount?: number }
   sparklineData?: number[]
   showSparkline?: boolean
 }) {
+  const [chartOpen, setChartOpen] = useState(true)
   const hasHolding = asset.totalQuantity > 0 || (asset.assetType === 'savings' && (asset.totalCostKrw > 0 || asset.monthlyContributionKrw != null))
   const isCrypto = asset.assetType === 'crypto'
   const hasValue = asset.currentValueKrw > 0
@@ -535,29 +519,41 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
   )
 
   return (
-    <div className={cn("flex items-stretch gap-3 rounded-xl border border-border px-4 py-3.5 border-l-4 hover:shadow-md transition-all bg-card", ASSET_TYPE_ACCENT[asset.assetType] ?? 'border-l-border')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      {/* 로고 */}
-      <div className="shrink-0 self-center">
-        <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={40} />
+    <div className={cn("rounded-xl border border-border border-l-4 hover:shadow-md transition-all bg-card", ASSET_TYPE_ACCENT[asset.assetType] ?? 'border-l-border')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <div className="flex items-stretch gap-3 px-4 py-3.5">
+        {/* 로고 */}
+        <div className="shrink-0 self-center">
+          <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={40} />
+        </div>
+
+        {/* 종목 정보 */}
+        <div className="flex flex-col flex-1 min-w-0">
+          {nameBlock}
+          {valueFooter}
+        </div>
+
+        {/* 차트보기 버튼 */}
+        {showSparkline && sparklineData && (
+          <button
+            onClick={() => setChartOpen(v => !v)}
+            className="shrink-0 self-center flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-lg hover:bg-muted/40"
+          >
+            {asset.returnPct >= 0
+              ? <TrendingUp className="h-3.5 w-3.5 text-red-500" />
+              : <TrendingDown className="h-3.5 w-3.5 text-blue-500" />}
+            차트
+            <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', chartOpen && 'rotate-180')} />
+          </button>
+        )}
       </div>
 
-      {/* 종목 정보 */}
-      <div className="flex flex-col flex-1 min-w-0">
-        {nameBlock}
-        {valueFooter}
-      </div>
-
-      {/* 스파크라인 + 현재가 + 등락률 (우측) */}
-      {showSparkline && (
-        <>
-          <div className="w-px self-stretch bg-border/30 shrink-0" />
-          <div className="shrink-0 self-center w-[100px] h-[52px] overflow-hidden rounded-lg">
-            {sparklineData
-              ? <SparklineChart data={sparklineData} positive={asset.returnPct >= 0} width={100} height={52} />
-              : null
-            }
+      {/* 스파크라인 collapse */}
+      {showSparkline && sparklineData && chartOpen && (
+        <div className="px-4 pb-3">
+          <div className="h-[52px] rounded-lg overflow-hidden border border-border/40">
+            <SparklineChart data={sparklineData} positive={asset.returnPct >= 0} width={600} height={52} />
           </div>
-        </>
+        </div>
       )}
     </div>
   )
@@ -722,7 +718,7 @@ function AssetCardList({ assets, title, sparklines }: {
           <div className="flex items-center gap-3 flex-wrap">
             {title && <div className="flex items-center gap-2">{title}</div>}
             {/* 매수금 · 평가금 · 수익금 인라인 */}
-            <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-2 text-xs" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
               <span className="text-muted-foreground">매수금</span>
               <span className="font-semibold text-foreground tabular-nums">{totalCost > 0 ? formatKrw(totalCost) : '—'}</span>
               <span className="text-muted-foreground/40">|</span>
@@ -762,7 +758,7 @@ function AssetCardList({ assets, title, sparklines }: {
             {hasDuplicates && (
               <button
                 onClick={() => setMerged((v) => !v)}
-                className={cn(buttonVariants({ variant: 'default', size: 'sm' }), !merged && 'opacity-50')}
+                className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FEE500] hover:bg-[#FFD600] border-2 border-[#FEE500] text-black text-xs font-semibold transition-all duration-200 hover:shadow-md active:scale-95', !merged && 'opacity-60')}
               >
                 <Layers className="h-3.5 w-3.5" />
                 종목 합산
@@ -782,9 +778,6 @@ function AssetCardList({ assets, title, sparklines }: {
             showSparkline={showSparkline}
           />
         ))}
-        {displayAssets.length % 2 === 1 && (
-          <AssetCardSkeleton assetType={assets[0]?.assetType} />
-        )}
       </div>
     </div>
   )
@@ -1092,8 +1085,8 @@ function AssetFilter({
             className={cn(
               'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors',
               active === 'all'
-                ? 'bg-card border-border text-foreground shadow-sm'
-                : 'bg-muted/30 border-transparent text-muted-foreground hover:text-foreground hover:border-border/50',
+                ? 'bg-foreground border-foreground text-background shadow-sm'
+                : 'bg-muted/60 border-border text-foreground/70 hover:text-foreground hover:bg-muted',
             )}
           >
             <LayoutGrid className="h-3 w-3" />
@@ -1110,8 +1103,8 @@ function AssetFilter({
                 className={cn(
                   'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors',
                   isActive
-                    ? 'bg-card border-border text-foreground shadow-sm'
-                    : 'bg-muted/30 border-transparent text-muted-foreground hover:text-foreground hover:border-border/50',
+                    ? 'bg-foreground border-foreground text-background shadow-sm'
+                    : 'bg-muted/60 border-border text-foreground/70 hover:text-foreground hover:bg-muted',
                 )}
               >
                 {Icon && <Icon className="h-3 w-3" />}
