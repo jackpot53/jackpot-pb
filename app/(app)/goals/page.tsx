@@ -27,7 +27,7 @@ export default async function GoalsPage() {
   return (
     <div className="relative space-y-6">
       {/* 히어로 배너 */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 p-8 text-white shadow-xl">
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 p-6 sm:p-8 text-white shadow-xl">
         {/* 배경 장식 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
           <style>{`
