@@ -382,7 +382,7 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
     const isDueSoon = days >= 0 && days <= 30
     const label = isExpired ? '만기 경과' : days === 0 ? 'D-Day' : `D-${days}`
     return (
-      <span className={`shrink-0 inline-flex items-center text-[11px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums ${isExpired ? 'bg-white/10 text-foreground/50' : isDueSoon ? 'bg-orange-500/15 text-orange-400' : 'bg-[#FEE500]/15 text-[#FEE500]'}`}>
+      <span className={`shrink-0 inline-flex items-center text-[11px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums ${isExpired ? 'bg-white/10 text-foreground/50' : isDueSoon ? 'bg-orange-500/15 text-orange-400' : 'bg-emerald-500/15 text-emerald-400'}`}>
         <span className="font-normal opacity-70">만기일 {asset.maturityDate.replace(/-/g, '.')}</span>
         <span className="opacity-40 mx-0.5">·</span>
         <span>{label}</span>
@@ -395,7 +395,7 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
       {/* Row1: 이름 + 계좌 badge + 만기 배지 */}
       <div className="flex items-center gap-2 min-w-0 flex-wrap">
         <span className="inline-block">
-          <span className="text-xl font-bold text-foreground leading-snug">{asset.name}</span>
+          <span className="text-sm font-semibold text-foreground leading-snug">{asset.name}</span>
           <span className="block h-[2px] w-full rounded-full" style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #f59e0b, #10b981)', backgroundSize: '200% 100%', animation: 'shimmer-underline 3s linear infinite' }} />
         </span>
         {accountBadge}
@@ -432,7 +432,7 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
               )
             })()}
           {isSavings && asset.interestRateBp != null && asset.interestRateBp > 0 && (
-            <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-[#FEE500]">연 {(asset.interestRateBp / 10000).toFixed(2)}%</span></>
+            <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-emerald-400">연 {(asset.interestRateBp / 10000).toFixed(2)}%</span></>
           )}
           {isSavings && asset.initialTransactionDate && (
             <><span className="text-border/60">|</span><span className="tabular-nums"><span className="text-muted-foreground">가입일</span> <span className="font-medium text-foreground/90">{asset.initialTransactionDate.replace(/-/g, '.')}</span></span></>
@@ -535,7 +535,7 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
   )
 
   return (
-    <div className={cn("flex items-stretch gap-3 rounded-xl border border-[#FEE500]/35 px-4 py-3.5 border-l-4 hover:shadow-md transition-all bg-card", ASSET_TYPE_ACCENT[asset.assetType] ?? 'border-l-border')}>
+    <div className={cn("flex items-stretch gap-3 rounded-xl border border-border px-4 py-3.5 border-l-4 hover:shadow-md transition-all bg-card", ASSET_TYPE_ACCENT[asset.assetType] ?? 'border-l-border')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* 로고 */}
       <div className="shrink-0 self-center">
         <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={40} />
@@ -578,7 +578,7 @@ function AssetGridCard({ asset, sparklineData }: {
     : asset.accountType && ACCOUNT_TYPE_LABELS[asset.accountType] ? ACCOUNT_TYPE_LABELS[asset.accountType] : null
 
   return (
-    <div className={cn("rounded-xl border border-[#FEE500]/35 p-4 flex flex-col gap-2.5 hover:shadow-md transition-all border-l-4 bg-card", ASSET_TYPE_ACCENT[asset.assetType] ?? 'border-l-border')}>
+    <div className={cn("rounded-xl border border-border p-4 flex flex-col gap-2.5 hover:shadow-md transition-all border-l-4 bg-card", ASSET_TYPE_ACCENT[asset.assetType] ?? 'border-l-border')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* 헤더: 로고 */}
       <div className="flex items-start">
         <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={38} />
@@ -587,7 +587,7 @@ function AssetGridCard({ asset, sparklineData }: {
       {/* 종목명 + 티커 */}
       <div className="min-w-0 flex flex-col gap-1">
         <span className="inline-block">
-          <span className="text-xl font-bold text-foreground leading-snug">{asset.name}</span>
+          <span className="text-sm font-semibold text-foreground leading-snug">{asset.name}</span>
           <span className="block h-[2px] w-full rounded-full" style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #f59e0b, #10b981)', backgroundSize: '200% 100%', animation: 'shimmer-underline 3s linear infinite' }} />
         </span>
       </div>
@@ -636,7 +636,7 @@ function AssetGridCard({ asset, sparklineData }: {
 
 function AssetGridCardSkeleton({ assetType }: { assetType?: string } = {}) {
   return (
-    <div className={cn("rounded-xl bg-card border border-[#FEE500]/35 p-3.5 flex flex-col gap-2 border-l-4", assetType ? (ASSET_TYPE_ACCENT[assetType] ?? 'border-l-border') : 'border-l-border')}>
+    <div className={cn("rounded-xl bg-card border border-border p-3.5 flex flex-col gap-2 border-l-4", assetType ? (ASSET_TYPE_ACCENT[assetType] ?? 'border-l-border') : 'border-l-border')}>
       <div className="w-9 h-9 rounded-full bg-muted animate-pulse" />
       <div className="h-3.5 w-3/4 bg-muted animate-pulse rounded" />
       <div className="h-3 w-1/2 bg-muted animate-pulse rounded" />
@@ -799,7 +799,7 @@ function CollapsibleChart({ assets, sparklines, monthlyData, annualData, dailyDa
 }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="bg-card rounded-xl overflow-hidden border border-[#FEE500]/35">
+    <div className="bg-card rounded-xl overflow-hidden border border-border">
       <button
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
@@ -877,7 +877,7 @@ export function SummaryCards({ grouped, performances, valueCandles, showTypeStri
 
   const fireworks = useCallback(() => {
     const burst = (x: number, y: number, delay: number) => setTimeout(() => {
-      confetti({ particleCount: 120, spread: 80, startVelocity: 55, origin: { x, y }, colors: ['#FEE500', '#ff6b6b', '#a78bfa', '#34d399', '#60a5fa', '#f97316'] })
+      confetti({ particleCount: 120, spread: 80, startVelocity: 55, origin: { x, y }, colors: ['#ff6b6b', '#a78bfa', '#34d399', '#60a5fa', '#f97316', '#facc15'] })
     }, delay)
     burst(0.5, 0.4, 0)
     burst(0.3, 0.5, 200)
@@ -977,7 +977,7 @@ export function SummaryCards({ grouped, performances, valueCandles, showTypeStri
           const hasValue = totalValue > 0
 
           return (
-            <div key={type} className={cn("rounded-xl border border-[#FEE500]/35 px-4 py-3 flex flex-col gap-1.5 border-l-4 bg-card shadow-sm", ASSET_TYPE_ACCENT[type] ?? 'border-l-border')}>
+            <div key={type} className={cn("rounded-xl border border-border px-4 py-3 flex flex-col gap-1.5 border-l-4 bg-card shadow-sm", ASSET_TYPE_ACCENT[type] ?? 'border-l-border')}>
               <div className="flex items-center justify-between mb-0.5">
                 <AssetTypeBadge assetType={type as AssetPerformance['assetType']} light />
                 <span className="text-xs text-muted-foreground">{assets.length}종목</span>
