@@ -5,7 +5,7 @@ export default function AssetsLoading() {
   return (
     <div className="space-y-6">
       {/* Hero 배너 */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-8 shadow-xl">
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-6 sm:p-8 shadow-xl">
         <div className="space-y-2">
           <Skeleton className="h-3 w-20 bg-white/25" />
           <Skeleton className="h-8 w-36 bg-white/30" />

@@ -266,7 +266,7 @@ export function TransactionsPageClient({ transactions, assetOptions, sparklines:
         </div>
       </div>
       {/* Filters + add button */}
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3">
         <div className="flex items-center gap-2">
           <Label className="text-sm text-muted-foreground shrink-0">자산</Label>
           <Select value={assetFilter} onValueChange={(v) => setAssetFilter(v ?? '전체')}>

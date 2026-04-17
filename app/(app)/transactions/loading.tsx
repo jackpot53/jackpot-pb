@@ -5,7 +5,7 @@ export default function TransactionsLoading() {
   return (
     <div className="space-y-4">
       {/* Hero 배너 */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-teal-600 via-cyan-600 to-sky-700 p-8 shadow-xl">
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-teal-600 via-cyan-600 to-sky-700 p-6 sm:p-8 shadow-xl">
         <div className="space-y-2">
           <Skeleton className="h-3 w-20 bg-white/25" />
           <Skeleton className="h-8 w-36 bg-white/30" />

@@ -126,12 +126,13 @@ export function Sidebar() {
   return (
     <>
       {/* 모바일 백드롭 */}
-      {isMobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
-          onClick={closeMobile}
-        />
-      )}
+      <div
+        className={cn(
+          'fixed inset-0 z-40 bg-black/50 lg:hidden transition-opacity duration-300',
+          isMobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
+        )}
+        onClick={closeMobile}
+      />
       <aside
         className={cn(
           'fixed lg:static inset-y-0 left-0 z-50 h-screen border-r border-white flex flex-col shrink-0 overflow-hidden',

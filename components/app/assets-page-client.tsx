@@ -662,7 +662,7 @@ export function SummaryCards({ grouped, performances, valueCandles }: { grouped:
       </div>
 
       {/* Per-type strip */}
-      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${types.length}, 1fr)` }}>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
         {types.map((type) => {
           const assets = grouped[type]
           const totalCost = assets.reduce((s, a) => s + a.totalCostKrw, 0)

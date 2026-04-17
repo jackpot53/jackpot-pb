@@ -278,7 +278,7 @@ async function ChartsPageContent({ userId }: { userId: string }) {
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             <LayoutGrid className="h-4 w-4 text-violet-500" />자산별 누적 수익률
           </h2>
-          <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${typeCandles.length}, 1fr)` }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {typeCandles.map(({ type, candles }) => (
               <Card key={type} className="border-l-4 border-l-violet-400 shadow-sm">
                 <CardHeader className="pb-3 border-b bg-gradient-to-r from-violet-500/10 to-transparent rounded-tl-[calc(var(--radius)-1px)]">
