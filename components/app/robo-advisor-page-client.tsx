@@ -403,9 +403,9 @@ export function RoboAdvisorPageClient({ universe, statsMap }: Props) {
               <div key={stock.id} className="rounded-xl border border-white/[0.08] bg-[#242731]/80 p-2 shadow-sm">
                 <StockRow
                   stock={stock}
-                  displayRank={filter === 'top200' ? realRank : undefined}
-                  winRate={filter === 'signal' ? getPrimaryWinRate(stock) : undefined}
-                  highlightSignal={filter === 'sector'}
+                  displayRank={undefined}
+                  winRate={getPrimaryWinRate(stock)}
+                  highlightSignal={false}
                   onClick={() => setSelectedStock(stock)}
                 />
               </div>

@@ -6,6 +6,90 @@ import { cn } from '@/lib/utils'
 
 type SignalCategory = 'technical' | 'supply' | 'trend' | 'composite'
 
+// SVG Mini Charts for Technical Analysis
+function GoldenCrossChart() {
+  return (
+    <svg viewBox="0 0 80 50" className="w-[72px] h-[44px]">
+      {/* 배경 */}
+      <rect width="80" height="50" fill="rgba(255,255,255,0.02)" />
+      {/* 장기선 (파란색) */}
+      <path d="M0,35 Q20,28 40,22 T80,10" stroke="#3b82f6" strokeWidth="1.5" fill="none" strokeDasharray="200" style={{ animation: 'ra-draw-line 2s ease-in-out infinite' }} />
+      {/* 단기선 (노란색) */}
+      <path d="M0,38 Q20,30 40,18 T80,8" stroke="#fbbf24" strokeWidth="1.5" fill="none" strokeDasharray="200" style={{ animation: 'ra-draw-line 2s ease-in-out infinite 0.2s' }} />
+      {/* 교차점 강조 */}
+      <circle cx="40" cy="20" fill="none" stroke="#10b981" strokeWidth="1" style={{ animation: 'ra-glow-dot 1s ease-in-out infinite' }} />
+      <circle cx="40" cy="20" r="1" fill="#10b981" />
+    </svg>
+  )
+}
+
+function RSIChart() {
+  return (
+    <svg viewBox="0 0 80 50" className="w-[72px] h-[44px]">
+      <rect width="80" height="50" fill="rgba(255,255,255,0.02)" />
+      {/* 과매도 영역 (30선) */}
+      <line x1="0" y1="35" x2="80" y2="35" stroke="rgba(239,68,68,0.3)" strokeWidth="1" strokeDasharray="2" />
+      {/* RSI 곡선 */}
+      <path d="M0,32 Q20,40 40,38 Q60,28 80,15" stroke="#a78bfa" strokeWidth="1.5" fill="none" strokeDasharray="200" style={{ animation: 'ra-draw-line 2s ease-in-out infinite' }} />
+      {/* 반등 포인트 */}
+      <circle cx="50" cy="25" fill="none" stroke="#34d399" strokeWidth="1" style={{ animation: 'ra-glow-dot 1s ease-in-out infinite' }} />
+      <circle cx="50" cy="25" r="1" fill="#34d399" />
+    </svg>
+  )
+}
+
+function MACDChart() {
+  return (
+    <svg viewBox="0 0 80 50" className="w-[72px] h-[44px]">
+      <rect width="80" height="50" fill="rgba(255,255,255,0.02)" />
+      {/* 0 기준선 */}
+      <line x1="0" y1="25" x2="80" y2="25" stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
+      {/* MACD 선 (파란색) */}
+      <path d="M0,28 Q20,22 40,20 T80,18" stroke="#3b82f6" strokeWidth="1.5" fill="none" strokeDasharray="200" style={{ animation: 'ra-draw-line 2s ease-in-out infinite' }} />
+      {/* 시그널 선 (주황색) */}
+      <path d="M0,30 Q20,24 40,22 T80,20" stroke="#f97316" strokeWidth="1.5" fill="none" strokeDasharray="200" style={{ animation: 'ra-draw-line 2s ease-in-out infinite 0.2s' }} />
+      {/* 교차점 */}
+      <circle cx="40" cy="21" fill="none" stroke="#06b6d4" strokeWidth="1" style={{ animation: 'ra-glow-dot 1s ease-in-out infinite' }} />
+      <circle cx="40" cy="21" r="1" fill="#06b6d4" />
+    </svg>
+  )
+}
+
+function StochasticChart() {
+  return (
+    <svg viewBox="0 0 80 50" className="w-[72px] h-[44px]">
+      <rect width="80" height="50" fill="rgba(255,255,255,0.02)" />
+      {/* 과매도 영역 (20선) */}
+      <line x1="0" y1="36" x2="80" y2="36" stroke="rgba(239,68,68,0.3)" strokeWidth="1" strokeDasharray="2" />
+      {/* %K 선 (보라색) */}
+      <path d="M0,34 Q20,42 40,32 Q60,22 80,12" stroke="#d946ef" strokeWidth="1.5" fill="none" strokeDasharray="200" style={{ animation: 'ra-draw-line 2s ease-in-out infinite' }} />
+      {/* %D 선 (주황색) */}
+      <path d="M0,36 Q20,40 40,34 Q60,24 80,14" stroke="#f97316" strokeWidth="1.5" fill="none" strokeDasharray="200" style={{ animation: 'ra-draw-line 2s ease-in-out infinite 0.15s' }} />
+      {/* 교차점 */}
+      <circle cx="48" cy="27" fill="none" stroke="#34d399" strokeWidth="1" style={{ animation: 'ra-glow-dot 1s ease-in-out infinite' }} />
+      <circle cx="48" cy="27" r="1" fill="#34d399" />
+    </svg>
+  )
+}
+
+function BollingerChart() {
+  return (
+    <svg viewBox="0 0 80 50" className="w-[72px] h-[44px]">
+      <rect width="80" height="50" fill="rgba(255,255,255,0.02)" />
+      {/* 밴드 영역 */}
+      <path d="M0,15 Q40,18 80,12" stroke="rgba(100,200,255,0.3)" strokeWidth="1" fill="none" />
+      <path d="M0,35 Q40,32 80,38" stroke="rgba(100,200,255,0.3)" strokeWidth="1" fill="none" />
+      {/* 중심선 */}
+      <path d="M0,25 Q40,25 80,25" stroke="rgba(255,255,255,0.3)" strokeWidth="0.5" />
+      {/* 가격선 (V자 반등) */}
+      <path d="M0,25 L30,38 L60,18 L80,12" stroke="#fbbf24" strokeWidth="1.5" fill="none" strokeDasharray="200" style={{ animation: 'ra-draw-line 2.5s ease-in-out infinite' }} />
+      {/* 반등 포인트 */}
+      <circle cx="35" cy="34" fill="none" stroke="#34d399" strokeWidth="1" style={{ animation: 'ra-glow-dot 1s ease-in-out infinite' }} />
+      <circle cx="35" cy="34" r="1" fill="#34d399" />
+    </svg>
+  )
+}
+
 const SIGNAL_CATEGORIES: Record<SignalCategory, { label: string; description: string; signals: Array<{ emoji: string; name: string; description: string }> }> = {
   technical: {
     label: '기술적분석',
@@ -86,7 +170,6 @@ export function RoboAdvisorHero() {
   return (
     <div
       className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#1a0010] via-[#1f0018] to-[#0f0014] p-8 text-white shadow-xl"
-      style={{ fontFamily: 'var(--font-sunflower), sans-serif' }}
     >
       <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
         {/* 배경 글로우 */}
@@ -119,6 +202,23 @@ export function RoboAdvisorHero() {
           @keyframes ra-float {
             0%, 100% { transform: translateY(0px) rotate(-4deg); }
             50% { transform: translateY(-10px) rotate(4deg); }
+          }
+          @keyframes ra-draw-line {
+            0% { stroke-dashoffset: 200; }
+            100% { stroke-dashoffset: 0; }
+          }
+          @keyframes ra-glow-dot {
+            0%, 100% { opacity: 1; r: 2; }
+            50% { opacity: 0.4; r: 3; }
+          }
+          @keyframes ra-bounce-line {
+            0% { transform: translateY(8px); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-8px); }
+          }
+          @keyframes ra-slide-up {
+            0% { transform: translateY(6px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
           }
         `}</style>
 
@@ -229,20 +329,34 @@ export function RoboAdvisorHero() {
                 'grid gap-2 transition-opacity duration-300',
                 currentCategory.signals.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'
               )}>
-                {currentCategory.signals.map((signal, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.05] transition-colors group"
-                  >
-                    <div className="flex items-start gap-2.5">
-                      <span className="text-lg shrink-0 group-hover:scale-110 transition-transform">{signal.emoji}</span>
-                      <div className="space-y-0.5 flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-white">{signal.name}</p>
-                        <p className="text-xs text-white/50 leading-relaxed">{signal.description}</p>
+                {currentCategory.signals.map((signal, idx) => {
+                  const getTechnicalChart = (name: string) => {
+                    if (name === '골든크로스') return <GoldenCrossChart />
+                    if (name === 'RSI 과매도 반등') return <RSIChart />
+                    if (name === 'MACD 교차') return <MACDChart />
+                    if (name === '스토캐스틱 과매도') return <StochasticChart />
+                    if (name === '볼린저 밴드 돌파') return <BollingerChart />
+                    return null
+                  }
+
+                  return (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.05] transition-colors group"
+                    >
+                      <div className={cn('flex items-start gap-2.5', activeTab === 'technical' && 'justify-between')}>
+                        <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                          <span className="text-lg shrink-0 group-hover:scale-110 transition-transform">{signal.emoji}</span>
+                          <div className="space-y-0.5 flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-white">{signal.name}</p>
+                            <p className="text-xs text-white/50 leading-relaxed">{signal.description}</p>
+                          </div>
+                        </div>
+                        {activeTab === 'technical' && getTechnicalChart(signal.name)}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </div>

@@ -74,7 +74,7 @@ export async function getInsuranceBuys(
     // transactionDate는 date 타입이므로 문자열 처리
     const dateStr = typeof row.transactionDate === 'string'
       ? row.transactionDate
-      : row.transactionDate.toISOString().split('T')[0]
+      : (row.transactionDate as Date).toISOString().split('T')[0]
     map.get(key)!.push({
       transactionDate: dateStr,
       amountKrw: row.amountKrw,

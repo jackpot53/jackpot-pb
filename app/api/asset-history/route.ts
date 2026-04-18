@@ -93,13 +93,14 @@ export async function GET(request: NextRequest) {
       return `${y}-${m}-${d}`
     }
 
-    // 일시납 보험: buys가 없으면 paymentStartDate에 totalCostKrw 만큼의 거래 생성
+    // 일시납 보험: buys가 없으면 paymentStartDate에 premiumPerCycleKrw 만큼의 거래 생성
     const effectiveBuys =
       buys.length === 0 &&
       details.paymentCycle === 'lump_sum' &&
       details.paymentStartDate &&
-      asset.totalCostKrw > 0
-        ? [{ transactionDate: formatDate(details.paymentStartDate)!, amountKrw: asset.totalCostKrw }]
+      details.premiumPerCycleKrw &&
+      details.premiumPerCycleKrw > 0
+        ? [{ transactionDate: formatDate(details.paymentStartDate)!, amountKrw: details.premiumPerCycleKrw }]
         : buys
 
     // paymentEndDate가 없으면 coverageEndDate 사용 (미래값 표시)
