@@ -29,6 +29,8 @@ export const insuranceDetails = pgTable('insurance_details', {
   expectedReturnRateBp: integer('expected_return_rate_bp'),
   // 납입 완료 여부 (감액완납 등으로 더 이상 납입하지 않는 상태)
   isPaidUp: boolean('is_paid_up').notNull().default(false),
+  // 이자 계산 방식: 'simple'(단리) | 'monthly'(월복리) | 'yearly'(연복리)
+  compoundType: varchar('compound_type', { length: 10 }).notNull().default('simple'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
