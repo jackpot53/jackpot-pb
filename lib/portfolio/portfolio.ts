@@ -5,6 +5,7 @@
  */
 import { computeCurrentSavingsValueKrw, generateVirtualRecurringBuys, type CompoundType, type SavingsDetails, type SavingsBuy } from '@/lib/savings'
 import { computeCurrentInsuranceValueKrw, type InsuranceBuy } from '@/lib/insurance'
+import { buildInsuranceCurvePoints } from '@/lib/insurance-curve'
 import type { InsuranceDetailsRow } from '@/db/schema/insurance-details'
 
 export interface AssetHoldingInput {
@@ -150,6 +151,28 @@ export function computeAssetPerformance(params: {
       holding.totalCostKrw > 0
         ? ((currentValueKrw - holding.totalCostKrw) / holding.totalCostKrw) * 100
         : 0
+
+    // insurance 차트 데이터 생성 (savings와 유사)
+    let insuranceChartData: Array<{ date: string; value: number; projected: boolean }> | undefined = undefined
+
+    const curvePoints = buildInsuranceCurvePoints({
+      buys: insuranceBuys,
+      expectedReturnRateBp: insuranceDetails.expectedReturnRateBp ?? null,
+      paymentStartDate: formatDate(insuranceDetails.paymentStartDate),
+      paymentEndDate: formatDate(insuranceDetails.paymentEndDate),
+      compoundType: insuranceDetails.compoundType as CompoundType,
+      paymentCycle: insuranceDetails.paymentCycle as 'monthly' | 'quarterly' | 'yearly' | 'lump_sum',
+      premiumPerCycleKrw: insuranceDetails.premiumPerCycleKrw ?? null,
+    })
+
+    if (curvePoints.length > 0) {
+      insuranceChartData = curvePoints.map(p => ({
+        date: p.date,
+        value: p.value,
+        projected: p.projected,
+      }))
+    }
+
     return {
       ...holding,
       currentPriceKrw: currentValueKrw,
@@ -169,6 +192,7 @@ export function computeAssetPerformance(params: {
       monthlyContributionKrw: null,
       insuranceDetails,
       compoundType: insuranceDetails.compoundType as CompoundType,
+      chartData: insuranceChartData,
     }
   }
 
@@ -264,6 +288,35 @@ export function computeAssetPerformance(params: {
     fxReturnPct = ((currentFxRate / avgFxRate) - 1) * 100
   }
 
+  // insurance 차트 데이터 생성 (savings와 유사)
+  let insuranceChartData: Array<{ date: string; value: number; projected: boolean }> | undefined = undefined
+
+  if (holding.assetType === 'insurance' && insuranceDetails && insuranceBuys) {
+    const formatDate = (date: Date | string | null): string | null => {
+      if (!date) return null
+      if (typeof date === 'string') return date
+      return date.toISOString().split('T')[0]
+    }
+
+    const curvePoints = buildInsuranceCurvePoints({
+      buys: insuranceBuys,
+      expectedReturnRateBp: insuranceDetails.expectedReturnRateBp ?? null,
+      paymentStartDate: formatDate(insuranceDetails.paymentStartDate),
+      paymentEndDate: formatDate(insuranceDetails.paymentEndDate),
+      compoundType: insuranceDetails.compoundType as CompoundType,
+      paymentCycle: insuranceDetails.paymentCycle as 'monthly' | 'quarterly' | 'yearly' | 'lump_sum',
+      premiumPerCycleKrw: insuranceDetails.premiumPerCycleKrw ?? null,
+    })
+
+    if (curvePoints.length > 0) {
+      insuranceChartData = curvePoints.map(p => ({
+        date: p.date,
+        value: p.value,
+        projected: p.projected,
+      }))
+    }
+  }
+
   return {
     ...holding,
     currentPriceKrw:
@@ -286,6 +339,7 @@ export function computeAssetPerformance(params: {
     monthlyContributionKrw: savingsDetails?.monthlyContributionKrw ?? null,
     insuranceDetails: insuranceDetails ?? null,
     compoundType: savingsDetails?.compoundType ?? null,
+    chartData: insuranceChartData,
   }
 }
 
