@@ -8,8 +8,8 @@ describe('computeAssetPerformance - insurance integration', () => {
     userId: 'user-001',
     category: 'savings',
     expectedReturnRateBp: 35000,
-    paymentStartDate: new Date('2024-01-15'),
-    paymentEndDate: new Date('2025-01-15'),
+    paymentStartDate: '2024-01-15',
+    paymentEndDate: '2025-01-15',
     compoundType: 'simple',
     paymentCycle: 'monthly',
     premiumPerCycleKrw: 100000,
@@ -163,8 +163,8 @@ describe('computeAssetPerformance - insurance integration', () => {
   it('should generate multi-month chartData for long payment period', () => {
     const longTermInsurance: InsuranceDetailsRow = {
       ...mockInsuranceDetails,
-      paymentStartDate: new Date('2024-01-01'),
-      paymentEndDate: new Date('2026-12-31'),
+      paymentStartDate: '2024-01-01',
+      paymentEndDate: '2026-12-31',
     }
 
     const result = computeAssetPerformance({
