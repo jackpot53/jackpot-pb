@@ -4,17 +4,20 @@ import { parseKrTicker, resolveUsTicker } from '@/lib/price/kis-ticker'
 
 const KIS_BASE = 'https://openapi.koreainvestment.com:9443'
 
+function getCredentials(): { appKey: string; appSecret: string } {
+  const appKey = process.env.KIS_APP_KEY
+  const appSecret = process.env.KIS_APP_SECRET
+  if (!appKey) throw new KisTokenError('KIS_APP_KEY is not set')
+  if (!appSecret) throw new KisTokenError('KIS_APP_SECRET is not set')
+  return { appKey, appSecret }
+}
+
 async function kisGet(
   path: string,
   trId: string,
   params: Record<string, string>,
 ): Promise<Response> {
-  const appKey = process.env.KIS_APP_KEY
-  const appSecret = process.env.KIS_APP_SECRET
-
-  if (!appKey) throw new KisTokenError('KIS_APP_KEY is not set')
-  if (!appSecret) throw new KisTokenError('KIS_APP_SECRET is not set')
-
+  const { appKey, appSecret } = getCredentials()
   const token = await getToken()
   const url = `${KIS_BASE}${path}?${new URLSearchParams(params)}`
 
@@ -62,12 +65,7 @@ export async function fetchKisQuote(
     }
 
     if (assetType === 'stock_us' || assetType === 'etf_us') {
-      const appKey = process.env.KIS_APP_KEY
-      const appSecret = process.env.KIS_APP_SECRET
-
-      if (!appKey) throw new KisTokenError('KIS_APP_KEY is not set')
-      if (!appSecret) throw new KisTokenError('KIS_APP_SECRET is not set')
-
+      const { appKey, appSecret } = getCredentials()
       const { excd, symb } = await resolveUsTicker(ticker, getToken, appKey, appSecret)
 
       const res = await kisGet(
@@ -95,12 +93,12 @@ export async function fetchKisQuote(
 
 // Converts YYYYMMDD string to YYYY-MM-DD
 function formatDate(yyyymmdd: string): string {
+  if (yyyymmdd.length !== 8) return ''
   return `${yyyymmdd.slice(0, 4)}-${yyyymmdd.slice(4, 6)}-${yyyymmdd.slice(6, 8)}`
 }
 
 async function fetchKisOhlcKr(
   ticker: string,
-  assetType: string,
   startDate: string,
   endDate: string,
 ): Promise<OhlcPoint[] | null> {
@@ -131,7 +129,9 @@ async function fetchKisOhlcKr(
     const low = parseInt(item.stck_lwpr ?? '0', 10)
     const close = parseInt(item.stck_clpr ?? '0', 10)
     if (open === 0 || high === 0 || low === 0 || close === 0) continue
-    points.push({ date: formatDate(item.stck_bsop_date), open, high, low, close })
+    const date = formatDate(item.stck_bsop_date)
+    if (!date) continue
+    points.push({ date, open, high, low, close })
   }
 
   // KIS returns reverse chronological order — sort ascending
@@ -158,7 +158,6 @@ async function fetchKisOhlcChunked(
 
   while (chunkStart <= end) {
     if (!first) {
-      // 50ms delay between chunks to avoid rate limits
       await new Promise((resolve) => setTimeout(resolve, 50))
     }
     first = false
@@ -171,10 +170,8 @@ async function fetchKisOhlcChunked(
     const chunkStartStr = chunkStart.toISOString().slice(0, 10)
     const chunkEndStr = chunkEnd.toISOString().slice(0, 10)
 
-    const points = await fetchKisOhlcKr(ticker, assetType, chunkStartStr, chunkEndStr)
-    if (points) {
-      allPoints.push(...points)
-    }
+    const points = await fetchKisOhlcKr(ticker, chunkStartStr, chunkEndStr)
+    if (points) allPoints.push(...points)
 
     chunkStart = new Date(chunkEnd.getTime() + MS_PER_DAY)
   }
@@ -203,27 +200,21 @@ export async function fetchKisOhlc(
 ): Promise<OhlcPoint[] | null> {
   try {
     if (assetType === 'stock_kr' || assetType === 'etf_kr') {
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      const diffDays = (end.getTime() - start.getTime()) / 86_400_000
+      const diffDays = (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86_400_000
 
-      // Use chunked fetching for ranges > 100 days
       if (diffDays > 100) {
         return fetchKisOhlcChunked(ticker, assetType, startDate, endDate)
       }
 
-      return fetchKisOhlcKr(ticker, assetType, startDate, endDate)
+      return fetchKisOhlcKr(ticker, startDate, endDate)
     }
 
     if (assetType === 'stock_us' || assetType === 'etf_us') {
-      const appKey = process.env.KIS_APP_KEY
-      const appSecret = process.env.KIS_APP_SECRET
-
-      if (!appKey) throw new KisTokenError('KIS_APP_KEY is not set')
-      if (!appSecret) throw new KisTokenError('KIS_APP_SECRET is not set')
-
+      const { appKey, appSecret } = getCredentials()
       const { excd, symb } = await resolveUsTicker(ticker, getToken, appKey, appSecret)
 
+      // KIS dailyprice returns up to ~100 most recent trading days (no server-side date filter).
+      // Results are filtered client-side to the requested range.
       const res = await kisGet(
         '/uapi/overseas-price/v1/quotations/dailyprice',
         'HHDFS76950200',
@@ -247,8 +238,12 @@ export async function fetchKisOhlc(
         const high = parseFloat(item.high ?? '0')
         const low = parseFloat(item.low ?? '0')
         const close = parseFloat(item.clos ?? '0')
+        // KR skips all-zero candles; US only checks close (thin-volume days may have 0 open/high/low)
         if (close === 0) continue
-        points.push({ date: formatDate(item.xymd), open, high, low, close })
+        const date = formatDate(item.xymd)
+        if (!date) continue
+        if (date < startDate || date > endDate) continue
+        points.push({ date, open, high, low, close })
       }
 
       points.sort((a, b) => a.date.localeCompare(b.date))
