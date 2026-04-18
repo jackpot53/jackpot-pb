@@ -14,15 +14,11 @@ export async function getKisToken(): Promise<{ tokenValue: string; expiresAt: Da
 }
 
 export async function upsertKisToken(tokenValue: string, expiresAt: Date): Promise<void> {
-  const now = new Date()
   await db
     .insert(kisOauthTokens)
-    .values({ id: 'default', tokenValue, expiresAt, createdAt: now })
+    .values({ id: 'default', tokenValue, expiresAt })
     .onConflictDoUpdate({
       target: kisOauthTokens.id,
-      set: {
-        tokenValue,
-        expiresAt,
-      },
+      set: { tokenValue, expiresAt },
     })
 }
