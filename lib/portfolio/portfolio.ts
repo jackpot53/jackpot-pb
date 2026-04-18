@@ -3,7 +3,7 @@
  * All functions are pure (no DB calls). They accept pre-fetched data as arguments.
  * All money values are KRW integers (BIGINT convention, Phase 1 D-04).
  */
-import { computeCurrentSavingsValueKrw, generateVirtualRecurringBuys, type SavingsDetails, type SavingsBuy } from '@/lib/savings'
+import { computeCurrentSavingsValueKrw, generateVirtualRecurringBuys, type CompoundType, type SavingsDetails, type SavingsBuy } from '@/lib/savings'
 import type { InsuranceDetailsRow } from '@/db/schema/insurance-details'
 
 export interface AssetHoldingInput {
@@ -51,8 +51,8 @@ export interface AssetPerformance extends AssetHoldingInput {
   monthlyContributionKrw: number | null
   /** 보험 전용: 계약 메타데이터, 없으면 null */
   insuranceDetails: InsuranceDetailsRow | null
-  /** savings 전용: 복리 계산 방식 'simple' | 'monthly' | 'yearly', 없으면 null */
-  compoundType?: string
+  /** savings 전용: 복리 계산 방식 'simple' | 'monthly', 없으면 null */
+  compoundType: CompoundType | null
 }
 
 export interface PortfolioSummary {
