@@ -15,26 +15,40 @@
       "when": 1776138730662,
       "tag": "0001_modern_guardsmen",
       "breakpoints": true
-    }
-    ,{
+    },
+    {
       "idx": 2,
       "version": "7",
       "when": 1776200000000,
       "tag": "0002_add_fund_asset_type",
       "breakpoints": true
-    }
-    ,{
+    },
+    {
       "idx": 3,
       "version": "7",
       "when": 1776300000000,
       "tag": "0003_add_account_type",
       "breakpoints": true
-    }
-    ,{
+    },
+    {
       "idx": 4,
       "version": "7",
       "when": 1776400000000,
       "tag": "0004_add_spot_account_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1776498301322,
+      "tag": "0005_add_insurance_compound_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776541618000,
+      "tag": "0030_add_insurance_compound_type",
       "breakpoints": true
     }
   ]
