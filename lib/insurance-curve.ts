@@ -36,9 +36,6 @@ export function buildInsuranceCurvePoints({
   premiumPerCycleKrw: number | null
   today?: Date
 }): InsuranceProjectionPoint[] {
-  // 예상수익률이 없으면 빈 배열 반환
-  if (!expectedReturnRateBp || expectedReturnRateBp <= 0) return []
-
   // 시작일 결정: 가장 빠른 납입일 또는 paymentStartDate
   const startStr =
     rawBuys.length > 0
@@ -70,7 +67,7 @@ export function buildInsuranceCurvePoints({
 
     const value = computeCurrentInsuranceValueKrw({
       buys,
-      expectedReturnRateBp,
+      expectedReturnRateBp: expectedReturnRateBp ?? 0,
       paymentStartDate,
       paymentEndDate,
       compoundType,

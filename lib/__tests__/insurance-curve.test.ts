@@ -2,17 +2,19 @@ import { describe, it, expect } from 'vitest'
 import { buildInsuranceCurvePoints } from '@/lib/insurance-curve'
 
 describe('buildInsuranceCurvePoints', () => {
-  it('should return empty array when expectedReturnRateBp is null or 0', () => {
+  it('should generate chart even when expectedReturnRateBp is null (principal only)', () => {
     const result = buildInsuranceCurvePoints({
-      buys: [],
+      buys: [{ transactionDate: '2024-01-15', amountKrw: 100000 }],
       expectedReturnRateBp: null,
       paymentStartDate: '2024-01-15',
-      paymentEndDate: '2025-01-15',
+      paymentEndDate: '2024-12-31',
       compoundType: 'simple',
-      paymentCycle: 'monthly',
-      premiumPerCycleKrw: 100000,
+      paymentCycle: 'lump_sum',
+      premiumPerCycleKrw: null,
     })
-    expect(result).toEqual([])
+    // Should generate chart with principal-only values (no interest)
+    expect(result.length).toBeGreaterThan(0)
+    expect(result[0].value).toBeGreaterThanOrEqual(100000)
   })
 
   it('should return empty array when no startDate available', () => {
