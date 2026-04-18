@@ -366,6 +366,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
 
   const isSavings = asset.assetType === 'savings'
   const isRealEstate = asset.assetType === 'real_estate'
+  const isInsurance = asset.assetType === 'insurance'
   const hideQty = isSavings || isRealEstate
 
   const maturityBadge = (() => {
@@ -435,6 +436,17 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
                 backgroundColor: asset.compoundType === 'simple' ? '#3b82f6' : '#10b981'
               }}>
                 {asset.compoundType === 'simple' ? '단리' : '복리'}
+              </span>
+            )}
+            </>
+          )}
+          {isInsurance && asset.insuranceDetails?.expectedReturnRateBp != null && asset.insuranceDetails.expectedReturnRateBp > 0 && (
+            <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-emerald-400">연 {(asset.insuranceDetails.expectedReturnRateBp / 10000).toFixed(2)}%</span>
+            {asset.insuranceDetails.compoundType && (
+              <span className="ml-1 text-xs px-1.5 py-0.5 rounded-md font-medium text-white" style={{
+                backgroundColor: asset.insuranceDetails.compoundType === 'simple' ? '#3b82f6' : '#10b981'
+              }}>
+                {asset.insuranceDetails.compoundType === 'simple' ? '단리' : '복리'}
               </span>
             )}
             </>
