@@ -32,7 +32,8 @@ export async function getToken(): Promise<string> {
     return tokenCache.value
   }
 
-  // Fetch a fresh token from KIS API
+  // Single-user app: concurrent refresh is low-risk but could cause double API calls.
+  // Acceptable given usage pattern (personal finance tracker, not high-traffic).
   return refreshToken(appKey, appSecret)
 }
 
@@ -49,7 +50,7 @@ async function refreshToken(appKey: string, appSecret: string): Promise<string> 
       }),
     })
   } catch (err) {
-    throw new KisTokenError(`KIS token fetch failed: ${err}`)
+    throw new KisTokenError(`KIS token fetch failed: ${err instanceof Error ? err.message : String(err)}`)
   }
 
   if (!response.ok) {
@@ -60,13 +61,16 @@ async function refreshToken(appKey: string, appSecret: string): Promise<string> 
   try {
     data = await response.json()
   } catch (err) {
-    throw new KisTokenError(`KIS token response parse failed: ${err}`)
+    throw new KisTokenError(`KIS token response parse failed: ${err instanceof Error ? err.message : String(err)}`)
   }
 
   if (!data.access_token) {
     throw new KisTokenError('KIS token response missing access_token')
   }
 
+  if (data.expires_in === undefined) {
+    console.warn('[kis-token] expires_in missing from KIS response, defaulting to 24h')
+  }
   const expiresIn = data.expires_in ?? 86400
   const expiresAt = new Date(Date.now() + expiresIn * 1000)
 

@@ -142,6 +142,18 @@ describe('getToken', () => {
     await expect(getToken()).rejects.toBeInstanceOf(KisTokenError)
   })
 
+  it('throws KisTokenError if fetch rejects (network error)', async () => {
+    const { getToken, KisTokenError } = await import('../kis-token')
+    const { getKisToken } = await import('@/db/queries/kis-token')
+
+    vi.mocked(getKisToken).mockResolvedValueOnce(null)
+
+    const mockFetch = vi.fn().mockRejectedValue(new Error('ECONNREFUSED'))
+    vi.stubGlobal('fetch', mockFetch)
+
+    await expect(getToken()).rejects.toBeInstanceOf(KisTokenError)
+  })
+
   it('throws KisTokenError if refresh response has no access_token', async () => {
     const { getToken, KisTokenError } = await import('../kis-token')
     const { getKisToken, upsertKisToken } = await import('@/db/queries/kis-token')
