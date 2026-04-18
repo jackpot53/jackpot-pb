@@ -6,6 +6,8 @@ import { getFundManualNavHistory } from '@/db/queries/manual-valuations'
 import { getSavingsDetailsByAsset } from '@/db/queries/savings'
 import { getSavingsBuys } from '@/db/queries/savings'
 import { buildSavingsCurvePoints } from '@/lib/savings-curve'
+import { getInsuranceDetails, getInsuranceBuys } from '@/db/queries/insurance'
+import { buildInsuranceCurvePoints } from '@/lib/insurance-curve'
 import type { AssetHistoryPoint, AssetHistoryResponse } from '@/lib/asset-history-types'
 
 export type { AssetHistoryPoint, AssetHistoryResponse }
@@ -60,6 +62,47 @@ export async function GET(request: NextRequest) {
 
     return Response.json(
       { assetId, points, kind: 'line-projected' } satisfies AssetHistoryResponse,
+      { headers: { 'Cache-Control': 'private, max-age=3600, stale-while-revalidate=86400' } },
+    )
+  }
+
+  if (asset.assetType === 'insurance') {
+    const [detailsMap, buysMap] = await Promise.all([
+      getInsuranceDetails([assetId]),
+      getInsuranceBuys([assetId]),
+    ])
+    const details = detailsMap.get(assetId)
+    if (!details) return Response.json({ assetId, points: [], kind: 'line-projected' } satisfies AssetHistoryResponse)
+
+    const buys = buysMap.get(assetId) ?? []
+
+    const formatDate = (date: Date | string | null): string | null => {
+      if (!date) return null
+      if (typeof date === 'string') return date
+      return date.toISOString().split('T')[0]
+    }
+
+    // 일시납 보험: buys가 없으면 paymentStartDate에 totalCostKrw 만큼의 거래 생성
+    const effectiveBuys =
+      buys.length === 0 &&
+      details.paymentCycle === 'lump_sum' &&
+      details.paymentStartDate &&
+      asset.totalCostKrw > 0
+        ? [{ transactionDate: formatDate(details.paymentStartDate)!, amountKrw: asset.totalCostKrw }]
+        : buys
+
+    const points = buildInsuranceCurvePoints({
+      buys: effectiveBuys,
+      expectedReturnRateBp: details.expectedReturnRateBp ?? null,
+      paymentStartDate: formatDate(details.paymentStartDate),
+      paymentEndDate: formatDate(details.paymentEndDate),
+      compoundType: details.compoundType as any,
+      paymentCycle: details.paymentCycle as 'monthly' | 'quarterly' | 'yearly' | 'lump_sum',
+      premiumPerCycleKrw: details.premiumPerCycleKrw ?? null,
+    })
+
+    return Response.json(
+      { assetId, points: points.map(p => ({ date: p.date, value: p.value, projected: p.projected })), kind: 'line-projected' } satisfies AssetHistoryResponse,
       { headers: { 'Cache-Control': 'private, max-age=3600, stale-while-revalidate=86400' } },
     )
   }
