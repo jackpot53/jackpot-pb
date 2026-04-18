@@ -111,7 +111,7 @@ async function StockAnalysisContent({ ticker }: { ticker: string }) {
   return (
     <div className='space-y-8'>
       {/* 종목 히어로 섹션 */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#0f1419] via-[#1a1f2e] to-[#0f1014] p-8 text-white shadow-xl">
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#0f1419] via-[#1a1f2e] to-[#0f1014] p-6 text-white shadow-xl">
         <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
           <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-emerald-500/5 blur-3xl" />
           <div className="absolute bottom-0 left-1/3 w-80 h-48 rounded-full bg-emerald-500/10 blur-3xl" />
