@@ -18,7 +18,7 @@ export function FaqApiCard() {
   return (
     <details className="group">
       <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground">
-        <span>한국 주식/ETF와 미국 주식/ETF 실시간 시세 조회는 어디서 하나요?</span>
+        <span><span className="mr-2">1️⃣</span>한국 주식/ETF와 미국 주식/ETF 실시간 시세 조회는 어디서 하나요?</span>
         <span className="transition-transform group-open:rotate-180">▼</span>
       </summary>
 
@@ -28,7 +28,8 @@ export function FaqApiCard() {
             🇰🇷 한국 주식/ETF
           </div>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            <SentenceBreak text="한국거래소(KRX)에 상장된 모든 주식/ETF는 Yahoo Finance API에서 실시간으로 조회됩니다. 가격은 원(KRW) 단위이며, 시장 종료 후 약 15초 이내에 반영됩니다." />
+            한국거래소(KRX)에 상장된 모든 주식/ETF는 <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/20 px-2 py-0.5 font-mono text-xs font-semibold text-blue-300">Yahoo Finance API</span>에서 실시간으로 조회됩니다.<br/>
+            가격은 원(KRW) 단위이며, 시장 종료 후 약 15초 이내에 반영됩니다.
           </p>
         </div>
 
@@ -37,16 +38,7 @@ export function FaqApiCard() {
             🇺🇸 미국 주식/ETF
           </div>
           <p className="text-sm leading-relaxed text-muted-foreground">
-            <SentenceBreak text="뉴욕거래소(NYSE, NASDAQ)에 상장된 주식/ETF는 Yahoo Finance API에서 달러(USD) 단위로 조회한 후, 시스템이 자동으로 한국은행(BOK) 공식 환율을 사용해 원화로 변환합니다." />
-          </p>
-        </div>
-
-        <div>
-          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-orange-500/15 px-2.5 py-1 text-xs font-semibold text-orange-400">
-            💰 암호화폐
-          </div>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            <SentenceBreak text="암호화폐는 Finnhub API에서 달러(USD) 단위로 조회한 후, 시스템이 자동으로 원화로 변환합니다. 암호화폐 가격은 24시간 실시간으로 변동하며, 가격 변동이 매우 크므로 자주 갱신됩니다." />
+            뉴욕거래소(NYSE, NASDAQ)에 상장된 주식/ETF는 <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/20 px-2 py-0.5 font-mono text-xs font-semibold text-blue-300">Yahoo Finance API</span>에서 달러(USD) 단위로 조회한 후, 시스템이 자동으로 한국은행(BOK) 공식 환율을 사용해 원화로 변환합니다.
           </p>
         </div>
 

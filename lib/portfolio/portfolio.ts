@@ -164,11 +164,14 @@ export function computeAssetPerformance(params: {
         ? [{ transactionDate: formatDate(insuranceDetails.paymentStartDate)!, amountKrw: holding.totalCostKrw }]
         : insuranceBuys
 
+    // paymentEndDate가 없으면 coverageEndDate 사용 (미래값 표시)
+    const endDate = formatDate(insuranceDetails.paymentEndDate) || formatDate(insuranceDetails.coverageEndDate)
+
     const curvePoints = buildInsuranceCurvePoints({
       buys: effectiveInsuranceBuys,
       expectedReturnRateBp: insuranceDetails.expectedReturnRateBp ?? null,
       paymentStartDate: formatDate(insuranceDetails.paymentStartDate),
-      paymentEndDate: formatDate(insuranceDetails.paymentEndDate),
+      paymentEndDate: endDate,
       compoundType: insuranceDetails.compoundType as CompoundType,
       paymentCycle: insuranceDetails.paymentCycle as 'monthly' | 'quarterly' | 'yearly' | 'lump_sum',
       premiumPerCycleKrw: insuranceDetails.premiumPerCycleKrw ?? null,
@@ -316,11 +319,14 @@ export function computeAssetPerformance(params: {
         ? [{ transactionDate: formatDate(insuranceDetails.paymentStartDate)!, amountKrw: holding.totalCostKrw }]
         : insuranceBuys
 
+    // paymentEndDate가 없으면 coverageEndDate 사용 (미래값 표시)
+    const endDate = formatDate(insuranceDetails.paymentEndDate) || formatDate(insuranceDetails.coverageEndDate)
+
     const curvePoints = buildInsuranceCurvePoints({
       buys: effectiveInsuranceBuys,
       expectedReturnRateBp: insuranceDetails.expectedReturnRateBp ?? null,
       paymentStartDate: formatDate(insuranceDetails.paymentStartDate),
-      paymentEndDate: formatDate(insuranceDetails.paymentEndDate),
+      paymentEndDate: endDate,
       compoundType: insuranceDetails.compoundType as CompoundType,
       paymentCycle: insuranceDetails.paymentCycle as 'monthly' | 'quarterly' | 'yearly' | 'lump_sum',
       premiumPerCycleKrw: insuranceDetails.premiumPerCycleKrw ?? null,

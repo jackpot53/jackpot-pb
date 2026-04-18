@@ -91,11 +91,14 @@ export async function GET(request: NextRequest) {
         ? [{ transactionDate: formatDate(details.paymentStartDate)!, amountKrw: asset.totalCostKrw }]
         : buys
 
+    // paymentEndDate가 없으면 coverageEndDate 사용 (미래값 표시)
+    const endDate = formatDate(details.paymentEndDate) || formatDate(details.coverageEndDate)
+
     const points = buildInsuranceCurvePoints({
       buys: effectiveBuys,
       expectedReturnRateBp: details.expectedReturnRateBp ?? null,
       paymentStartDate: formatDate(details.paymentStartDate),
-      paymentEndDate: formatDate(details.paymentEndDate),
+      paymentEndDate: endDate,
       compoundType: details.compoundType as any,
       paymentCycle: details.paymentCycle as 'monthly' | 'quarterly' | 'yearly' | 'lump_sum',
       premiumPerCycleKrw: details.premiumPerCycleKrw ?? null,
