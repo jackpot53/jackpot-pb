@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -174,8 +175,7 @@ function DomainLogo({ value, size = 28 }: { value: string; size?: number }) {
   }
   return (
     <span className={cls} style={{ width: size, height: size }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={url} alt="" width={size} height={size} onError={() => setFailed(true)} className="object-cover w-full h-full" />
+      <Image src={url} alt="" width={size} height={size} onError={() => setFailed(true)} className="object-cover w-full h-full" />
     </span>
   )
 }

@@ -1,4 +1,4 @@
-import { pgTable, uuid, bigint, varchar, date, timestamp } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, bigint, varchar, date, timestamp, index } from 'drizzle-orm/pg-core'
 import { assets, currencyEnum } from './assets'
 
 // D-06: Append-only table — INSERT only. No UPDATE or DELETE operations allowed.
@@ -13,4 +13,6 @@ export const manualValuations = pgTable('manual_valuations', {
   valuedAt: date('valued_at').notNull(),
   notes: varchar('notes', { length: 1000 }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-})
+}, (table) => [
+  index('manual_valuations_asset_id_idx').on(table.assetId),
+])

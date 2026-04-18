@@ -139,11 +139,6 @@ function AuthForm() {
 
   return (
     <>
-      {/* Logo */}
-      <div className="flex flex-col items-center mb-6">
-        <AnimatedLogo size={72} />
-      </div>
-
       {/* Mode tabs */}
       <div className="flex rounded-2xl p-1 mb-6"
         style={{ background: 'rgba(245,200,66,0.05)', border: '1px solid rgba(245,200,66,0.12)' }}>
@@ -285,11 +280,6 @@ export default function LoginPage() {
   return (
     <>
       <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          33%       { transform: translateY(-10px) rotate(3deg); }
-          66%       { transform: translateY(-5px) rotate(-2deg); }
-        }
         @keyframes floatBadge {
           0%, 100% { transform: translateY(0); }
           50%       { transform: translateY(-7px); }
@@ -298,35 +288,9 @@ export default function LoginPage() {
           0%   { transform: translateY(-100%); }
           100% { transform: translateY(100vh); }
         }
-        @keyframes nodeGlow {
-          0%, 100% { opacity: 0.2; r: 3; }
-          50%       { opacity: 1;   r: 5; }
-        }
-        @keyframes edgePulse {
-          0%, 100% { opacity: 0.04; }
-          50%       { opacity: 0.18; }
-        }
-        @keyframes drawLine {
-          0%   { stroke-dashoffset: 1000; }
-          100% { stroke-dashoffset: 0; }
-        }
-        @keyframes drawLine2 {
-          0%   { stroke-dashoffset: 800; }
-          100% { stroke-dashoffset: 0; }
-        }
-        @keyframes candleUp {
-          0%   { transform: scaleY(0); opacity: 0; }
-          100% { transform: scaleY(1); opacity: 1; }
-        }
         @keyframes tickerScroll {
           0%   { transform: translateX(0); }
           100% { transform: translateX(-50%); }
-        }
-        @keyframes pricePop {
-          0%   { opacity: 0; transform: translateY(6px) scale(0.9); }
-          15%  { opacity: 1; transform: translateY(0) scale(1); }
-          80%  { opacity: 1; }
-          100% { opacity: 0; transform: translateY(-6px); }
         }
         @keyframes barGrow {
           0%   { height: 0%; opacity: 0; }
@@ -344,10 +308,6 @@ export default function LoginPage() {
           0%   { background-position: 0% 50%; }
           50%  { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
-        }
-        @keyframes cornerSpin {
-          0%   { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
         }
         @keyframes goldFall {
           0%   { transform: translateY(-40px) rotate(-10deg) scale(0.8); opacity: 0; }
@@ -374,26 +334,18 @@ export default function LoginPage() {
           0%,100% { transform: translateY(0) scale(1); opacity: 0.15; }
           50%     { transform: translateY(-12px) scale(1.4); opacity: 0.7; }
         }
-        .asset-rise   { position: absolute; animation: assetRise var(--dur) ease-out var(--delay) infinite; }
+        .asset-rise    { position: absolute; animation: assetRise var(--dur) ease-out var(--delay) infinite; }
         .gold-particle { position: absolute; border-radius: 50%; animation: goldParticle var(--dur) ease-in-out var(--delay) infinite; }
-        .particle    { animation: float var(--dur) ease-in-out var(--delay) infinite; }
-        .badge-float { animation: floatBadge var(--dur) ease-in-out var(--delay) infinite; }
-        .bar         { animation: barGrow 1.2s cubic-bezier(.22,1,.36,1) var(--delay) both; }
-        .spark-dot   { animation: sparkDot var(--dur) ease-in-out var(--delay) infinite; }
-        .chart-line  { stroke-dasharray: 1000; animation: drawLine 3s ease-out var(--delay) forwards; }
-        .chart-line2 { stroke-dasharray: 800;  animation: drawLine2 4s ease-out var(--delay) forwards; }
-        .candle      { transform-origin: bottom; animation: candleUp 0.5s cubic-bezier(.22,1,.36,1) var(--delay) both; }
+        .badge-float   { animation: floatBadge var(--dur) ease-in-out var(--delay) infinite; }
+        .bar           { animation: barGrow 1.2s cubic-bezier(.22,1,.36,1) var(--delay) both; }
+        .spark-dot     { animation: sparkDot var(--dur) ease-in-out var(--delay) infinite; }
         .ticker-scroll { animation: tickerScroll 22s linear infinite; }
-        .price-pop   { animation: pricePop var(--dur) ease-in-out var(--delay) infinite; }
-        .node-glow   { animation: nodeGlow var(--dur) ease-in-out var(--delay) infinite; }
-        .edge-pulse  { animation: edgePulse var(--dur) ease-in-out var(--delay) infinite; }
-        .glow-blob   { animation: glowBlob var(--dur) ease-in-out var(--delay) infinite; }
-        .scanline    { animation: scanline 6s linear infinite; }
-        .corner-spin { animation: cornerSpin 8s linear infinite; }
+        .glow-blob     { animation: glowBlob var(--dur) ease-in-out var(--delay) infinite; }
+        .scanline      { animation: scanline 6s linear infinite; }
         input::placeholder { color: rgba(255,255,255,0.2) !important; }
         .login-page input { background: transparent !important; }
-        .login-page, .login-page * { font-family: 'Gaegu', cursive !important; }
-        .login-page input, .login-page button { font-family: 'Gaegu', cursive !important; }
+        .login-page, .login-page * { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important; }
+        .login-page input, .login-page button { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important; }
       `}</style>
 
       <main className="login-page min-h-screen flex items-center justify-center p-4 relative overflow-hidden"

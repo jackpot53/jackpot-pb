@@ -38,6 +38,10 @@ const KRX_HEADERS = {
   'X-Requested-With': 'XMLHttpRequest',
 }
 
+const VALID_SEARCH_TYPES = new Set([
+  'stock_kr', 'etf_kr', 'stock_us', 'etf_us', 'fund', 'crypto', 'insurance',
+])
+
 let krxCookieCache: { cookies: string; ts: number } | null = null
 
 async function getKrxCookies(): Promise<string> {
@@ -57,9 +61,13 @@ async function getKrxCookies(): Promise<string> {
     })
     const setCookies = res.headers.getSetCookie?.() ?? []
     const cookies = setCookies.map((c) => c.split(';')[0]).join('; ')
+    if (!cookies) {
+      console.error('[ticker-search] KRX cookie parsing failed — empty cookie set')
+    }
     krxCookieCache = { cookies, ts: now }
     return cookies
-  } catch {
+  } catch (err) {
+    console.error('[ticker-search] KRX cookie fetch failed:', err)
     return ''
   }
 }
@@ -474,9 +482,9 @@ export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get('q')?.trim()
   const type = req.nextUrl.searchParams.get('type') ?? ''
 
-  if (!q || q.length < 1) {
-    return NextResponse.json({ results: [] })
-  }
+  if (!q || q.length < 1) return NextResponse.json({ results: [] })
+  if (q.length > 100) return NextResponse.json({ error: 'query too long' }, { status: 400 })
+  if (!VALID_SEARCH_TYPES.has(type)) return NextResponse.json({ results: [] })
 
   try {
     if (type === 'stock_kr' || type === 'etf_kr') {

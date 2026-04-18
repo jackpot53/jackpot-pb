@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, varchar, timestamp, pgEnum, index } from 'drizzle-orm/pg-core'
 
 export const assetTypeEnum = pgEnum('asset_type', [
   'stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'savings', 'real_estate', 'fund', 'insurance', 'precious_metal', 'cma'
@@ -39,4 +39,6 @@ export const assets = pgTable('assets', {
   notes: varchar('notes', { length: 1000 }),
   insuranceType: varchar('insurance_type', { length: 50 }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-})
+}, (table) => [
+  index('assets_user_id_idx').on(table.userId),
+])

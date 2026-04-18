@@ -9,6 +9,7 @@ import { buildSavingsCurvePoints } from '@/lib/savings-curve'
 import { getInsuranceDetails, getInsuranceBuys } from '@/db/queries/insurance'
 import { buildInsuranceCurvePoints } from '@/lib/insurance-curve'
 import type { AssetHistoryPoint, AssetHistoryResponse } from '@/lib/asset-history-types'
+import type { CompoundType } from '@/lib/savings'
 
 export type { AssetHistoryPoint, AssetHistoryResponse }
 
@@ -24,7 +25,8 @@ export async function GET(request: NextRequest) {
   if (!user) return new Response('Unauthorized', { status: 401 })
 
   const assetId = request.nextUrl.searchParams.get('assetId')
-  if (!assetId) return Response.json({ error: 'assetId required' }, { status: 400 })
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  if (!assetId || !UUID_RE.test(assetId)) return Response.json({ error: 'invalid assetId' }, { status: 400 })
 
   const asset = await getAssetById(assetId, user.id)
   if (!asset) return Response.json({ error: 'not found' }, { status: 404 })
@@ -74,13 +76,6 @@ export async function GET(request: NextRequest) {
     const details = detailsMap.get(assetId)
     if (!details) return Response.json({ assetId, points: [], kind: 'line-projected' } satisfies AssetHistoryResponse)
 
-    // DEBUG: coverageEndDate 확인
-    console.log(`[DEBUG] insurance details for ${assetId}:`, {
-      paymentEndDate: details.paymentEndDate,
-      coverageEndDate: details.coverageEndDate,
-      category: details.category,
-    })
-
     const buys = buysMap.get(assetId) ?? []
 
     const formatDate = (date: Date | string | null): string | null => {
@@ -107,15 +102,12 @@ export async function GET(request: NextRequest) {
     // 타입 안전성: coverageEndDate가 null이 아닌지 확인
     const endDate = formatDate(details.paymentEndDate) || (details.coverageEndDate ? formatDate(details.coverageEndDate) : null)
 
-    // DEBUG
-    console.log(`[Insurance Chart] assetId=${assetId}, paymentEndDate=${details.paymentEndDate}, coverageEndDate=${details.coverageEndDate}, endDate=${endDate}`)
-
     const points = buildInsuranceCurvePoints({
       buys: effectiveBuys,
       expectedReturnRateBp: details.expectedReturnRateBp ?? null,
       paymentStartDate: formatDate(details.paymentStartDate),
       paymentEndDate: endDate,
-      compoundType: details.compoundType as any,
+      compoundType: details.compoundType as CompoundType,
       paymentCycle: details.paymentCycle as 'monthly' | 'quarterly' | 'yearly' | 'lump_sum',
       premiumPerCycleKrw: details.premiumPerCycleKrw ?? null,
     })

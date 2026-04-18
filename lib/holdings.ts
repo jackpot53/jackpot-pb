@@ -95,43 +95,45 @@ export function computeHoldings(txns: TransactionInput[]): HoldingsResult {
  * NOT pure — reads DB and writes DB.
  */
 export async function upsertHoldings(assetId: string, userId: string): Promise<void> {
-  const txns = await db
-    .select({
-      type: transactions.type,
-      quantity: transactions.quantity,
-      pricePerUnit: transactions.pricePerUnit,
-      fee: transactions.fee,
-      isVoided: transactions.isVoided,
-      currency: transactions.currency,
-      exchangeRateAtTime: transactions.exchangeRateAtTime,
-    })
-    .from(transactions)
-    .where(eq(transactions.assetId, assetId))
+  await db.transaction(async (tx) => {
+    const txns = await tx
+      .select({
+        type: transactions.type,
+        quantity: transactions.quantity,
+        pricePerUnit: transactions.pricePerUnit,
+        fee: transactions.fee,
+        isVoided: transactions.isVoided,
+        currency: transactions.currency,
+        exchangeRateAtTime: transactions.exchangeRateAtTime,
+      })
+      .from(transactions)
+      .where(eq(transactions.assetId, assetId))
 
-  const result = computeHoldings(txns)
+    const result = computeHoldings(txns)
 
-  await db
-    .insert(holdings)
-    .values({
-      assetId,
-      userId,
-      totalQuantity: result.totalQuantity,
-      avgCostPerUnit: result.avgCostPerUnit,
-      totalCostKrw: result.totalCostKrw,
-      avgCostPerUnitOriginal: result.avgCostPerUnitOriginal,
-      avgExchangeRateAtTime: result.avgExchangeRateAtTime,
-      updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: holdings.assetId,
-      set: {
-        // userId는 업데이트 대상이 아님 — 자산 소유자는 변경되지 않음
+    await tx
+      .insert(holdings)
+      .values({
+        assetId,
+        userId,
         totalQuantity: result.totalQuantity,
         avgCostPerUnit: result.avgCostPerUnit,
         totalCostKrw: result.totalCostKrw,
         avgCostPerUnitOriginal: result.avgCostPerUnitOriginal,
         avgExchangeRateAtTime: result.avgExchangeRateAtTime,
         updatedAt: new Date(),
-      },
-    })
+      })
+      .onConflictDoUpdate({
+        target: holdings.assetId,
+        set: {
+          // userId는 업데이트 대상이 아님 — 자산 소유자는 변경되지 않음
+          totalQuantity: result.totalQuantity,
+          avgCostPerUnit: result.avgCostPerUnit,
+          totalCostKrw: result.totalCostKrw,
+          avgCostPerUnitOriginal: result.avgCostPerUnitOriginal,
+          avgExchangeRateAtTime: result.avgExchangeRateAtTime,
+          updatedAt: new Date(),
+        },
+      })
+  })
 }

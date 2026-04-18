@@ -1,4 +1,4 @@
-import { pgTable, uuid, bigint, boolean, varchar, date, timestamp, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, bigint, boolean, varchar, date, timestamp, pgEnum, index } from 'drizzle-orm/pg-core'
 import { assets, currencyEnum } from './assets'
 
 export const transactionTypeEnum = pgEnum('transaction_type', ['buy', 'sell'])
@@ -21,4 +21,7 @@ export const transactions = pgTable('transactions', {
   isVoided: boolean('is_voided').notNull().default(false),
   notes: varchar('notes', { length: 1000 }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-})
+}, (table) => [
+  index('transactions_asset_id_idx').on(table.assetId),
+  index('transactions_user_id_idx').on(table.userId),
+])
