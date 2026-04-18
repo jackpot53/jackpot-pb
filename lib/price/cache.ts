@@ -57,7 +57,8 @@ export async function refreshPriceIfStale(ticker: string, assetType: string): Pr
     // D-02: If API fails/returns null, do NOT write zero — preserve existing cache
     if (result === null) return
 
-    // Need FX rate to convert USD → KRW
+    // Need FX rate to convert USD → KRW.
+    // stale FX is acceptable here (D-09): refreshFxIfStale() should be called before this.
     const fxCache = await getPriceCacheByTicker('USD_KRW')
     // FX rate stored as integer × 10000 (D-17). If unavailable, skip update.
     if (!fxCache || fxCache.priceKrw === 0) return

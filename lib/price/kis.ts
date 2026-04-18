@@ -86,7 +86,8 @@ export async function fetchKisQuote(
     }
 
     return null
-  } catch {
+  } catch (err) {
+    console.warn('[kis] fetchKisQuote failed:', err instanceof Error ? err.message : String(err))
     return null
   }
 }
@@ -251,7 +252,8 @@ export async function fetchKisOhlc(
     }
 
     return null
-  } catch {
+  } catch (err) {
+    console.warn('[kis] fetchKisOhlc failed:', err instanceof Error ? err.message : String(err))
     return null
   }
 }
