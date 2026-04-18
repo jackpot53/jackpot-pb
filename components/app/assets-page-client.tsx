@@ -582,7 +582,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
               <div className="h-[240px] rounded-lg overflow-hidden border border-border/40">
                 <AssetLineChart
                   data={lineData}
-                  kind={asset.assetType === 'savings' ? 'line-projected' : 'line-nav'}
+                  kind={asset.assetType === 'savings' || asset.assetType === 'insurance' ? 'line-projected' : 'line-nav'}
                   positive={asset.returnPct >= 0}
                 />
               </div>
@@ -1078,7 +1078,7 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
         .catch(() => {})
     }
 
-    const lineAssets = performances.filter((p) => p.assetType === 'fund' || p.assetType === 'savings')
+    const lineAssets = performances.filter((p) => p.assetType === 'fund' || p.assetType === 'savings' || p.assetType === 'insurance')
     if (lineAssets.length === 0) return
 
     Promise.all(
