@@ -10,6 +10,7 @@ import {
   LineChart,
   Target,
   Sparkles,
+  Bot,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
   { label: '거래내역', href: '/transactions', icon: ArrowLeftRight, color: 'text-sky-400', bg: 'bg-sky-400/15', activeBg: 'bg-sky-400/25', activeColor: 'text-sky-300' },
   { label: '차트', href: '/charts', icon: LineChart, color: 'text-violet-400', bg: 'bg-violet-400/15', activeBg: 'bg-violet-400/25', activeColor: 'text-violet-300' },
   { label: '인사이트', href: '/insights', icon: Sparkles, color: 'text-fuchsia-400', bg: 'bg-fuchsia-400/15', activeBg: 'bg-fuchsia-400/25', activeColor: 'text-fuchsia-300' },
+  { label: '로보어드바이저', href: '/robo-advisor', icon: Bot, color: 'text-rose-400', bg: 'bg-rose-400/15', activeBg: 'bg-rose-400/25', activeColor: 'text-rose-300' },
 ]
 
 const SYMBOLS = ['7', '₩', '★', '♦', '♠']

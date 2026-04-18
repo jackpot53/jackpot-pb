@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/snapshot",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/ohlc-daily",
+      "schedule": "30 7 * * 1-5"
+    },
+    {
+      "path": "/api/cron/backtest-weekly",
+      "schedule": "0 0 * * 0"
     }
   ]
 }
