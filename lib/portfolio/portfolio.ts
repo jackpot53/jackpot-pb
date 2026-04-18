@@ -51,6 +51,8 @@ export interface AssetPerformance extends AssetHoldingInput {
   monthlyContributionKrw: number | null
   /** 보험 전용: 계약 메타데이터, 없으면 null */
   insuranceDetails: InsuranceDetailsRow | null
+  /** savings 전용: 복리 계산 방식 'simple' | 'monthly' | 'yearly', 없으면 null */
+  compoundType?: string
 }
 
 export interface PortfolioSummary {
@@ -160,6 +162,7 @@ export function computeAssetPerformance(params: {
       interestRateBp: savingsDetails?.interestRateBp ?? null,
       monthlyContributionKrw: savingsDetails?.monthlyContributionKrw ?? null,
       insuranceDetails: null,
+      compoundType: savingsDetails?.compoundType ?? null,
     }
   }
 
@@ -226,6 +229,7 @@ export function computeAssetPerformance(params: {
     interestRateBp: savingsDetails?.interestRateBp ?? null,
     monthlyContributionKrw: savingsDetails?.monthlyContributionKrw ?? null,
     insuranceDetails: insuranceDetails ?? null,
+    compoundType: savingsDetails?.compoundType ?? null,
   }
 }
 
