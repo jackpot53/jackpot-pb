@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Bot, BookOpen, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type SignalCategory = 'technical' | 'supply' | 'trend' | 'composite'
+type SignalCategory = 'trend' | 'momentum' | 'volatility' | 'volume' | 'supply' | 'composite'
 
 // SVG Mini Charts for Technical Analysis
 function GoldenCrossChart() {
@@ -90,35 +90,112 @@ function BollingerChart() {
   )
 }
 
-const SIGNAL_CATEGORIES: Record<SignalCategory, { label: string; description: string; signals: Array<{ emoji: string; name: string; description: string }> }> = {
-  technical: {
-    label: '기술적분석',
-    description: '이동평균, 모멘텀 지표, 변동성 지표를 통한 매수 신호',
+const SIGNAL_CATEGORIES: Record<SignalCategory, { label: string; description: string; signals: Array<{ emoji: string; name: string; description: string; status?: 'active' | 'coming-soon' }> }> = {
+  trend: {
+    label: '추세 지표 (Trend)',
+    description: '현재 주가 방향(상승/하락/횡보)과 추세 강도를 분석합니다',
     signals: [
       {
         emoji: '🔀',
-        name: '골든크로스',
+        name: '이동평균선 (MA) — 골든크로스',
         description: '단기(5일) 이동평균이 장기(20일) 이평선을 상향 돌파 — 상승 추세 시작 신호',
-      },
-      {
-        emoji: '📉',
-        name: 'RSI 과매도 반등',
-        description: 'RSI 30 이하 후 반등 — 과매도 구간에서의 회복 신호',
+        status: 'active',
       },
       {
         emoji: '📊',
         name: 'MACD 교차',
         description: 'MACD 라인이 시그널 라인을 상향 교차 — 모멘텀 전환 신호',
+        status: 'active',
+      },
+      {
+        emoji: '📍',
+        name: '파라볼릭 SAR',
+        description: '차트 위아래 점으로 추세 전환점(Stop And Reverse) 포착',
+        status: 'coming-soon',
+      },
+      {
+        emoji: '☁️',
+        name: '일목균형표 (Ichimoku Cloud)',
+        description: '구름대, 전환선, 기준선으로 현재 추세와 미래 지지·저항 표시',
+        status: 'coming-soon',
+      },
+    ],
+  },
+  momentum: {
+    label: '모멘텀 지표 (Momentum)',
+    description: '주가의 상승/하락 속도와 강도, 과매수/과매도 구간을 측정합니다',
+    signals: [
+      {
+        emoji: '📉',
+        name: 'RSI 과매도 반등',
+        description: 'RSI 30 이하 후 반등 — 과매도 구간에서의 회복 신호',
+        status: 'active',
       },
       {
         emoji: '🎯',
         name: '스토캐스틱 과매도',
         description: '%K가 20 이하 후 %D 상향 교차 — 과매도 영역 탈출 신호',
+        status: 'active',
       },
+      {
+        emoji: '🌊',
+        name: 'CCI (상품채널지수)',
+        description: '현재 주가의 비정상적인 편차를 수치로 측정',
+        status: 'coming-soon',
+      },
+      {
+        emoji: '🚀',
+        name: '모멘텀 / ROC (변화율)',
+        description: '과거 특정 시점 대비 현재 주가의 상승/하락 가속도 측정',
+        status: 'coming-soon',
+      },
+    ],
+  },
+  volatility: {
+    label: '변동성 지표 (Volatility)',
+    description: '주가의 위아래 변동폭을 측정하여 과도한 움직임을 포착합니다',
+    signals: [
       {
         emoji: '📈',
         name: '볼린저 밴드 돌파',
         description: '가격이 하단 밴드를 터치 후 중심선 방향으로 반등 — 변동성 축소 후 회복',
+        status: 'active',
+      },
+      {
+        emoji: '📏',
+        name: 'ATR (평균 진정 범위)',
+        description: '하루 주가 변동폭의 평균값으로 변동성 크기 측정',
+        status: 'coming-soon',
+      },
+      {
+        emoji: '🎭',
+        name: '엔벨로프 (Envelope)',
+        description: '이동평균선 위아래 일정 퍼센트 범위로 정상적인 가격 튜브 표시',
+        status: 'coming-soon',
+      },
+    ],
+  },
+  volume: {
+    label: '거래량 지표 (Volume)',
+    description: '거래량의 흐름으로 주가를 움직이는 실제 연료와 세력 매집을 파악합니다',
+    signals: [
+      {
+        emoji: '📦',
+        name: 'OBV (누적 거래량)',
+        description: '상승일 거래량은 더하고 하락일은 빼서 누적 — 매집/이탈 신호 감지',
+        status: 'coming-soon',
+      },
+      {
+        emoji: '💰',
+        name: 'MFI (자금흐름지수)',
+        description: 'RSI + 거래량으로 돈의 흐름을 입체적으로 분석',
+        status: 'coming-soon',
+      },
+      {
+        emoji: '⚖️',
+        name: 'VR (거래량비율)',
+        description: '상승일 거래량 합 ÷ 하락일 거래량 합 — 바닥과 상투 예측',
+        status: 'coming-soon',
       },
     ],
   },
@@ -130,17 +207,7 @@ const SIGNAL_CATEGORIES: Record<SignalCategory, { label: string; description: st
         emoji: '🔊',
         name: '거래량 돌파',
         description: '거래량이 20일 평균 대비 2배 이상 급증 — 실제 자금의 관심도 증가 신호',
-      },
-    ],
-  },
-  trend: {
-    label: '트렌드분석',
-    description: '추세의 강도와 방향을 분석한 신호',
-    signals: [
-      {
-        emoji: '📐',
-        name: 'ADX 추세 강도',
-        description: 'ADX 25 이상 + DI+ > DI- (상승 추세 확인) — 강한 상승 추세 확인',
+        status: 'active',
       },
     ],
   },
@@ -151,7 +218,8 @@ const SIGNAL_CATEGORIES: Record<SignalCategory, { label: string; description: st
       {
         emoji: '⭐',
         name: '종합 신호 (Composite)',
-        description: '위 7가지 개별 시그널의 가중합 기반 — confidence 점수(0~100)로 신뢰도 표시. 점수가 높을수록 여러 지표가 동시에 매수 신호를 발생',
+        description: '위 기술지표들의 가중합 기반 — confidence 점수(0~100)로 신뢰도 표시. 점수가 높을수록 여러 지표가 동시에 매수 신호를 발생',
+        status: 'active',
       },
     ],
   },
@@ -159,7 +227,7 @@ const SIGNAL_CATEGORIES: Record<SignalCategory, { label: string; description: st
 
 export function RoboAdvisorHero() {
   const [open, setOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<SignalCategory>('technical')
+  const [activeTab, setActiveTab] = useState<SignalCategory>('trend')
 
   const currentCategory = SIGNAL_CATEGORIES[activeTab]
   const tabs = Object.entries(SIGNAL_CATEGORIES).map(([key, value]) => ({
@@ -331,28 +399,43 @@ export function RoboAdvisorHero() {
               )}>
                 {currentCategory.signals.map((signal, idx) => {
                   const getTechnicalChart = (name: string) => {
-                    if (name === '골든크로스') return <GoldenCrossChart />
-                    if (name === 'RSI 과매도 반등') return <RSIChart />
-                    if (name === 'MACD 교차') return <MACDChart />
-                    if (name === '스토캐스틱 과매도') return <StochasticChart />
-                    if (name === '볼린저 밴드 돌파') return <BollingerChart />
+                    if (name.includes('골든크로스')) return <GoldenCrossChart />
+                    if (name.includes('RSI')) return <RSIChart />
+                    if (name.includes('MACD')) return <MACDChart />
+                    if (name.includes('스토캐스틱')) return <StochasticChart />
+                    if (name.includes('볼린저')) return <BollingerChart />
                     return null
                   }
+
+                  const isTechnicalTab = ['trend', 'momentum', 'volatility'].includes(activeTab)
+                  const hasChart = isTechnicalTab && getTechnicalChart(signal.name)
 
                   return (
                     <div
                       key={idx}
-                      className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.05] transition-colors group"
+                      className={cn(
+                        'p-3 rounded-lg border transition-colors group',
+                        signal.status === 'coming-soon'
+                          ? 'bg-white/[0.02] border-white/[0.06] opacity-60'
+                          : 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.05]'
+                      )}
                     >
-                      <div className={cn('flex items-start gap-2.5', activeTab === 'technical' && 'justify-between')}>
+                      <div className={cn('flex items-start gap-2.5', hasChart && 'justify-between')}>
                         <div className="flex items-start gap-2.5 flex-1 min-w-0">
                           <span className="text-lg shrink-0 group-hover:scale-110 transition-transform">{signal.emoji}</span>
-                          <div className="space-y-0.5 flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-white">{signal.name}</p>
+                          <div className="space-y-1 flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-white">{signal.name}</p>
+                              {signal.status === 'coming-soon' && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 font-medium">
+                                  업데이트중
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-white/50 leading-relaxed">{signal.description}</p>
                           </div>
                         </div>
-                        {activeTab === 'technical' && getTechnicalChart(signal.name)}
+                        {hasChart && getTechnicalChart(signal.name)}
                       </div>
                     </div>
                   )
