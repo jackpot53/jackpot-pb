@@ -48,7 +48,7 @@ const assetSchema = z.object({
   depositStartDate: z.string().optional().nullable(),  // 'YYYY-MM-DD'
   maturityDate: z.string().optional().nullable(),      // 'YYYY-MM-DD'
   monthlyContributionKrw: z.string().optional().nullable(),
-  compoundType: z.enum(['simple', 'monthly']).optional().nullable(),
+  compoundType: z.enum(['simple', 'monthly', 'yearly']).optional().nullable(),
   taxType: z.enum(['taxable', 'tax_free', 'preferential']).optional().nullable(),
   autoRenew: z.boolean().optional().nullable(),
 })
@@ -205,6 +205,7 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
         sumInsuredKrw: sumKrw,
         expectedReturnRateBp: rateBp,
         isPaidUp: false,
+        compoundType: compoundType ?? 'simple',
       })
     }
     revalidatePath('/assets')
@@ -409,6 +410,7 @@ export async function updateAsset(
       sumInsuredKrw: sumKrw,
       expectedReturnRateBp: rateBp,
       isPaidUp: false,
+      compoundType: compoundType ?? 'simple',
     }).onConflictDoUpdate({
       target: insuranceDetails.assetId,
       set: {
@@ -421,6 +423,7 @@ export async function updateAsset(
         coverageEndDate: normCoverageEndDate,
         sumInsuredKrw: sumKrw,
         expectedReturnRateBp: rateBp,
+        compoundType: compoundType ?? 'simple',
         updatedAt: new Date(),
       },
     })

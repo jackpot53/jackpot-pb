@@ -273,7 +273,7 @@ const assetSchema = z.object({
   depositStartDate: z.string().optional().nullable(),
   maturityDate: z.string().optional().nullable(),
   monthlyContributionKrw: z.string().optional().nullable(),
-  compoundType: z.enum(['simple', 'monthly']).optional().nullable(),
+  compoundType: z.enum(['simple', 'monthly', 'yearly']).optional().nullable(),
   taxType: z.enum(['taxable', 'tax_free', 'preferential']).optional().nullable(),
   autoRenew: z.boolean().optional().nullable(),
 }).superRefine((data, ctx) => {
@@ -1590,7 +1590,8 @@ export function NewAssetForm({ onSubmit }: {
                                 <div className="flex gap-1 shrink-0">
                                   {([
                                     ['simple', '단리', Minus, 'text-orange-400'],
-                                    ['monthly', '복리', TrendingUp, 'text-emerald-400'],
+                                    ['monthly', '월복리', TrendingUp, 'text-emerald-400'],
+                                    ['yearly', '연복리', Repeat, 'text-blue-400'],
                                   ] as const).map(([type, label, Icon, iconColor]) => {
                                     const active = form.watch('compoundType') === type
                                     return (
