@@ -2,52 +2,86 @@
 
 import { useState } from 'react'
 import { Bot, BookOpen, ChevronDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-const SIGNALS = [
-  {
-    emoji: '🔀',
-    name: '골든크로스',
-    description: '단기(5일) 이동평균이 장기(20일) 이평선을 상향 돌파',
+type SignalCategory = 'technical' | 'supply' | 'trend' | 'composite'
+
+const SIGNAL_CATEGORIES: Record<SignalCategory, { label: string; description: string; signals: Array<{ emoji: string; name: string; description: string }> }> = {
+  technical: {
+    label: '기술적분석',
+    description: '이동평균, 모멘텀 지표, 변동성 지표를 통한 매수 신호',
+    signals: [
+      {
+        emoji: '🔀',
+        name: '골든크로스',
+        description: '단기(5일) 이동평균이 장기(20일) 이평선을 상향 돌파 — 상승 추세 시작 신호',
+      },
+      {
+        emoji: '📉',
+        name: 'RSI 과매도 반등',
+        description: 'RSI 30 이하 후 반등 — 과매도 구간에서의 회복 신호',
+      },
+      {
+        emoji: '📊',
+        name: 'MACD 교차',
+        description: 'MACD 라인이 시그널 라인을 상향 교차 — 모멘텀 전환 신호',
+      },
+      {
+        emoji: '🎯',
+        name: '스토캐스틱 과매도',
+        description: '%K가 20 이하 후 %D 상향 교차 — 과매도 영역 탈출 신호',
+      },
+      {
+        emoji: '📈',
+        name: '볼린저 밴드 돌파',
+        description: '가격이 하단 밴드를 터치 후 중심선 방향으로 반등 — 변동성 축소 후 회복',
+      },
+    ],
   },
-  {
-    emoji: '📉',
-    name: 'RSI 과매도 반등',
-    description: 'RSI 30 이하 후 반등 — 과매도 구간 탈출',
+  supply: {
+    label: '수급분석',
+    description: '거래량과 매수세를 통한 신호 감지',
+    signals: [
+      {
+        emoji: '🔊',
+        name: '거래량 돌파',
+        description: '거래량이 20일 평균 대비 2배 이상 급증 — 실제 자금의 관심도 증가 신호',
+      },
+    ],
   },
-  {
-    emoji: '📊',
-    name: 'MACD 교차',
-    description: 'MACD 라인이 시그널 라인을 상향 교차',
+  trend: {
+    label: '트렌드분석',
+    description: '추세의 강도와 방향을 분석한 신호',
+    signals: [
+      {
+        emoji: '📐',
+        name: 'ADX 추세 강도',
+        description: 'ADX 25 이상 + DI+ > DI- (상승 추세 확인) — 강한 상승 추세 확인',
+      },
+    ],
   },
-  {
-    emoji: '🔊',
-    name: '거래량 돌파',
-    description: '거래량이 20일 평균 대비 2배 이상 급증',
+  composite: {
+    label: '복합신호',
+    description: '모든 기술지표를 종합한 최종 매수 신호',
+    signals: [
+      {
+        emoji: '⭐',
+        name: '종합 신호 (Composite)',
+        description: '위 7가지 개별 시그널의 가중합 기반 — confidence 점수(0~100)로 신뢰도 표시. 점수가 높을수록 여러 지표가 동시에 매수 신호를 발생',
+      },
+    ],
   },
-  {
-    emoji: '📈',
-    name: '볼린저 밴드 돌파',
-    description: '가격이 하단 밴드를 터치 후 중심선 방향으로 반등',
-  },
-  {
-    emoji: '🎯',
-    name: '스토캐스틱 과매도',
-    description: '%K가 20 이하 후 %D 상향 교차',
-  },
-  {
-    emoji: '📐',
-    name: 'ADX 추세 강도',
-    description: 'ADX 25 이상 + DI+ > DI- (상승 추세 확인)',
-  },
-  {
-    emoji: '⭐',
-    name: '복합 시그널',
-    description: '위 7가지 가중합 기반 — confidence 점수 포함',
-  },
-]
+}
 
 export function RoboAdvisorHero() {
   const [open, setOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<SignalCategory>('technical')
+
+  const currentCategory = SIGNAL_CATEGORIES[activeTab]
+  const tabs = Object.entries(SIGNAL_CATEGORIES).map(([key, value]) => ({
+    key: key as SignalCategory,
+    label: value.label,
+  }))
 
   return (
     <div
@@ -165,27 +199,51 @@ export function RoboAdvisorHero() {
         <div
           className="overflow-hidden transition-all duration-300 ease-out"
           style={{
-            maxHeight: open ? '500px' : '0px',
+            maxHeight: open ? '600px' : '0px',
             opacity: open ? 1 : 0,
           }}
         >
-          <div className="pt-4 border-t border-white/10">
-            <p className="text-white/50 text-xs mb-3">매수 신호를 감지하는 8가지 알고리즘</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {SIGNALS.map((signal, idx) => (
-                <div
-                  key={idx}
-                  className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.05] transition-colors group"
+          <div className="pt-4 border-t border-white/10 space-y-3">
+            {/* 탭 버튼 */}
+            <div className="flex gap-1.5 flex-wrap">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
+                    activeTab === tab.key
+                      ? 'bg-rose-500/30 border border-rose-400/50 text-rose-200'
+                      : 'bg-white/[0.05] border border-white/[0.12] text-white/60 hover:text-white/80 hover:bg-white/[0.08]',
+                  )}
                 >
-                  <div className="flex items-start gap-2.5">
-                    <span className="text-lg shrink-0 group-hover:scale-110 transition-transform">{signal.emoji}</span>
-                    <div className="space-y-0.5 flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white">{signal.name}</p>
-                      <p className="text-xs text-white/50 leading-relaxed">{signal.description}</p>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 카테고리 설명 + 신호 목록 */}
+            <div className="space-y-2">
+              <p className="text-white/60 text-xs">{currentCategory.description}</p>
+              <div className={cn(
+                'grid gap-2 transition-opacity duration-300',
+                currentCategory.signals.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'
+              )}>
+                {currentCategory.signals.map((signal, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.05] transition-colors group"
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-lg shrink-0 group-hover:scale-110 transition-transform">{signal.emoji}</span>
+                      <div className="space-y-0.5 flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white">{signal.name}</p>
+                        <p className="text-xs text-white/50 leading-relaxed">{signal.description}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
