@@ -2,7 +2,7 @@ import { cache } from 'react'
 import { getAssetsWithHoldings } from '@/db/queries/assets-with-holdings'
 import { getPriceCacheByTickers } from '@/db/queries/price-cache'
 import { getSavingsDetails, getSavingsBuys } from '@/db/queries/savings'
-import { getInsuranceDetails } from '@/db/queries/insurance'
+import { getInsuranceDetails, getInsuranceBuys } from '@/db/queries/insurance'
 import { computeAssetPerformance, type AssetPerformance } from '@/lib/portfolio'
 import { timed, timedSync } from '@/lib/perf'
 
@@ -36,11 +36,16 @@ export const loadPerformances = cache(async (userId: string): Promise<{
     getSavingsBuys(savingsIds),
   ]))
 
-  // insurance 전용: 계약 메타데이터 bulk 조회
+  // insurance 전용: 계약 메타데이터 + 납입 내역 bulk 조회
   const insuranceIds = assetsWithHoldings
     .filter((a) => a.assetType === 'insurance')
     .map((a) => a.assetId)
-  const insuranceDetailsMap = await timed('  insurance details', () => getInsuranceDetails(insuranceIds))
+  const [insuranceDetailsMap, insuranceBuysMap] = await timed('  insurance details+buys', () =>
+    Promise.all([
+      getInsuranceDetails(insuranceIds),
+      getInsuranceBuys(insuranceIds),
+    ])
+  )
 
   const fxCacheRow = priceMap.get('USD_KRW')
   const currentFxRate = fxCacheRow ? fxCacheRow.priceKrw / 10000 : null
@@ -91,6 +96,7 @@ export const loadPerformances = cache(async (userId: string): Promise<{
           savingsDetails: savingsDetailsMap.get(asset.assetId) ?? null,
           savingsBuys: savingsBuysMap.get(asset.assetId) ?? [],
           insuranceDetails: insuranceDetailsMap.get(asset.assetId) ?? null,
+          insuranceBuys: insuranceBuysMap.get(asset.assetId) ?? [],
         })
       )
     }
