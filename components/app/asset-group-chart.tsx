@@ -4,12 +4,13 @@ import { CandlestickChart } from './candlestick-chart'
 import type { CandlestickPoint } from './candlestick-chart'
 import type { AssetPerformance } from '@/lib/portfolio'
 import type { MonthlyDataPoint, AnnualDataPoint, DailyDataPoint } from '@/lib/snapshot/aggregation'
+import type { OhlcPoint } from '@/lib/price/sparkline'
 
 type Tab = '일별' | '월별' | '연간'
 
 interface AssetGroupChartProps {
   assets: AssetPerformance[]
-  sparklines?: Record<string, number[]>
+  sparklines?: Record<string, OhlcPoint[]>
   monthlyData?: MonthlyDataPoint[]
   annualData?: AnnualDataPoint[]
   dailyData?: DailyDataPoint[]
@@ -30,7 +31,7 @@ interface DayProfit {
  */
 function computeDailyGroupProfitSeries(
   assets: AssetPerformance[],
-  sparklines: Record<string, number[]>
+  sparklines: Record<string, OhlcPoint[]>
 ): DayProfit[] | null {
   const liveAssets = assets.filter(
     a => a.priceType === 'live' && a.ticker && sparklines[a.ticker] && sparklines[a.ticker].length >= 2
@@ -49,9 +50,9 @@ function computeDailyGroupProfitSeries(
   return Array.from({ length: minLen }, (_, i) => {
     const liveValue = liveAssets.reduce((s, a) => {
       const prices = sparklines[a.ticker!]
-      const lastPrice = prices[prices.length - 1]
+      const lastPrice = prices[prices.length - 1]?.close
       if (!lastPrice) return s
-      return s + a.currentValueKrw * (prices[i] / lastPrice)
+      return s + a.currentValueKrw * (prices[i].close / lastPrice)
     }, 0)
 
     const totalValue = liveValue + manualValue

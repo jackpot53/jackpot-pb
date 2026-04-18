@@ -1,6 +1,6 @@
 'use client'
 import { useState, useTransition } from 'react'
-import { Loader2, PiggyBank, TrendingUp, Calendar, Banknote } from 'lucide-react'
+import { Loader2, PiggyBank, TrendingUp, Calendar, Banknote, ShieldCheck } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table'
 import { createManualValuation } from '@/app/actions/manual-valuations'
 import { recordMonthlyContribution } from '@/app/actions/savings'
+import { recordMonthlyPremium } from '@/app/actions/insurance'
 import {
   computeCurrentSavingsValueKrw, computeExpectedMaturityValueKrw,
   remainingDays, annualizedReturnPct,
@@ -24,6 +25,7 @@ import type { Asset } from '@/db/queries/assets'
 import type { ManualValuation } from '@/db/queries/manual-valuations'
 import type { HoldingRow } from '@/db/queries/holdings'
 import type { SavingsDetailsRow } from '@/db/schema/savings-details'
+import type { InsuranceDetailsRow } from '@/db/schema/insurance-details'
 
 const valuationSchema = z.object({
   valueKrw: z.string()
@@ -56,6 +58,7 @@ interface OverviewTabProps {
   holding: HoldingRow | null
   savingsDetails?: SavingsDetailsRow | null
   savingsBuys?: SavingsBuy[]
+  insuranceDetails?: InsuranceDetailsRow | null
 }
 
 function SavingsInfoSection({
@@ -208,6 +211,194 @@ function SavingsInfoSection({
           >
             {isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Banknote className="mr-1.5 h-3.5 w-3.5" />}
             {recorded ? '납입 완료!' : `이번 달 납입 기록 (₩${formatKrw(details.monthlyContributionKrw)})`}
+          </Button>
+          {recordError && <p className="text-xs text-destructive">{recordError}</p>}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function InsuranceInfoSection({
+  assetId, details, holding, latestManualKrw,
+}: {
+  assetId: string
+  details: InsuranceDetailsRow
+  holding: HoldingRow | null
+  latestManualKrw: number | null
+}) {
+  const [isPending, startTransition] = useTransition()
+  const [recordError, setRecordError] = useState<string | null>(null)
+  const [recorded, setRecorded] = useState(false)
+
+  const surrenderValueKrw = latestManualKrw
+  const totalCostKrw = holding?.totalCostKrw ?? 0
+
+  const surrenderRatePct = totalCostKrw > 0 && surrenderValueKrw != null
+    ? (surrenderValueKrw / totalCostKrw) * 100
+    : null
+
+  const returnPct = totalCostKrw > 0 && surrenderValueKrw != null
+    ? ((surrenderValueKrw - totalCostKrw) / totalCostKrw) * 100
+    : null
+
+  // 납입 진행률: paymentStartDate → paymentEndDate 기준
+  const paymentProgress = (() => {
+    if (!details.paymentStartDate || !details.paymentEndDate || !details.premiumPerCycleKrw) return null
+    const start = new Date(details.paymentStartDate).getTime()
+    const end = new Date(details.paymentEndDate).getTime()
+    const now = Date.now()
+    if (end <= start) return null
+    const pct = Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100))
+    return Math.round(pct)
+  })()
+
+  // 만기까지 남은 날수 (coverageEndDate 기준)
+  const coverageDaysLeft = details.coverageEndDate
+    ? Math.ceil((new Date(details.coverageEndDate).getTime() - Date.now()) / 86400000)
+    : null
+
+  // 납입 만료까지 남은 날수
+  const paymentDaysLeft = details.paymentEndDate
+    ? Math.ceil((new Date(details.paymentEndDate).getTime() - Date.now()) / 86400000)
+    : null
+
+  const CATEGORY_LABELS: Record<string, string> = { protection: '보장성', savings: '저축성' }
+  const CYCLE_LABELS: Record<string, string> = {
+    monthly: '월납', quarterly: '분기납', yearly: '연납', lump_sum: '일시납',
+  }
+
+  function handleMonthlyPremium() {
+    setRecordError(null)
+    startTransition(async () => {
+      const result = await recordMonthlyPremium(assetId)
+      if (result?.error) {
+        setRecordError(result.error)
+      } else {
+        setRecorded(true)
+      }
+    })
+  }
+
+  return (
+    <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4 space-y-4">
+      <div className="flex items-center gap-2">
+        <ShieldCheck className="h-4 w-4 text-blue-600" />
+        <span className="text-sm font-semibold text-blue-800">보험 정보</span>
+        {details.isPaidUp && (
+          <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-medium">납입완료</span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-8 gap-y-2 max-w-sm">
+        <span className="text-sm text-muted-foreground">보험 성격</span>
+        <span className="text-sm">{CATEGORY_LABELS[details.category] ?? details.category}</span>
+
+        <span className="text-sm text-muted-foreground">납입 주기</span>
+        <span className="text-sm">{CYCLE_LABELS[details.paymentCycle] ?? details.paymentCycle}</span>
+
+        {details.premiumPerCycleKrw != null && (
+          <>
+            <span className="text-sm text-muted-foreground">주기당 납입액</span>
+            <span className="text-sm font-medium">₩{formatKrw(details.premiumPerCycleKrw)}</span>
+          </>
+        )}
+
+        {details.contractDate && (
+          <>
+            <span className="text-sm text-muted-foreground">계약일</span>
+            <span className="text-sm">{details.contractDate}</span>
+          </>
+        )}
+
+        {details.paymentStartDate && (
+          <>
+            <span className="text-sm text-muted-foreground">납입 시작일</span>
+            <span className="text-sm">{details.paymentStartDate}</span>
+          </>
+        )}
+
+        {details.paymentEndDate && (
+          <>
+            <span className="text-sm text-muted-foreground">납입 만료일</span>
+            <span className="text-sm">
+              {details.paymentEndDate}
+              {paymentDaysLeft != null && (
+                <span className={`ml-2 text-xs font-medium ${paymentDaysLeft < 0 ? 'text-muted-foreground' : paymentDaysLeft <= 90 ? 'text-amber-600' : 'text-blue-700'}`}>
+                  {paymentDaysLeft < 0 ? '납입완료' : `D-${paymentDaysLeft}`}
+                </span>
+              )}
+            </span>
+          </>
+        )}
+
+        {details.coverageEndDate && (
+          <>
+            <span className="text-sm text-muted-foreground">보장 만료일</span>
+            <span className="text-sm">
+              {details.coverageEndDate}
+              {coverageDaysLeft != null && (
+                <span className={`ml-2 text-xs font-medium ${coverageDaysLeft < 0 ? 'text-muted-foreground' : coverageDaysLeft <= 180 ? 'text-red-600' : 'text-blue-700'}`}>
+                  {coverageDaysLeft < 0 ? '만기' : `D-${coverageDaysLeft}`}
+                </span>
+              )}
+            </span>
+          </>
+        )}
+
+        {details.sumInsuredKrw != null && (
+          <>
+            <span className="text-sm text-muted-foreground">보험가입금액</span>
+            <span className="text-sm">₩{formatKrw(details.sumInsuredKrw)}</span>
+          </>
+        )}
+
+        {details.expectedReturnRateBp != null && (
+          <>
+            <span className="text-sm text-muted-foreground">예상 공시이율</span>
+            <span className="text-sm">{(details.expectedReturnRateBp / 10000).toFixed(2)}%</span>
+          </>
+        )}
+
+        {surrenderValueKrw != null && totalCostKrw > 0 && (
+          <>
+            <span className="text-sm text-muted-foreground">해지환급금</span>
+            <span className="text-sm font-medium">₩{formatKrw(surrenderValueKrw)}</span>
+            <span className="text-sm text-muted-foreground">환급률</span>
+            <span className={`text-sm font-medium ${returnPct != null && returnPct >= 0 ? 'text-red-500' : 'text-blue-600'}`}>
+              {surrenderRatePct != null ? `${surrenderRatePct.toFixed(1)}%` : '—'}
+              {returnPct != null && ` (${returnPct >= 0 ? '+' : ''}${returnPct.toFixed(2)}%)`}
+            </span>
+          </>
+        )}
+      </div>
+
+      {paymentProgress != null && (
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs text-muted-foreground">
+            <span>납입 진행률</span>
+            <span>{paymentProgress}%</span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-blue-100">
+            <div
+              className="h-1.5 rounded-full bg-blue-500 transition-all"
+              style={{ width: `${paymentProgress}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {details.paymentCycle === 'monthly' && details.premiumPerCycleKrw && !details.isPaidUp && (
+        <div className="flex items-center gap-3 pt-1">
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-blue-400 text-blue-700 hover:bg-blue-100"
+            onClick={handleMonthlyPremium}
+            disabled={isPending || recorded}
+          >
+            {isPending ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Banknote className="mr-1.5 h-3.5 w-3.5" />}
+            {recorded ? '납입 완료!' : `이번 달 납입 기록 (₩${formatKrw(details.premiumPerCycleKrw)})`}
           </Button>
           {recordError && <p className="text-xs text-destructive">{recordError}</p>}
         </div>
@@ -396,7 +587,7 @@ function decodeQuantity(stored: number): string {
   return `${intPart}.${fracPart.toString().padStart(8, '0').replace(/0+$/, '')}`
 }
 
-export function OverviewTab({ asset, valuations, holding, savingsDetails = null, savingsBuys = [] }: OverviewTabProps) {
+export function OverviewTab({ asset, valuations, holding, savingsDetails = null, savingsBuys = [], insuranceDetails = null }: OverviewTabProps) {
   const [showUpdateForm, setShowUpdateForm] = useState(false)
   const isRealEstate = asset.assetType === 'real_estate'
   const usesUnitPrice = isRealEstate
@@ -460,6 +651,19 @@ export function OverviewTab({ asset, valuations, holding, savingsDetails = null,
             assetId={asset.id}
             details={savingsDetails}
             buys={savingsBuys}
+            holding={holding}
+            latestManualKrw={valuations[0]?.valueKrw ?? null}
+          />
+          <Separator />
+        </>
+      )}
+
+      {/* Insurance info section */}
+      {asset.assetType === 'insurance' && insuranceDetails && (
+        <>
+          <InsuranceInfoSection
+            assetId={asset.id}
+            details={insuranceDetails}
             holding={holding}
             latestManualKrw={valuations[0]?.valueKrw ?? null}
           />

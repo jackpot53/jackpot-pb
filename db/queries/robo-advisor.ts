@@ -15,6 +15,7 @@ export type UniverseStockWithSignals = UniverseStock & {
   signals: Signal[]
   latestClose: number | null
   changePercent: number | null
+  changeAmount: number | null
 }
 
 export const getUniverse = cache(async (): Promise<UniverseStock[]> => {
@@ -22,7 +23,7 @@ export const getUniverse = cache(async (): Promise<UniverseStock[]> => {
     .select()
     .from(universeStocks)
     .where(eq(universeStocks.isActive, true))
-    .orderBy(universeStocks.rank)
+    .orderBy(desc(universeStocks.marketCapKrw))
 })
 
 export const getUniverseWithSignals = cache(async (): Promise<UniverseStockWithSignals[]> => {
@@ -31,26 +32,17 @@ export const getUniverseWithSignals = cache(async (): Promise<UniverseStockWithS
 
   const tickers = stocks.map((s) => s.ticker)
 
-  const [allSignals, rawLatest, rawPrev] = await Promise.all([
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - 14)
+  const cutoffStr = cutoff.toISOString().slice(0, 10)
+
+  const [allSignals, recentPrices] = await Promise.all([
     db.select().from(signals).where(inArray(signals.ticker, tickers)),
-    // 각 ticker 최신 종가
-    db.execute(sql`
-      SELECT DISTINCT ON (ticker) ticker, close, date
-      FROM price_history
-      WHERE ticker = ANY(${tickers})
-      ORDER BY ticker, date DESC
-    `),
-    // 각 ticker 직전 종가 (등락률 계산용)
-    db.execute(sql`
-      SELECT ticker, close
-      FROM (
-        SELECT ticker, close,
-               ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY date DESC) AS rn
-        FROM price_history
-        WHERE ticker = ANY(${tickers})
-      ) sub
-      WHERE rn = 2
-    `),
+    db
+      .select({ ticker: priceHistory.ticker, close: priceHistory.close })
+      .from(priceHistory)
+      .where(and(inArray(priceHistory.ticker, tickers), gte(priceHistory.date, cutoffStr)))
+      .orderBy(priceHistory.ticker, desc(priceHistory.date)),
   ])
 
   const signalMap = new Map<string, Signal[]>()
@@ -59,16 +51,11 @@ export const getUniverseWithSignals = cache(async (): Promise<UniverseStockWithS
     signalMap.get(sig.ticker)!.push(sig)
   }
 
-  type PriceRow = { ticker: string; close: string | number }
-
   const latestMap = new Map<string, number>()
-  for (const row of rawLatest as unknown as PriceRow[]) {
-    latestMap.set(row.ticker, Number(row.close))
-  }
-
   const prevMap = new Map<string, number>()
-  for (const row of rawPrev as unknown as PriceRow[]) {
-    prevMap.set(row.ticker, Number(row.close))
+  for (const row of recentPrices) {
+    if (!latestMap.has(row.ticker)) latestMap.set(row.ticker, Number(row.close))
+    else if (!prevMap.has(row.ticker)) prevMap.set(row.ticker, Number(row.close))
   }
 
   return stocks.map((stock) => {
@@ -78,12 +65,14 @@ export const getUniverseWithSignals = cache(async (): Promise<UniverseStockWithS
       latestClose !== null && prevClose !== null && prevClose > 0
         ? ((latestClose - prevClose) / prevClose) * 100
         : null
+    const changeAmount = latestClose !== null && prevClose !== null ? latestClose - prevClose : null
 
     return {
       ...stock,
       signals: signalMap.get(stock.ticker) ?? [],
       latestClose,
       changePercent,
+      changeAmount,
     }
   })
 })

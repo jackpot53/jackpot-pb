@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Gaegu, Nanum_Pen_Script, Story_Script, Sunflower, Faster_One } from 'next/font/google'
 import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
+import { ComponentInspector } from '@/components/dev/component-inspector'
 
 const gaegu = Gaegu({
   weight: ['400', '700'],
@@ -51,6 +52,7 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         {children}
         <Toaster position="bottom-right" />
+        {process.env.NODE_ENV === 'development' && <ComponentInspector />}
       </body>
     </html>
   )

@@ -9,8 +9,19 @@ import { Separator } from '@/components/ui/separator'
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { cn } from '@/lib/utils'
 import { refreshAllPrices } from '@/app/actions/prices'
-import { SparklineChart } from '@/components/app/sparkline-chart'
+import { MiniCandleChart } from '@/components/app/mini-candle-chart'
+import { LineSparkline } from '@/components/app/line-sparkline'
+import type { OhlcPoint } from '@/lib/price/sparkline'
+import type { AssetHistoryPoint } from '@/lib/asset-history-types'
 import dynamic from 'next/dynamic'
+const AssetCandleChart = dynamic(
+  () => import('@/components/app/asset-candle-chart').then(m => ({ default: m.AssetCandleChart })),
+  { ssr: false, loading: () => <div className="w-full h-full animate-pulse bg-muted/40 rounded-lg" /> }
+)
+const AssetLineChart = dynamic(
+  () => import('@/components/app/asset-line-chart').then(m => ({ default: m.AssetLineChart })),
+  { ssr: false, loading: () => <div className="w-full h-full animate-pulse bg-muted/40 rounded-lg" /> }
+)
 const AssetGroupChart = dynamic(
   () => import('@/components/app/asset-group-chart').then(m => ({ default: m.AssetGroupChart })),
   { ssr: false, loading: () => <div className="h-full w-full animate-pulse bg-muted rounded-xl" /> }
@@ -23,6 +34,7 @@ const CandlestickChart = dynamic(
 )
 import { formatKrw, formatUsd, formatReturn, formatQty } from '@/lib/portfolio'
 import type { AssetPerformance } from '@/lib/portfolio'
+import { TodayReport } from '@/components/app/today-report'
 import type { MonthlyDataPoint, AnnualDataPoint, DailyDataPoint } from '@/lib/snapshot/aggregation'
 
 const ASSET_TYPE_ORDER = [
@@ -137,7 +149,7 @@ const ASSET_TYPE_NAME_BADGE: Record<string, string> = {
   cma:            'bg-rose-500/15 text-rose-400 ring-rose-500/30',
 }
 
-const NO_SPARKLINE_TYPES = new Set(['fund', 'real_estate', 'savings', 'insurance', 'precious_metal', 'cma'])
+const NO_SPARKLINE_TYPES = new Set(['real_estate', 'insurance', 'precious_metal', 'cma'])
 
 const BROKERAGE_LABELS: Record<string, string> = {
   sec_mirae: '미래에셋', sec_samsung: '삼성', sec_korea: '한국투자',
@@ -298,12 +310,13 @@ function mergeAssets(assets: AssetPerformance[]): MergedAsset[] {
 
 
 
-function AssetCard({ asset, sparklineData, showSparkline }: {
+function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
   asset: AssetPerformance & { mergedCount?: number }
-  sparklineData?: number[]
+  sparklineData?: OhlcPoint[]
+  lineData?: AssetHistoryPoint[]
   showSparkline?: boolean
 }) {
-  const [chartOpen, setChartOpen] = useState(true)
+  const [chartOpen, setChartOpen] = useState(false)
   const hasHolding = asset.totalQuantity > 0 || (asset.assetType === 'savings' && (asset.totalCostKrw > 0 || asset.monthlyContributionKrw != null))
   const isCrypto = asset.assetType === 'crypto'
   const hasValue = asset.currentValueKrw > 0
@@ -513,7 +526,21 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
   )
 
   return (
-    <div className={cn("rounded-xl border border-border border-l-4 hover:shadow-md transition-all bg-card", ASSET_TYPE_ACCENT[asset.assetType] ?? 'border-l-border')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div className={cn("relative rounded-xl border border-border border-l-4 hover:shadow-md transition-all bg-card", ASSET_TYPE_ACCENT[asset.assetType] ?? 'border-l-border')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      {/* 차트 토글 — 우상단 */}
+      {((showSparkline && sparklineData) || lineData !== undefined) && (
+        <button
+          onClick={() => setChartOpen(v => !v)}
+          className="absolute top-2.5 right-2.5 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded-lg hover:bg-muted/40"
+        >
+          {asset.returnPct >= 0
+            ? <TrendingUp className="h-3 w-3 text-red-500" />
+            : <TrendingDown className="h-3 w-3 text-blue-500" />}
+          차트
+          <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', chartOpen && 'rotate-180')} />
+        </button>
+      )}
+
       <div className="flex items-stretch gap-3 px-4 py-3.5">
         {/* 로고 */}
         <div className="shrink-0 self-center">
@@ -525,37 +552,39 @@ function AssetCard({ asset, sparklineData, showSparkline }: {
           {nameBlock}
           {valueFooter}
         </div>
-
-        {/* 차트보기 버튼 */}
-        {showSparkline && sparklineData && (
-          <button
-            onClick={() => setChartOpen(v => !v)}
-            className="shrink-0 self-center flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-lg hover:bg-muted/40"
-          >
-            {asset.returnPct >= 0
-              ? <TrendingUp className="h-3.5 w-3.5 text-red-500" />
-              : <TrendingDown className="h-3.5 w-3.5 text-blue-500" />}
-            차트
-            <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', chartOpen && 'rotate-180')} />
-          </button>
-        )}
       </div>
 
-      {/* 스파크라인 collapse */}
-      {showSparkline && sparklineData && chartOpen && (
-        <div className="px-4 pb-3">
-          <div className="h-[52px] rounded-lg overflow-hidden border border-border/40">
-            <SparklineChart data={sparklineData} positive={asset.returnPct >= 0} width={600} height={52} />
-          </div>
-        </div>
+      {/* 차트 collapse */}
+      {chartOpen && (
+        <>
+          {lineData !== undefined && (
+            <div className="px-4 pb-3">
+              <div className="h-[240px] rounded-lg overflow-hidden border border-border/40">
+                <AssetLineChart
+                  data={lineData}
+                  kind={asset.assetType === 'savings' ? 'line-projected' : 'line-nav'}
+                  positive={asset.returnPct >= 0}
+                />
+              </div>
+            </div>
+          )}
+          {showSparkline && sparklineData && asset.ticker && !lineData && (
+            <div className="px-4 pb-3">
+              <div className="h-[280px] rounded-lg overflow-hidden border border-border/40 bg-white">
+                <AssetCandleChart ticker={asset.ticker} initialData={sparklineData} />
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
 }
 
-function AssetGridCard({ asset, sparklineData }: {
+function AssetGridCard({ asset, sparklineData, lineData }: {
   asset: AssetPerformance & { mergedCount?: number }
-  sparklineData?: number[]
+  sparklineData?: OhlcPoint[]
+  lineData?: AssetHistoryPoint[]
 }) {
   const hasValue = asset.currentValueKrw > 0
   const hasCost = asset.totalCostKrw > 0
@@ -593,10 +622,12 @@ function AssetGridCard({ asset, sparklineData }: {
 
       {/* 스파크라인 */}
       {showSpark && (
-        <div className="rounded-lg border border-border/30 bg-muted/20 overflow-hidden h-10">
-          {sparklineData
-            ? <SparklineChart data={sparklineData} positive={asset.returnPct >= 0} width={200} height={40} />
-            : <div className="w-full h-full" />
+        <div className="rounded-lg border border-border/30 bg-muted/20 overflow-hidden h-36">
+          {lineData && lineData.length >= 2
+            ? <LineSparkline data={lineData} width={200} height={144} positive={asset.returnPct >= 0} />
+            : sparklineData
+              ? <MiniCandleChart data={sparklineData} width={200} height={144} />
+              : <div className="w-full h-full" />
           }
         </div>
       )}
@@ -676,10 +707,11 @@ function SummaryBar({ assets }: { assets: AssetPerformance[] }) {
   )
 }
 
-function AssetCardList({ assets, title, sparklines }: {
+function AssetCardList({ assets, title, sparklines, lineDataMap }: {
   assets: AssetPerformance[]
   title?: React.ReactNode
-  sparklines?: Record<string, number[]>
+  sparklines?: Record<string, OhlcPoint[]>
+  lineDataMap?: Record<string, AssetHistoryPoint[]>
 }) {
   const [merged, setMerged] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -708,11 +740,11 @@ function AssetCardList({ assets, title, sparklines }: {
   return (
     <div className="space-y-2">
       {(title || hasDuplicates || hasStale) && (
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-3 flex-wrap">
-            {title && <div className="flex items-center gap-2">{title}</div>}
+        <div className="flex items-center justify-between gap-2 px-1 flex-wrap">
+          <div className="flex items-center gap-x-3 gap-y-1 flex-wrap min-w-0">
+            {title && <div className="flex items-center gap-2 flex-wrap">{title}</div>}
             {/* 매수금 · 평가금 · 수익금 인라인 */}
-            <div className="flex items-center gap-2 text-xs" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+            <div className="flex items-center gap-x-2 gap-y-1 text-xs flex-wrap" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
               <span className="text-muted-foreground">매수금</span>
               <span className="font-semibold text-foreground tabular-nums">{totalCost > 0 ? formatKrw(totalCost) : '—'}</span>
               <span className="text-muted-foreground/40">|</span>
@@ -761,7 +793,7 @@ function AssetCardList({ assets, title, sparklines }: {
           </div>
         </div>
       )}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-1.5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-1.5 items-start">
         {displayAssets.map((asset) => (
           <AssetCard
             key={'mergedCount' in asset && (asset as MergedAsset).mergedCount > 1
@@ -769,6 +801,7 @@ function AssetCardList({ assets, title, sparklines }: {
               : asset.assetId}
             asset={asset}
             sparklineData={asset.ticker ? sparklines?.[asset.ticker] : undefined}
+            lineData={lineDataMap?.[asset.assetId]}
             showSparkline={showSparkline}
           />
         ))}
@@ -779,7 +812,7 @@ function AssetCardList({ assets, title, sparklines }: {
 
 function CollapsibleChart({ assets, sparklines, monthlyData, annualData, dailyData }: {
   assets: AssetPerformance[]
-  sparklines?: Record<string, number[]>
+  sparklines?: Record<string, OhlcPoint[]>
   monthlyData: MonthlyDataPoint[]
   annualData: AnnualDataPoint[]
   dailyData?: DailyDataPoint[]
@@ -998,7 +1031,7 @@ export function SummaryCards({ grouped, performances, valueCandles, showTypeStri
 
 interface AssetsPageClientProps {
   performances: AssetPerformance[]
-  sparklines?: Record<string, number[]>
+  sparklines?: Record<string, OhlcPoint[]>
   monthlyData?: MonthlyDataPoint[]
   annualData?: AnnualDataPoint[]
   monthlyByType?: Record<string, MonthlyDataPoint[]>
@@ -1007,7 +1040,8 @@ interface AssetsPageClientProps {
 }
 
 export function AssetsPageClient({ performances, sparklines: initialSparklines, monthlyData = [], annualData = [], monthlyByType = {}, annualByType = {}, dailyByType = {} }: AssetsPageClientProps) {
-  const [sparklines, setSparklines] = useState<Record<string, number[]>>(initialSparklines ?? {})
+  const [sparklines, setSparklines] = useState<Record<string, OhlcPoint[]>>(initialSparklines ?? {})
+  const [lineDataMap, setLineDataMap] = useState<Record<string, AssetHistoryPoint[]>>({})
 
   useEffect(() => {
     const liveTickers = [
@@ -1017,11 +1051,30 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
           .map((p) => p.ticker!)
       ),
     ]
-    if (liveTickers.length === 0) return
-    fetch(`/api/sparklines?tickers=${liveTickers.join(',')}`)
-      .then((r) => r.json())
-      .then((data: Record<string, number[]>) => setSparklines(data))
-      .catch(() => {})
+    if (liveTickers.length > 0) {
+      fetch(`/api/sparklines?tickers=${liveTickers.join(',')}`)
+        .then((r) => r.json())
+        .then((data: Record<string, OhlcPoint[]>) => setSparklines(data))
+        .catch(() => {})
+    }
+
+    const lineAssets = performances.filter((p) => p.assetType === 'fund' || p.assetType === 'savings')
+    if (lineAssets.length === 0) return
+
+    Promise.all(
+      lineAssets.map((p) =>
+        fetch(`/api/asset-history?assetId=${p.assetId}`)
+          .then((r) => r.json())
+          .then((data) => ({ assetId: p.assetId, points: data.points as AssetHistoryPoint[] }))
+          .catch(() => null)
+      )
+    ).then((results) => {
+      const map: Record<string, AssetHistoryPoint[]> = {}
+      for (const r of results) {
+        if (r) map[r.assetId] = r.points ?? []
+      }
+      setLineDataMap(map)
+    })
   }, [performances])
 
   const grouped = ASSET_TYPE_ORDER.reduce<Record<string, AssetPerformance[]>>((acc, type) => {
@@ -1043,10 +1096,12 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
 
   return (
     <div className="space-y-6">
+      <TodayReport performances={performances} />
       <AssetFilter
         types={types}
         grouped={grouped}
         sparklines={sparklines}
+        lineDataMap={lineDataMap}
         monthlyByType={monthlyByType}
         annualByType={annualByType}
         dailyByType={dailyByType}
@@ -1056,11 +1111,12 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
 }
 
 function AssetFilter({
-  types, grouped, sparklines, monthlyByType, annualByType, dailyByType,
+  types, grouped, sparklines, lineDataMap, monthlyByType, annualByType, dailyByType,
 }: {
   types: string[]
   grouped: Record<string, AssetPerformance[]>
-  sparklines: Record<string, number[]>
+  sparklines: Record<string, OhlcPoint[]>
+  lineDataMap: Record<string, AssetHistoryPoint[]>
   monthlyByType: Record<string, MonthlyDataPoint[]>
   annualByType: Record<string, AnnualDataPoint[]>
   dailyByType: Record<string, DailyDataPoint[]>
@@ -1126,6 +1182,7 @@ function AssetFilter({
               <AssetCardList
                 assets={grouped[type]}
                 sparklines={sparklines}
+                lineDataMap={lineDataMap}
                 title={
                   <>
                     <AssetTypeBadge assetType={type as AssetPerformance['assetType']} />

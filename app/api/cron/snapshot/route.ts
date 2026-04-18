@@ -8,8 +8,11 @@ import {
   type AssetPerformance,
 } from '@/lib/portfolio'
 import { writePortfolioSnapshot } from '@/lib/snapshot/writer'
+import { upsertFundNavHistory } from '@/db/queries/fund-nav-history'
 import { db } from '@/db'
 import { assets } from '@/db/schema/assets'
+import { priceCache } from '@/db/schema/price-cache'
+import { eq, inArray } from 'drizzle-orm'
 
 const PRICE_TTL_MS = 5 * 60 * 1000
 
@@ -59,6 +62,25 @@ export async function GET(request: NextRequest) {
   try {
     // Step 1: Refresh all prices + FX in bulk (replaces per-ticker N+1)
     await refreshAllPricesInternal()
+
+    // Step 1b: Snapshot live fund NAVs into fund_nav_history (ticker-level, shared across users)
+    const today = new Date().toISOString().slice(0, 10)
+    const fundTickerRows = await db
+      .selectDistinct({ ticker: assets.ticker })
+      .from(assets)
+      .where(eq(assets.assetType, 'fund'))
+    const fundTickers = fundTickerRows.map((r) => r.ticker).filter(Boolean) as string[]
+    if (fundTickers.length > 0) {
+      const fundPriceRows = await db
+        .select({ ticker: priceCache.ticker, navKrw: priceCache.priceKrw })
+        .from(priceCache)
+        .where(inArray(priceCache.ticker, fundTickers))
+      if (fundPriceRows.length > 0) {
+        await upsertFundNavHistory(
+          fundPriceRows.map((r) => ({ ticker: r.ticker, navKrw: r.navKrw, recordedAt: today, source: 'live' as const }))
+        )
+      }
+    }
 
     // Step 2: Find all users who have assets
     const userRows = await db

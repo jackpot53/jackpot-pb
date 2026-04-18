@@ -13,7 +13,10 @@ export default async function RoboAdvisorPage() {
   return (
     <div className="space-y-6">
       {/* 히어로 배너 */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#1a0010] via-[#1f0018] to-[#0f0014] p-8 text-white shadow-xl">
+      <div 
+        className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#1a0010] via-[#1f0018] to-[#0f0014] p-8 text-white shadow-xl"
+        style={{ fontFamily: 'var(--font-sunflower), sans-serif' }}
+      >
         <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
           {/* 배경 글로우 */}
           <div className="absolute -top-16 -right-16 w-72 h-72 rounded-full bg-rose-500/10 blur-3xl" />

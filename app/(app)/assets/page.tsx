@@ -36,10 +36,10 @@ export default async function AssetsPage() {
           {/* AnimatedLogo — 신나게 튀어오르는 애니메이션 */}
           <style>{`
             @keyframes assets-logo-bounce {
-              0%,100% { transform: translateY(0) scale(1) rotate(0deg); filter: drop-shadow(0 0 6px rgba(254,229,0,0.3)); }
-              30% { transform: translateY(-16px) scale(1.1) rotate(-5deg); filter: drop-shadow(0 0 20px rgba(254,229,0,0.7)); }
+              0%,100% { transform: translateY(0) scale(1) rotate(0deg); }
+              30% { transform: translateY(-16px) scale(1.1) rotate(-5deg); }
               50% { transform: translateY(-10px) scale(1.05) rotate(3deg); }
-              70% { transform: translateY(-18px) scale(1.12) rotate(-3deg); filter: drop-shadow(0 0 22px rgba(254,229,0,0.8)); }
+              70% { transform: translateY(-18px) scale(1.12) rotate(-3deg); }
             }
           `}</style>
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-75 hidden sm:block"

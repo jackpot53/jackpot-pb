@@ -7,6 +7,7 @@ import { transactions } from '@/db/schema/transactions'
 import { holdings } from '@/db/schema/holdings'
 import { manualValuations } from '@/db/schema/manual-valuations'
 import { savingsDetails } from '@/db/schema/savings-details'
+import { insuranceDetails } from '@/db/schema/insurance-details'
 import { eq, sql, and } from 'drizzle-orm'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
@@ -33,6 +34,14 @@ const assetSchema = z.object({
   // Insurance-specific fields
   initialSurrenderValue: z.string().optional().nullable(),
   insuranceType: z.string().max(50).optional().nullable(),
+  insuranceCategory: z.enum(['protection', 'savings']).optional().nullable(),
+  paymentCycle: z.enum(['monthly', 'quarterly', 'yearly', 'lump_sum']).optional().nullable(),
+  premiumPerCycleKrw: z.string().optional().nullable(),
+  contractDate: z.string().optional().nullable(),
+  paymentEndDate: z.string().optional().nullable(),
+  coverageEndDate: z.string().optional().nullable(),
+  sumInsuredKrw: z.string().optional().nullable(),
+  expectedReturnRatePct: z.string().optional().nullable(),
   // Savings-specific fields
   savingsKind: z.enum(['term', 'recurring', 'free']).optional().nullable(),
   interestRatePct: z.string().optional().nullable(),  // e.g. "5.25"
@@ -62,6 +71,8 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
     ticker, notes, brokerageId, withdrawalBankId, owner,
     initialQuantity, initialPricePerUnit, initialTransactionDate, initialExchangeRate,
     initialSurrenderValue, insuranceType,
+    insuranceCategory, paymentCycle, premiumPerCycleKrw, contractDate,
+    paymentEndDate, coverageEndDate, sumInsuredKrw, expectedReturnRatePct,
     savingsKind, interestRatePct, depositStartDate, maturityDate,
     monthlyContributionKrw, compoundType, taxType, autoRenew,
     ...rest
@@ -135,15 +146,20 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
     redirect('/assets')
   }
 
-  // Insurance: 총납입보험료 → buy tx (qty=1), 해지환급금 → manual valuation
+  // Insurance: 총납입보험료 → buy tx (qty=1), 해지환급금 → manual valuation, 계약 메타 → insurance_details
   if (rest.assetType === 'insurance') {
+    const normalizedContractDate = contractDate || null
+    const normalizedPaymentStartDate = initialTransactionDate || null
+    const normalizedPaymentEndDate = paymentEndDate || null
+    const normalizedCoverageEndDate = coverageEndDate || null
+
     if (initialPricePerUnit && !isNaN(parseFloat(initialPricePerUnit)) && parseFloat(initialPricePerUnit) > 0) {
       const premiumKrw = Math.round(parseFloat(initialPricePerUnit))
       await db.insert(transactions).values({
         assetId: newAsset.id,
         userId: user.id,
         type: 'buy',
-        quantity: 1e8, // 1 unit encoded
+        quantity: 1e8,
         pricePerUnit: premiumKrw,
         fee: 0,
         currency: 'KRW',
@@ -163,6 +179,32 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
         exchangeRateAtTime: null,
         valuedAt: txDate,
         notes: '해지환급금',
+      })
+    }
+    // insurance_details 메타 저장 (category 또는 premiumPerCycleKrw 중 하나라도 있으면 생성)
+    if (insuranceCategory || premiumPerCycleKrw) {
+      const premKrw = premiumPerCycleKrw && !isNaN(parseFloat(premiumPerCycleKrw))
+        ? Math.round(parseFloat(premiumPerCycleKrw))
+        : null
+      const sumKrw = sumInsuredKrw && !isNaN(parseFloat(sumInsuredKrw))
+        ? Math.round(parseFloat(sumInsuredKrw))
+        : null
+      const rateBp = expectedReturnRatePct && !isNaN(parseFloat(expectedReturnRatePct))
+        ? Math.round(parseFloat(expectedReturnRatePct) * 10000)
+        : null
+      await db.insert(insuranceDetails).values({
+        assetId: newAsset.id,
+        userId: user.id,
+        category: insuranceCategory ?? 'protection',
+        paymentCycle: paymentCycle ?? 'monthly',
+        premiumPerCycleKrw: premKrw,
+        contractDate: normalizedContractDate,
+        paymentStartDate: normalizedPaymentStartDate,
+        paymentEndDate: normalizedPaymentEndDate,
+        coverageEndDate: normalizedCoverageEndDate,
+        sumInsuredKrw: sumKrw,
+        expectedReturnRateBp: rateBp,
+        isPaidUp: false,
       })
     }
     revalidatePath('/assets')
@@ -239,6 +281,8 @@ export async function updateAsset(
     ticker, notes, brokerageId, withdrawalBankId, owner,
     initialQuantity, initialPricePerUnit, initialTransactionDate, initialExchangeRate,
     initialSurrenderValue: _surrender, insuranceType,
+    insuranceCategory, paymentCycle, premiumPerCycleKrw, contractDate,
+    paymentEndDate, coverageEndDate, sumInsuredKrw, expectedReturnRatePct,
     savingsKind, interestRatePct, depositStartDate, maturityDate,
     monthlyContributionKrw, compoundType, taxType, autoRenew,
     ...rest
@@ -332,6 +376,51 @@ export async function updateAsset(
         compoundType: compoundType ?? 'simple',
         taxType: taxType ?? 'taxable',
         autoRenew: autoRenew ?? false,
+        updatedAt: new Date(),
+      },
+    })
+  }
+
+  // insurance_details upsert (category 또는 premiumPerCycleKrw 중 하나라도 있으면)
+  if (rest.assetType === 'insurance' && (insuranceCategory || premiumPerCycleKrw)) {
+    const premKrw = premiumPerCycleKrw && !isNaN(parseFloat(premiumPerCycleKrw))
+      ? Math.round(parseFloat(premiumPerCycleKrw))
+      : null
+    const sumKrw = sumInsuredKrw && !isNaN(parseFloat(sumInsuredKrw))
+      ? Math.round(parseFloat(sumInsuredKrw))
+      : null
+    const rateBp = expectedReturnRatePct && !isNaN(parseFloat(expectedReturnRatePct))
+      ? Math.round(parseFloat(expectedReturnRatePct) * 10000)
+      : null
+    const normContractDate = contractDate || null
+    const normPaymentStartDate = initialTransactionDate || null
+    const normPaymentEndDate = paymentEndDate || null
+    const normCoverageEndDate = coverageEndDate || null
+    await db.insert(insuranceDetails).values({
+      assetId: id,
+      userId: user.id,
+      category: insuranceCategory ?? 'protection',
+      paymentCycle: paymentCycle ?? 'monthly',
+      premiumPerCycleKrw: premKrw,
+      contractDate: normContractDate,
+      paymentStartDate: normPaymentStartDate,
+      paymentEndDate: normPaymentEndDate,
+      coverageEndDate: normCoverageEndDate,
+      sumInsuredKrw: sumKrw,
+      expectedReturnRateBp: rateBp,
+      isPaidUp: false,
+    }).onConflictDoUpdate({
+      target: insuranceDetails.assetId,
+      set: {
+        category: insuranceCategory ?? 'protection',
+        paymentCycle: paymentCycle ?? 'monthly',
+        premiumPerCycleKrw: premKrw,
+        contractDate: normContractDate,
+        paymentStartDate: normPaymentStartDate,
+        paymentEndDate: normPaymentEndDate,
+        coverageEndDate: normCoverageEndDate,
+        sumInsuredKrw: sumKrw,
+        expectedReturnRateBp: rateBp,
         updatedAt: new Date(),
       },
     })

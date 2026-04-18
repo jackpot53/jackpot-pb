@@ -296,7 +296,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
   const narrative = generateNarrative(portfolioChangeBps, totalDailyChangeKrw, topMovers, typeStats)
 
   return (
-    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+    <div className="rounded-2xl border border-border bg-card overflow-hidden" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* Header */}
       <button
         onClick={() => setOpen((v) => !v)}
@@ -363,7 +363,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                       </div>
                       <div className="text-right shrink-0">
                         <span className={cn(
-                          'text-xs font-mono font-semibold',
+                          'text-xs font-semibold',
                           up && 'text-red-400',
                           dn && 'text-blue-400',
                           !up && !dn && 'text-muted-foreground',
@@ -405,7 +405,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                         </p>
                       </div>
                       <span className={cn(
-                        'text-sm font-mono font-bold shrink-0',
+                        'text-sm font-bold shrink-0',
                         up && 'text-red-400',
                         dn && 'text-blue-400',
                         !up && !dn && 'text-muted-foreground',

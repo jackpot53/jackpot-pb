@@ -4,6 +4,7 @@
  * All money values are KRW integers (BIGINT convention, Phase 1 D-04).
  */
 import { computeCurrentSavingsValueKrw, generateVirtualRecurringBuys, type SavingsDetails, type SavingsBuy } from '@/lib/savings'
+import type { InsuranceDetailsRow } from '@/db/schema/insurance-details'
 
 export interface AssetHoldingInput {
   assetId: string
@@ -48,6 +49,8 @@ export interface AssetPerformance extends AssetHoldingInput {
   interestRateBp: number | null
   /** savings recurring 전용: 월납입 계획액 (KRW), 없으면 null */
   monthlyContributionKrw: number | null
+  /** 보험 전용: 계약 메타데이터, 없으면 null */
+  insuranceDetails: InsuranceDetailsRow | null
 }
 
 export interface PortfolioSummary {
@@ -83,8 +86,10 @@ export function computeAssetPerformance(params: {
   // savings 전용: 자동 이자 계산에 필요한 메타 + 납입 내역
   savingsDetails?: SavingsDetails | null
   savingsBuys?: SavingsBuy[]
+  // 보험 전용: 계약 메타데이터
+  insuranceDetails?: InsuranceDetailsRow | null
 }): AssetPerformance {
-  const { holding, currentPriceKrw, currentPriceUsd = null, currentFxRate = null, isStale, cachedAt, latestManualValuationKrw, dailyChangeBps = null, savingsDetails = null, savingsBuys = [] } = params
+  const { holding, currentPriceKrw, currentPriceUsd = null, currentFxRate = null, isStale, cachedAt, latestManualValuationKrw, dailyChangeBps = null, savingsDetails = null, savingsBuys = [], insuranceDetails = null } = params
 
   // 정기적금(recurring): 가입일 기준 월납입 × 경과월수로 항상 가상 납입 내역 생성
   // 실제 거래 내역 여부와 무관하게 계약 금액 기준으로 평가액 산출
@@ -154,6 +159,7 @@ export function computeAssetPerformance(params: {
       maturityDate: savingsDetails?.maturityDate ?? null,
       interestRateBp: savingsDetails?.interestRateBp ?? null,
       monthlyContributionKrw: savingsDetails?.monthlyContributionKrw ?? null,
+      insuranceDetails: null,
     }
   }
 
@@ -219,6 +225,7 @@ export function computeAssetPerformance(params: {
     maturityDate: savingsDetails?.maturityDate ?? null,
     interestRateBp: savingsDetails?.interestRateBp ?? null,
     monthlyContributionKrw: savingsDetails?.monthlyContributionKrw ?? null,
+    insuranceDetails: insuranceDetails ?? null,
   }
 }
 

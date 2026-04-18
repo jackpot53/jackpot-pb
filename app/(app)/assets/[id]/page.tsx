@@ -5,6 +5,7 @@ import { getTransactionsByAsset } from '@/db/queries/transactions'
 import { getValuationsByAsset } from '@/db/queries/manual-valuations'
 import { getHoldingByAssetId } from '@/db/queries/holdings'
 import { getSavingsDetailsFull } from '@/db/queries/savings'
+import { getInsuranceDetailsFull } from '@/db/queries/insurance'
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TransactionsTab } from '@/components/app/transactions-tab'
@@ -34,6 +35,11 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
         .map((t) => ({ transactionDate: t.transactionDate, amountKrw: t.pricePerUnit }))
     : []
 
+  // insurance 전용: 계약 메타
+  const insuranceDetailsFull = asset.assetType === 'insurance'
+    ? await getInsuranceDetailsFull(id)
+    : null
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -47,7 +53,7 @@ export default async function AssetDetailPage({ params }: { params: Promise<{ id
           <TabsTrigger value="transactions">거래내역</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
-          <OverviewTab asset={asset} valuations={valuations} holding={holding} savingsDetails={savingsDetailsFull} savingsBuys={savingsBuys} />
+          <OverviewTab asset={asset} valuations={valuations} holding={holding} savingsDetails={savingsDetailsFull} savingsBuys={savingsBuys} insuranceDetails={insuranceDetailsFull} />
         </TabsContent>
         <TabsContent value="transactions">
           <TransactionsTab asset={asset} transactions={txns} />

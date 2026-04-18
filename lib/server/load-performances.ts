@@ -2,6 +2,7 @@ import { cache } from 'react'
 import { getAssetsWithHoldings } from '@/db/queries/assets-with-holdings'
 import { getPriceCacheByTickers } from '@/db/queries/price-cache'
 import { getSavingsDetails, getSavingsBuys } from '@/db/queries/savings'
+import { getInsuranceDetails } from '@/db/queries/insurance'
 import { computeAssetPerformance, type AssetPerformance } from '@/lib/portfolio'
 import { timed, timedSync } from '@/lib/perf'
 
@@ -34,6 +35,12 @@ export const loadPerformances = cache(async (userId: string): Promise<{
     getSavingsDetails(savingsIds),
     getSavingsBuys(savingsIds),
   ]))
+
+  // insurance 전용: 계약 메타데이터 bulk 조회
+  const insuranceIds = assetsWithHoldings
+    .filter((a) => a.assetType === 'insurance')
+    .map((a) => a.assetId)
+  const insuranceDetailsMap = await timed('  insurance details', () => getInsuranceDetails(insuranceIds))
 
   const fxCacheRow = priceMap.get('USD_KRW')
   const currentFxRate = fxCacheRow ? fxCacheRow.priceKrw / 10000 : null
@@ -83,6 +90,7 @@ export const loadPerformances = cache(async (userId: string): Promise<{
             : null,
           savingsDetails: savingsDetailsMap.get(asset.assetId) ?? null,
           savingsBuys: savingsBuysMap.get(asset.assetId) ?? [],
+          insuranceDetails: insuranceDetailsMap.get(asset.assetId) ?? null,
         })
       )
     }

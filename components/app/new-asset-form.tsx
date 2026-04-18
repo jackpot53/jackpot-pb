@@ -259,6 +259,14 @@ const assetSchema = z.object({
   initialSurrenderValue: z.string().optional().nullable(),
   // Insurance-specific fields
   insuranceType: z.string().max(50).optional().nullable(),
+  insuranceCategory: z.enum(['protection', 'savings']).optional().nullable(),
+  paymentCycle: z.enum(['monthly', 'quarterly', 'yearly', 'lump_sum']).optional().nullable(),
+  premiumPerCycleKrw: z.string().optional().nullable(),
+  contractDate: z.string().optional().nullable(),
+  paymentEndDate: z.string().optional().nullable(),
+  coverageEndDate: z.string().optional().nullable(),
+  sumInsuredKrw: z.string().optional().nullable(),
+  expectedReturnRatePct: z.string().optional().nullable(),
   // Savings-specific fields
   savingsKind: z.enum(['term', 'recurring', 'free']).optional().nullable(),
   interestRatePct: z.string().optional().nullable(),
@@ -366,6 +374,9 @@ export function NewAssetForm({ onSubmit }: {
       initialQuantity: null, initialPricePerUnit: null,
       initialTransactionDate: new Date().toISOString().split('T')[0],
       initialExchangeRate: null, initialSurrenderValue: null,
+      insuranceType: null, insuranceCategory: null,
+      paymentCycle: null, premiumPerCycleKrw: null, contractDate: null,
+      paymentEndDate: null, coverageEndDate: null, sumInsuredKrw: null, expectedReturnRatePct: null,
       savingsKind: null, interestRatePct: null, depositStartDate: null,
       maturityDate: null, monthlyContributionKrw: null,
       compoundType: null, taxType: null, autoRenew: null,
@@ -383,6 +394,19 @@ export function NewAssetForm({ onSubmit }: {
   const ticker = form.watch('ticker')
   const notes = form.watch('notes')
   const savingsKind = form.watch('savingsKind')
+  const insuranceType = form.watch('insuranceType')
+  const insuranceCategory = form.watch('insuranceCategory')
+
+  // insuranceType → insuranceCategory 자동 세팅
+  useEffect(() => {
+    if (!insuranceType) return
+    const SAVINGS_TYPES = ['annuity', 'variable', 'savings_ins']
+    const derived = SAVINGS_TYPES.includes(insuranceType) ? 'savings' : 'protection'
+    if (insuranceCategory !== derived) {
+      form.setValue('insuranceCategory', derived)
+    }
+  }, [insuranceType])
+
   const isSearchable = (SEARCHABLE_TYPES.includes(assetType) && priceType === 'live') || assetType === 'insurance'
   const isAccountTypeable = ACCOUNT_TYPE_TYPES.includes(assetType)
   const showBrokerage = STOCK_ETF_TYPES.includes(assetType) && !!accountType
@@ -1306,17 +1330,241 @@ export function NewAssetForm({ onSubmit }: {
               </div>
             ) : assetType === 'insurance' ? (
               <div className="flex flex-col gap-3">
+                {/* 보장성 / 저축성 분기 표시 (자동 세팅, 수동 오버라이드 가능) */}
+                <FormField
+                  control={form.control}
+                  name="insuranceCategory"
+                  render={({ field }) => (
+                    <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                      <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                        <Shield className="h-3.5 w-3.5 shrink-0" />보험 성격
+                      </FormLabel>
+                      <div className="flex gap-2">
+                        {([['protection', '보장성', '종신/정기/실손/건강'], ['savings', '저축성', '연금/변액/저축보험']] as const).map(([val, label, desc]) => (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => field.onChange(val)}
+                            className={cn(
+                              'flex-1 rounded-lg border px-3 py-2.5 text-left transition-colors',
+                              field.value === val
+                                ? 'bg-indigo-500/20 border-indigo-400/60 text-indigo-300'
+                                : 'border-white/20 bg-white/[0.04] text-white/60 hover:border-white/40 hover:text-white/90 hover:bg-white/[0.08]',
+                            )}
+                          >
+                            <div className="text-xs font-semibold">{label}</div>
+                            <div className="text-[11px] opacity-70 mt-0.5">{desc}</div>
+                          </button>
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* 납입 주기 + 주기당 납입액 */}
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="paymentCycle"
+                    render={({ field }) => (
+                      <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                        <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                          <Repeat className="h-3.5 w-3.5 shrink-0" />납입 주기
+                        </FormLabel>
+                        <div className="grid grid-cols-2 gap-1">
+                          {([['monthly', '월납'], ['quarterly', '분기납'], ['yearly', '연납'], ['lump_sum', '일시납']] as const).map(([val, label]) => (
+                            <button
+                              key={val}
+                              type="button"
+                              onClick={() => field.onChange(val)}
+                              className={cn(
+                                'rounded-md border py-1.5 text-xs font-medium transition-colors',
+                                field.value === val
+                                  ? 'bg-indigo-500/20 border-indigo-400/60 text-indigo-300'
+                                  : 'border-white/20 bg-white/[0.04] text-white/50 hover:text-white/80 hover:bg-white/[0.08]',
+                              )}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="premiumPerCycleKrw"
+                    render={({ field }) => (
+                      <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                        <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                          <Banknote className="h-3.5 w-3.5 shrink-0" />주기당 납입액
+                        </FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 300000" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* 계약일 + 납입 시작일 */}
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="contractDate"
+                    render={({ field }) => (
+                      <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                        <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                          <Calendar className="h-3.5 w-3.5 shrink-0" />계약일
+                        </FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} value={field.value ?? ''} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="initialTransactionDate"
+                    render={({ field }) => (
+                      <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                        <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                          <Calendar className="h-3.5 w-3.5 shrink-0" />납입 시작일
+                        </FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} value={field.value ?? ''} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* 보장성 전용: 납입만료 + 보장만료 + 보험가입금액 */}
+                {insuranceCategory === 'protection' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField
+                        control={form.control}
+                        name="paymentEndDate"
+                        render={({ field }) => (
+                          <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                            <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                              <Calendar className="h-3.5 w-3.5 shrink-0" />납입 만료일
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} value={field.value ?? ''} />
+                            </FormControl>
+                            <p className="text-[11px] text-white/40">비우면 종신납</p>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="coverageEndDate"
+                        render={({ field }) => (
+                          <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                            <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                              <Calendar className="h-3.5 w-3.5 shrink-0" />보장 만료일
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} value={field.value ?? ''} />
+                            </FormControl>
+                            <p className="text-[11px] text-white/40">비우면 종신보장</p>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="sumInsuredKrw"
+                      render={({ field }) => (
+                        <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                          <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                            <ShieldCheck className="h-3.5 w-3.5 shrink-0" />보험가입금액 (선택)
+                          </FormLabel>
+                          <FormControl>
+                            <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 100000000 (사망보험금/진단금 등)" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+
+                {/* 저축성 전용: 만기일 + 납입만료 + 예상수익률 */}
+                {insuranceCategory === 'savings' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField
+                        control={form.control}
+                        name="coverageEndDate"
+                        render={({ field }) => (
+                          <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                            <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                              <Calendar className="h-3.5 w-3.5 shrink-0" />만기일
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} value={field.value ?? ''} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="paymentEndDate"
+                        render={({ field }) => (
+                          <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                            <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                              <Calendar className="h-3.5 w-3.5 shrink-0" />납입 만료일 (선택)
+                            </FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} value={field.value ?? ''} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="expectedReturnRatePct"
+                      render={({ field }) => (
+                        <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                          <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                            <TrendingUp className="h-3.5 w-3.5 shrink-0" />예상 공시이율 (%)
+                          </FormLabel>
+                          <FormControl>
+                            <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 3.5" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+
+                {/* 현재까지 납입 내역 (선택) */}
                 <FormField
                   control={form.control}
                   name="initialPricePerUnit"
                   render={({ field }) => (
                     <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
                       <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
-                        <Receipt className="h-3.5 w-3.5 shrink-0" />총납입보험료
+                        <Receipt className="h-3.5 w-3.5 shrink-0" />현재까지 총납입 보험료 (선택)
                       </FormLabel>
                       <FormControl>
                         <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 12000000" />
                       </FormControl>
+                      <p className="text-[11px] text-white/40">누적 납입액. 이후 납입은 월납 버튼으로 기록하세요.</p>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -1327,25 +1575,10 @@ export function NewAssetForm({ onSubmit }: {
                   render={({ field }) => (
                     <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
                       <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
-                        <Wallet className="h-3.5 w-3.5 shrink-0" />해지환급금
+                        <Wallet className="h-3.5 w-3.5 shrink-0" />현재 해지환급금 (선택)
                       </FormLabel>
                       <FormControl>
                         <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 10500000" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="initialTransactionDate"
-                  render={({ field }) => (
-                    <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
-                      <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
-                        <Calendar className="h-3.5 w-3.5 shrink-0" />납입 시작일
-                      </FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} value={field.value ?? ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
