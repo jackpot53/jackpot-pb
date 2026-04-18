@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { updateDailyHistory } from '@/lib/robo-advisor/ohlc-collector'
 import { updateUniverseRanks } from '@/lib/robo-advisor/market-cap'
+import { evaluateAllSignals } from '@/lib/robo-advisor/signals/evaluator'
 
 /**
  * 평일 장 마감 후 OHLC 증분 수집 + 시가총액 갱신 cron.
@@ -41,9 +42,12 @@ export async function GET(request: NextRequest) {
       console.error('[cron/ohlc-daily] updateUniverseRanks error:', err)
     }
 
-    // Step 3: evaluateAllSignals — signals 모듈 미구현, 추후 추가
-    // TODO: import { evaluateAllSignals } from '@/lib/robo-advisor/signals'
-    //       await evaluateAllSignals()
+    // Step 3: 시그널 평가 (전 종목 기술적 지표 계산 + DB upsert)
+    try {
+      await evaluateAllSignals()
+    } catch (err) {
+      console.error('[cron/ohlc-daily] evaluateAllSignals error:', err)
+    }
 
     const duration = Date.now() - start
 
