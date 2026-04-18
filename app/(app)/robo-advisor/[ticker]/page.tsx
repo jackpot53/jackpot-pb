@@ -140,9 +140,9 @@ async function StockAnalysisContent({ ticker }: { ticker: string }) {
           </div>
         </div>
 
-        <div className="relative flex flex-col gap-6">
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-6">
-            <div className="space-y-3 flex-1">
+        <div className="relative flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+            <div className="space-y-2 flex-1">
               <div className="flex items-center gap-1.5 text-emerald-400/70 text-xs font-semibold tracking-widest uppercase">
                 <TrendingUp className="h-3.5 w-3.5" />종목분석
               </div>
