@@ -49,26 +49,14 @@ export function RoboAdvisorAnalysisChart({
   useEffect(() => {
     if (!containerRef.current) return
 
+    const width = containerRef.current.clientWidth || 800
     const chart = createChart(containerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: '#ffffff' },
         textColor: '#333333',
       },
-      width: containerRef.current.clientWidth,
+      width,
       height,
-      timeScale: {
-        timeVisible: true,
-        secondsVisible: false,
-      },
-    })
-
-    chart.applyOptions({
-      leftPriceScale: {
-        mode: 2,
-      },
-      rightPriceScale: {
-        visible: true,
-      },
     })
 
     const candlesSeries = chart.addSeries('candlestick' as any, {

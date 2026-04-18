@@ -50,6 +50,13 @@
       "when": 1776541618000,
       "tag": "0030_add_insurance_compound_type",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1776514179576,
+      "tag": "0007_abandoned_inhumans",
+      "breakpoints": true
     }
   ]
 }

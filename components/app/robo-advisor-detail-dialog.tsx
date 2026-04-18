@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import {
   Dialog,
   DialogContent,
@@ -7,6 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import type { UniverseStockWithSignals, BacktestStats } from '@/db/queries/robo-advisor'
 import { cn } from '@/lib/utils'
 
@@ -61,7 +63,13 @@ function fmtWinRate(n: number | null | undefined): string {
 }
 
 export function RoboAdvisorDetailDialog({ stock, statsMap, onClose }: Props) {
+  const router = useRouter()
   if (!stock) return null
+
+  const handlePaperTrading = () => {
+    router.push('/paper-trading')
+    onClose()
+  }
 
   const triggeredSignals = stock.signals.filter((s) => s.triggered)
   const compositeSignal = stock.signals.find((s) => s.signalType === 'composite')
@@ -233,6 +241,14 @@ export function RoboAdvisorDetailDialog({ stock, statsMap, onClose }: Props) {
               ⚠️ 과거 데이터 기반 통계이며 투자 조언이 아닙니다. 모든 투자 결정은 본인의 판단과 책임 하에 이루어져야 합니다.
             </p>
           </div>
+
+          {/* 모의투자 버튼 */}
+          <Button
+            onClick={handlePaperTrading}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
+          >
+            모의투자로 시뮬레이션
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

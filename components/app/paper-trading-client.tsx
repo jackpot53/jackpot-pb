@@ -7,7 +7,9 @@ import { PaperTradingChart } from '@/components/app/paper-trading-chart'
 import { PaperTradingMetrics } from '@/components/app/paper-trading-metrics'
 import { PaperTradingTable } from '@/components/app/paper-trading-table'
 import { PaperTradingHeatmap } from '@/components/app/paper-trading-heatmap'
+import { PaperTradingPositionsTable } from '@/components/app/paper-trading-positions-table'
 import { Calendar } from 'lucide-react'
+import type { paperTradingPositions } from '@/db/schema/paper-trading-positions'
 
 type PeriodType = '1y' | '3y' | '5y' | 'all' | 'custom'
 
@@ -15,6 +17,8 @@ interface DateRange {
   startDate: string
   endDate: string
 }
+
+type Position = typeof paperTradingPositions.$inferSelect
 
 const PERIOD_OPTIONS = [
   { label: '1년', value: '1y' },
@@ -30,7 +34,7 @@ const formatDateToISO = (date: Date): string => {
   return date.toLocaleDateString('en-CA')
 }
 
-export function PaperTradingClient() {
+export function PaperTradingClient({ positions = [] }: { positions?: Position[] }) {
   const [period, setPeriod] = useState<PeriodType>('1y')
   const [customRange, setCustomRange] = useState<DateRange | null>(null)
   const [showDatePicker, setShowDatePicker] = useState(false)
@@ -141,6 +145,14 @@ export function PaperTradingClient() {
           초기자금: ₩{INITIAL_CAPITAL.toLocaleString('ko-KR')} | 기간: {dateRange.startDate} ~ {dateRange.endDate}
         </div>
       </div>
+
+      {/* 보유 포지션 */}
+      {positions.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-gray-900">보유 포지션</h2>
+          <PaperTradingPositionsTable positions={positions} />
+        </div>
+      )}
 
       {/* 메인 콘텐츠 */}
       <PaperTradingChart dateRange={dateRange} />

@@ -41,27 +41,24 @@ export function RoboAdvisorAiReport({
     setReport('')
 
     try {
-      const response = await fetch(
-        `/api/robo-advisor/${ticker}/analyze`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ticker,
-            stockName,
-            sector,
-            market,
-            currentPrice,
-            changePercent,
-            changeAmount,
-            marketCapKrw,
-            triggeredSignals,
-            backtestStats,
-          }),
+      const response = await fetch(`/api/robo-advisor/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-      )
+        body: JSON.stringify({
+          ticker,
+          stockName,
+          sector,
+          market,
+          currentPrice,
+          changePercent,
+          changeAmount,
+          marketCapKrw,
+          triggeredSignals,
+          backtestStats,
+        }),
+      })
 
       if (!response.ok) {
         throw new Error('Failed to fetch analysis')
