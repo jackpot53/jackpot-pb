@@ -54,6 +54,8 @@ export interface AssetPerformance extends AssetHoldingInput {
   insuranceDetails: InsuranceDetailsRow | null
   /** savings 전용: 복리 계산 방식 'simple' | 'monthly', 없으면 null */
   compoundType: CompoundType | null
+  /** savings/insurance 차트 데이터 (오늘 기준 실/미래 분리), 없으면 undefined */
+  chartData?: Array<{ date: string; value: number; projected: boolean }>
 }
 
 export interface PortfolioSummary {
