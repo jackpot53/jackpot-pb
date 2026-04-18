@@ -429,7 +429,15 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
               )
             })()}
           {isSavings && asset.interestRateBp != null && asset.interestRateBp > 0 && (
-            <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-emerald-400">연 {(asset.interestRateBp / 10000).toFixed(2)}%</span></>
+            <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-emerald-400">연 {(asset.interestRateBp / 10000).toFixed(2)}%</span>
+            {asset.compoundType && (
+              <span className="ml-1 text-xs px-1.5 py-0.5 rounded-md font-medium text-white" style={{
+                backgroundColor: asset.compoundType === 'simple' ? '#3b82f6' : '#10b981'
+              }}>
+                {asset.compoundType === 'simple' ? '단리' : '복리'}
+              </span>
+            )}
+            </>
           )}
           {isSavings && asset.initialTransactionDate && (
             <><span className="text-border/60">|</span><span className="tabular-nums"><span className="text-muted-foreground">가입일</span> <span className="font-medium text-foreground/90">{asset.initialTransactionDate.replace(/-/g, '.')}</span></span></>
