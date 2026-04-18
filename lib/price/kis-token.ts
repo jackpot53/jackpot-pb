@@ -48,6 +48,7 @@ async function refreshToken(appKey: string, appSecret: string): Promise<string> 
         appkey: appKey,
         appsecret: appSecret,
       }),
+      signal: AbortSignal.timeout(3_000),
     })
   } catch (err) {
     throw new KisTokenError(`KIS token fetch failed: ${err instanceof Error ? err.message : String(err)}`)

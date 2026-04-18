@@ -12,7 +12,7 @@ export async function fetchFinnhubQuote(ticker: string): Promise<{ priceUsdCents
   try {
     const res = await fetch(
       `https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(ticker)}&token=${encodeURIComponent(apiKey)}`,
-      { cache: 'no-store', signal: AbortSignal.timeout(5000) }
+      { cache: 'no-store', signal: AbortSignal.timeout(3_000) }
     )
     if (!res.ok) return null
     const data = await res.json()

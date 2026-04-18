@@ -13,7 +13,7 @@ export async function fetchFunetfNav(fundCode: string): Promise<{ price: number;
     const url = `https://www.funetf.co.kr/product/fund/view/${encodeURIComponent(fundCode)}`
     const res = await fetch(url, {
       cache: 'no-store',
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(3_000),
       headers: {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
         'Accept': 'text/html,application/xhtml+xml',

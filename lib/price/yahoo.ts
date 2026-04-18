@@ -19,7 +19,7 @@ export async function fetchYahooQuote(
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`
     const res = await fetch(url, {
       cache: 'no-store',
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(3_000),
       headers: {
         // Yahoo Finance blocks requests without a User-Agent
         'User-Agent': 'Mozilla/5.0',

@@ -30,7 +30,7 @@ async function kisGet(
       custtype: 'P',
       'Content-Type': 'application/json',
     },
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(3_000),
   })
 }
 

@@ -23,7 +23,7 @@ export async function fetchSparklineData(
     const res = await fetch(url, {
       next: { revalidate: 3600 },
       headers: { 'User-Agent': 'Mozilla/5.0' },
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(3_000),
     })
     if (!res.ok) return null
 

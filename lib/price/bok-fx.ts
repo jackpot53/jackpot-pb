@@ -27,7 +27,7 @@ export async function fetchBokFxRate(): Promise<number | null> {
       .replace(/-/g, '')
     const url = `https://ecos.bok.or.kr/api/StatisticSearch/${encodeURIComponent(apiKey)}/json/kr/1/1/${BOK_STAT_CODE}/D/${today}/${today}/${BOK_ITEM_CODE}`
 
-    const res = await fetch(url, { cache: 'no-store' })
+    const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(3_000) })
     if (!res.ok) return null
 
     const data = await res.json()
