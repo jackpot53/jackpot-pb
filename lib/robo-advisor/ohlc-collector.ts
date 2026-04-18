@@ -37,18 +37,17 @@ async function withConcurrency<T>(
   return results
 }
 
-/** KST 기준 어제 날짜를 'YYYY-MM-DD' 형식으로 반환 */
-function yesterdayKst(): string {
-  const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
-  d.setDate(d.getDate() - 1)
-  return d.toLocaleDateString('sv-SE')
+// KST = UTC+9, no DST. Use UTC offset arithmetic for deterministic date math.
+const KST_OFFSET_MS = 9 * 60 * 60 * 1000
+
+function nowKst(): Date {
+  return new Date(Date.now() + KST_OFFSET_MS)
 }
 
-/** KST 기준 N일 전 날짜를 'YYYY-MM-DD' 형식으로 반환 */
 function daysAgoKst(days: number): string {
-  const d = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
-  d.setDate(d.getDate() - days)
-  return d.toLocaleDateString('sv-SE')
+  const d = nowKst()
+  d.setUTCDate(d.getUTCDate() - days)
+  return d.toISOString().slice(0, 10)
 }
 
 /** data/kospi200-seed.json에서 유니버스 종목 로드 */
@@ -58,14 +57,18 @@ export async function loadUniverseSeed(): Promise<SeedEntry[]> {
   return JSON.parse(raw) as SeedEntry[]
 }
 
-/** KIS API에서 특정 ticker의 OHLC를 가져온다. ticker는 '005930.KS' 형식. */
+/**
+ * KIS API에서 특정 ticker의 OHLC를 가져온다. ticker는 '005930.KS' 형식.
+ * Returns null on API failure (auth error, HTTP error, insufficient data).
+ * Returns [] only for a genuinely empty date range.
+ */
 async function fetchOhlcFromKis(
   ticker: string,
   startDate: string,
   endDate: string,
-): Promise<OhlcPoint[]> {
+): Promise<OhlcPoint[] | null> {
   const result = await fetchKisOhlc(ticker, 'stock_kr', startDate, endDate)
-  if (result === null) return []
+  if (result === null) return null
 
   return result.map((p) => ({
     date: p.date,
@@ -79,7 +82,7 @@ async function fetchOhlcFromKis(
 
 /**
  * 특정 ticker의 OHLC를 KIS에서 수집해 price_history에 upsert.
- * inserted count (upserted row 수) 반환.
+ * inserted count (upserted row 수) 반환. API 실패 시 throws.
  */
 export async function collectOhlcForTicker(
   ticker: string,
@@ -87,6 +90,7 @@ export async function collectOhlcForTicker(
   endDate: string,
 ): Promise<number> {
   const points = await fetchOhlcFromKis(ticker, startDate, endDate)
+  if (points === null) throw new Error(`KIS OHLC fetch returned null for ${ticker}`)
   if (points.length === 0) return 0
 
   const rows: OhlcRow[] = points.map((p) => ({
@@ -110,7 +114,7 @@ export async function collectOhlcForTicker(
 export async function collectAllOhlc(
   range: '3y' | '5d',
 ): Promise<{ success: number; failed: number }> {
-  const endDate = yesterdayKst()
+  const endDate = daysAgoKst(1)
   // '3y' → 3년 전, '5d' → 7일 전 (5 거래일 커버)
   const startDate = range === '3y' ? daysAgoKst(365 * 3) : daysAgoKst(7)
 
