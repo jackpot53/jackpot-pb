@@ -1,7 +1,9 @@
 import { db } from '@/db'
 import { insuranceDetails } from '@/db/schema/insurance-details'
-import { inArray, eq } from 'drizzle-orm'
+import { transactions } from '@/db/schema/transactions'
+import { inArray, eq, and } from 'drizzle-orm'
 import type { InsuranceDetailsRow } from '@/db/schema/insurance-details'
+import type { InsuranceBuy } from '@/lib/insurance'
 
 export type { InsuranceDetailsRow }
 
@@ -34,6 +36,45 @@ export async function getInsuranceDetails(
   const map = new Map<string, InsuranceDetailsRow>()
   for (const row of rows) {
     map.set(row.assetId, row)
+  }
+  return map
+}
+
+/**
+ * 복수 보험 자산의 거래 내역을 bulk 조회 (buy 거래만)
+ * @returns Map<assetId, InsuranceBuy[]>
+ */
+export async function getInsuranceBuys(
+  assetIds: string[]
+): Promise<Map<string, InsuranceBuy[]>> {
+  if (assetIds.length === 0) return new Map()
+
+  const rows = await db
+    .select({
+      assetId: transactions.assetId,
+      transactionDate: transactions.transactionDate,
+      amountKrw: transactions.pricePerUnit,
+    })
+    .from(transactions)
+    .where(
+      and(
+        inArray(transactions.assetId, assetIds),
+        eq(transactions.type, 'buy'),
+        eq(transactions.isVoided, false)
+      )
+    )
+    .orderBy(transactions.transactionDate)
+
+  const map = new Map<string, InsuranceBuy[]>()
+  for (const row of rows) {
+    const key = row.assetId
+    if (!map.has(key)) {
+      map.set(key, [])
+    }
+    map.get(key)!.push({
+      transactionDate: row.transactionDate.toISOString().split('T')[0],
+      amountKrw: row.amountKrw,
+    })
   }
   return map
 }
