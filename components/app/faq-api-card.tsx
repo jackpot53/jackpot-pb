@@ -41,6 +41,15 @@ export function FaqApiCard() {
           </p>
         </div>
 
+        <div>
+          <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-orange-500/15 px-2.5 py-1 text-xs font-semibold text-orange-400">
+            💰 암호화폐
+          </div>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            <SentenceBreak text="암호화폐는 Finnhub API에서 달러(USD) 단위로 조회한 후, 시스템이 자동으로 원화로 변환합니다. 암호화폐 가격은 24시간 실시간으로 변동하며, 가격 변동이 매우 크므로 자주 갱신됩니다." />
+          </p>
+        </div>
+
         <div className="rounded-lg bg-blue-500/10 p-3 text-xs leading-relaxed text-blue-300">
           <p>
             <span className="font-semibold text-blue-400">💡 참고</span> <SentenceBreak text="5분마다 자동 갱신되어 포트폴리오에 실시간 반영됩니다." />
