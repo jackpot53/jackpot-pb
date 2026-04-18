@@ -65,7 +65,7 @@ export default async function AssetsPage() {
             <div className="flex items-center gap-1.5 text-[#FEE500]/70 text-xs font-semibold tracking-widest uppercase">
               <Wallet className="h-3.5 w-3.5" />자산 관리
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">내 포트폴리오</h1>
+            <h1 className="text-3xl font-bold tracking-tight leading-tight" style={{ fontFamily: "'Sunflower', sans-serif" }}>내 포트폴리오</h1>
             <p className="text-white/60 text-sm">
               보유 자산을 등록하고 <span className="text-[#FEE500] font-medium">실시간 수익률을 추적</span>합니다
             </p>

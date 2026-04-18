@@ -15,7 +15,7 @@ export default function UpdatesPage() {
             <div className="flex items-center gap-1.5 text-indigo-400/70 text-xs font-semibold tracking-widest uppercase">
               <History className="h-3.5 w-3.5" />업데이트
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">업데이트 내역</h1>
+            <h1 className="text-3xl font-bold tracking-tight leading-tight" style={{ fontFamily: "'Sunflower', sans-serif" }}>업데이트 내역</h1>
             <p className="text-white/60 text-sm">
               최신 기능과 개선사항을 확인하세요
             </p>

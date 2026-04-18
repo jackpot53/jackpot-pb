@@ -15,7 +15,7 @@ export default function HelpPage() {
             <div className="flex items-center gap-1.5 text-cyan-400/70 text-xs font-semibold tracking-widest uppercase">
               <HelpCircle className="h-3.5 w-3.5" />도움말
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">자주 묻는 질문</h1>
+            <h1 className="text-3xl font-bold tracking-tight leading-tight" style={{ fontFamily: "'Sunflower', sans-serif" }}>자주 묻는 질문</h1>
             <p className="text-white/60 text-sm">
               jackpot을 사용하는 방법을 알아봅시다
             </p>
