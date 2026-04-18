@@ -65,11 +65,15 @@ export async function fetchSparklineData(
 
 const KIS_ASSET_TYPES = new Set(['stock_kr', 'etf_kr', 'stock_us', 'etf_us'])
 
-// Converts a range string (e.g. '1mo', '3mo', '1y') to a KST start date string.
+const RANGE_DAYS: Record<string, number> = { '1mo': 30, '3mo': 90, '6mo': 180, '1y': 365 }
+
+// Converts a range string to a KST start date. Materialises "today" in KST first
+// to avoid UTC/KST boundary off-by-one when the server is in UTC.
 function rangeToStartDate(range: string): string {
-  const days = range === '3mo' ? 90 : range === '1y' ? 365 : 30
-  const d = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-  return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' })
+  const days = RANGE_DAYS[range] ?? 30
+  const nowKst = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+  nowKst.setDate(nowKst.getDate() - days)
+  return nowKst.toLocaleDateString('sv-SE')
 }
 
 function todayKst(): string {
