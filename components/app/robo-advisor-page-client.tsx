@@ -125,7 +125,20 @@ const StockRow = ({
           }}
         />
       )}
-      <div className="relative z-10 flex flex-col items-start gap-1 max-w-[140px]">
+      <div className="relative z-10 flex flex-col items-start gap-0.5 max-w-[140px]">
+        {hasSignal && (
+          <div className="flex items-center gap-0.75">
+            {signalCount <= 5 ? (
+              Array.from({ length: signalCount }).map((_, i) => (
+                <div key={i} className="w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0" />
+              ))
+            ) : (
+              <div className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-400/20 border border-yellow-400/30 text-yellow-300 font-semibold">
+                +{signalCount}
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex items-center gap-1.5 w-full">
           {(displayRank !== undefined || stock.rank !== null) && (
             <span className="text-[11px] text-white/40 font-normal tabular-nums min-w-[18px] shrink-0 text-center">
@@ -142,19 +155,6 @@ const StockRow = ({
               }}
             />
           </div>
-          {hasSignal && (
-            <div className="flex items-center gap-0.75">
-              {signalCount <= 5 ? (
-                Array.from({ length: signalCount }).map((_, i) => (
-                  <div key={i} className="w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0" />
-                ))
-              ) : (
-                <div className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-400/20 border border-yellow-400/30 text-yellow-300 font-semibold">
-                  +{signalCount}
-                </div>
-              )}
-            </div>
-          )}
           <span className="text-[13px] font-medium text-white/90 group-hover:text-white transition-colors truncate">
             {stock.name}
           </span>
