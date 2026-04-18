@@ -50,7 +50,7 @@ export default async function PaperTradingPage() {
           <div className="flex items-center gap-1.5 text-blue-400/70 text-xs font-semibold tracking-widest uppercase mb-2">
             <TrendingUp className="h-3.5 w-3.5" />모의투자
           </div>
-          <h1 className="text-3xl font-bold tracking-tight leading-tight mb-2">모의투자 백테스팅</h1>
+          <h1 className="text-3xl font-bold tracking-tight leading-tight mb-2" style={{ fontFamily: "'Sunflower', sans-serif" }}>모의투자 백테스팅</h1>
           <p className="text-white/60 text-sm">
             로보어드바이저 포트폴리오의 <span className="text-blue-400 font-medium">역사적 성과를 분석</span>합니다
           </p>
