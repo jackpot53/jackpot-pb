@@ -128,15 +128,17 @@ export function computeAssetPerformance(params: {
     insuranceDetails.expectedReturnRateBp > 0
 
   if (isInsuranceAuto && insuranceDetails) {
+    const formatDate = (date: Date | string | null): string | null => {
+      if (!date) return null
+      if (typeof date === 'string') return date
+      return date.toISOString().split('T')[0]
+    }
+
     const autoValue = computeCurrentInsuranceValueKrw({
       buys: insuranceBuys,
       expectedReturnRateBp: insuranceDetails.expectedReturnRateBp!,
-      paymentStartDate: insuranceDetails.paymentStartDate
-        ? insuranceDetails.paymentStartDate.toISOString().split('T')[0]
-        : null,
-      paymentEndDate: insuranceDetails.paymentEndDate
-        ? insuranceDetails.paymentEndDate.toISOString().split('T')[0]
-        : null,
+      paymentStartDate: formatDate(insuranceDetails.paymentStartDate),
+      paymentEndDate: formatDate(insuranceDetails.paymentEndDate),
       compoundType: insuranceDetails.compoundType as CompoundType,
       paymentCycle: insuranceDetails.paymentCycle as 'monthly' | 'quarterly' | 'yearly' | 'lump_sum',
       premiumPerCycleKrw: insuranceDetails.premiumPerCycleKrw ?? null,
