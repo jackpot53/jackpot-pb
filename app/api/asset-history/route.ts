@@ -79,7 +79,11 @@ export async function GET(request: NextRequest) {
     const formatDate = (date: Date | string | null): string | null => {
       if (!date) return null
       if (typeof date === 'string') return date
-      return date.toISOString().split('T')[0]
+      // 로컬 날짜 기준 (UTC 변환 없음)
+      const y = date.getFullYear()
+      const m = String(date.getMonth() + 1).padStart(2, '0')
+      const d = String(date.getDate()).padStart(2, '0')
+      return `${y}-${m}-${d}`
     }
 
     // 일시납 보험: buys가 없으면 paymentStartDate에 totalCostKrw 만큼의 거래 생성
