@@ -8,7 +8,7 @@ import {
   TrendingUp, Globe, BarChart2, BarChart3, Bitcoin, Briefcase, Landmark, Building2,
   Layers, Tag, Hash, Wallet, MessageSquare, Package, Receipt, Calendar,
   Coins, Info, Shield, PiggyBank, Heart, Store, Banknote, DollarSign, ArrowLeftRight, CreditCard, ShieldCheck, Gem,
-  Check, Users, Percent, Star, Leaf, RefreshCw, Minus, Lock, Repeat, Shuffle, Home, ParkingCircle, Globe2,
+  Check, Users, Percent, Star, Leaf, RefreshCw, Minus, Lock, Repeat, Shuffle, Home, ParkingCircle, Globe2, Clock, Zap,
   type LucideIcon,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -888,14 +888,14 @@ export function NewAssetForm({ onSubmit }: {
                   {assetType === 'insurance' && (
                     <div className="grid grid-cols-4 gap-1.5">
                       {([
-                        ['종신보험', Shield,      'text-violet-400', 'whole_life' ],
-                        ['정기보험', Calendar,    'text-blue-400',   'term_life'  ],
-                        ['연금보험', TrendingUp,  'text-emerald-400','annuity'    ],
-                        ['변액보험', BarChart2,   'text-orange-400', 'variable'   ],
-                        ['저축보험', Banknote,    'text-cyan-400',   'savings_ins'],
-                        ['실손보험', Heart,       'text-rose-400',   'actual_loss'],
-                        ['건강보험', ShieldCheck, 'text-pink-400',   'health'     ],
-                      ] as const).map(([label, Icon, iconColor, typeVal]) => {
+                        ['종신보험', Shield,      'text-violet-400', 'bg-violet-500/20', 'whole_life' ],
+                        ['정기보험', Calendar,    'text-blue-400',   'bg-blue-500/20',   'term_life'  ],
+                        ['연금보험', TrendingUp,  'text-emerald-400','bg-emerald-500/20','annuity'    ],
+                        ['변액보험', BarChart2,   'text-orange-400', 'bg-orange-500/20', 'variable'   ],
+                        ['저축보험', Banknote,    'text-cyan-400',   'bg-cyan-500/20',   'savings_ins'],
+                        ['실손보험', Heart,       'text-rose-400',   'bg-rose-500/20',   'actual_loss'],
+                        ['건강보험', ShieldCheck, 'text-pink-400',   'bg-pink-500/20',   'health'     ],
+                      ] as const).map(([label, Icon, iconColor, iconBg, typeVal]) => {
                         const active = form.watch('insuranceType') === typeVal
                         return (
                           <button
@@ -903,13 +903,18 @@ export function NewAssetForm({ onSubmit }: {
                             type="button"
                             onClick={() => form.setValue('insuranceType', active ? null : typeVal)}
                             className={cn(
-                              'flex flex-col items-center gap-1.5 rounded-lg border py-2.5 text-xs font-medium transition-colors duration-100 cursor-pointer',
+                              'flex flex-col items-center gap-2 rounded-lg border py-3 px-2 text-xs font-medium transition-colors duration-100 cursor-pointer',
                               active
                                 ? 'bg-indigo-500/20 border-indigo-400/60 text-indigo-300'
                                 : 'border-white/20 bg-white/[0.04] text-white/60 hover:border-white/40 hover:text-white/90 hover:bg-white/[0.08]',
                             )}
                           >
-                            <Icon className={cn('h-3.5 w-3.5', active ? 'text-indigo-300' : iconColor)} />
+                            <div className={cn(
+                              'flex items-center justify-center rounded-lg w-9 h-9 transition-colors',
+                              active ? 'bg-indigo-400/30 text-indigo-300' : `${iconBg} ${iconColor}`
+                            )}>
+                              <Icon className="h-5 w-5" />
+                            </div>
                             {label}
                           </button>
                         )
@@ -1340,20 +1345,32 @@ export function NewAssetForm({ onSubmit }: {
                         <Shield className="h-3.5 w-3.5 shrink-0" />보험 성격
                       </FormLabel>
                       <div className="flex gap-2">
-                        {([['protection', '보장성', '종신/정기/실손/건강'], ['savings', '저축성', '연금/변액/저축보험']] as const).map(([val, label, desc]) => (
+                        {([['protection', '보장성', '종신/정기/실손/건강', ShieldCheck], ['savings', '저축성', '연금/변액/저축보험', PiggyBank]] as const).map(([val, label, desc, Icon]) => (
                           <button
                             key={val}
                             type="button"
                             onClick={() => field.onChange(val)}
                             className={cn(
-                              'flex-1 rounded-lg border px-3 py-2.5 text-left transition-colors',
+                              'flex-1 rounded-lg border px-3 py-2.5 transition-colors flex flex-col items-center text-center',
                               field.value === val
-                                ? 'bg-indigo-500/20 border-indigo-400/60 text-indigo-300'
-                                : 'border-white/20 bg-white/[0.04] text-white/60 hover:border-white/40 hover:text-white/90 hover:bg-white/[0.08]',
+                                ? 'bg-indigo-500/20 border-indigo-400/60'
+                                : 'border-white/20 bg-white/[0.04] hover:border-white/40 hover:bg-white/[0.08]',
                             )}
                           >
-                            <div className="text-xs font-semibold">{label}</div>
-                            <div className="text-[11px] opacity-70 mt-0.5">{desc}</div>
+                            <div className="flex items-center justify-center gap-2 mb-1">
+                              <Icon className={cn(
+                                'h-4 w-4 shrink-0',
+                                field.value === val ? 'text-indigo-300' : 'text-white/60'
+                              )} />
+                              <div className={cn(
+                                'text-xs font-semibold',
+                                field.value === val ? 'text-indigo-300' : 'text-white/60'
+                              )}>{label}</div>
+                            </div>
+                            <div className={cn(
+                              'text-[11px] opacity-70',
+                              field.value === val && 'opacity-100'
+                            )}>{desc}</div>
                           </button>
                         ))}
                       </div>
@@ -1362,53 +1379,42 @@ export function NewAssetForm({ onSubmit }: {
                   )}
                 />
 
-                {/* 납입 주기 + 주기당 납입액 */}
-                <div className="grid grid-cols-2 gap-3">
-                  <FormField
-                    control={form.control}
-                    name="paymentCycle"
-                    render={({ field }) => (
-                      <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
-                        <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
-                          <Repeat className="h-3.5 w-3.5 shrink-0" />납입 주기
-                        </FormLabel>
-                        <div className="grid grid-cols-2 gap-1">
-                          {([['monthly', '월납'], ['quarterly', '분기납'], ['yearly', '연납'], ['lump_sum', '일시납']] as const).map(([val, label]) => (
-                            <button
-                              key={val}
-                              type="button"
-                              onClick={() => field.onChange(val)}
-                              className={cn(
-                                'rounded-md border py-1.5 text-xs font-medium transition-colors',
-                                field.value === val
-                                  ? 'bg-indigo-500/20 border-indigo-400/60 text-indigo-300'
-                                  : 'border-white/20 bg-white/[0.04] text-white/50 hover:text-white/80 hover:bg-white/[0.08]',
-                              )}
-                            >
-                              {label}
-                            </button>
-                          ))}
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="premiumPerCycleKrw"
-                    render={({ field }) => (
-                      <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
-                        <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
-                          <Banknote className="h-3.5 w-3.5 shrink-0" />주기당 납입액
-                        </FormLabel>
-                        <FormControl>
-                          <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 300000" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                {/* 납입 주기 */}
+                <FormField
+                  control={form.control}
+                  name="paymentCycle"
+                  render={({ field }) => (
+                    <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                      <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                        <Repeat className="h-3.5 w-3.5 shrink-0" />납입 주기
+                      </FormLabel>
+                      <div className="grid grid-cols-4 gap-1">
+                        {([
+                          ['monthly', '월납', Calendar, 'text-blue-400'],
+                          ['quarterly', '분기납', Repeat, 'text-emerald-400'],
+                          ['yearly', '연납', Clock, 'text-orange-400'],
+                          ['lump_sum', '일시납', Zap, 'text-yellow-400'],
+                        ] as const).map(([val, label, Icon, iconColor]) => (
+                          <button
+                            key={val}
+                            type="button"
+                            onClick={() => field.onChange(val)}
+                            className={cn(
+                              'rounded-md border py-1.5 text-xs font-medium transition-colors flex items-center justify-center gap-1',
+                              field.value === val
+                                ? 'bg-indigo-500/20 border-indigo-400/60 text-indigo-300'
+                                : 'border-white/20 bg-white/[0.04] text-white/50 hover:text-white/80 hover:bg-white/[0.08]',
+                            )}
+                          >
+                            <Icon className={cn('h-3 w-3 shrink-0', field.value === val ? 'text-indigo-300' : iconColor)} />
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {/* 계약일 + 납입 시작일 */}
                 <div className="grid grid-cols-2 gap-3">
@@ -1534,56 +1540,102 @@ export function NewAssetForm({ onSubmit }: {
                         )}
                       />
                     </div>
-                    <FormField
-                      control={form.control}
-                      name="expectedReturnRatePct"
-                      render={({ field }) => (
-                        <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
-                          <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
-                            <TrendingUp className="h-3.5 w-3.5 shrink-0" />예상 공시이율 (%)
-                          </FormLabel>
-                          <FormControl>
-                            <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 3.5" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                    <div className="grid grid-cols-3 gap-3">
+                      {/* 일시납: 일시 납입액 / 주기적 납부: 주기당 납입액 */}
+                      {form.watch('paymentCycle') === 'lump_sum' ? (
+                        <FormField
+                          control={form.control}
+                          name="initialPricePerUnit"
+                          render={({ field }) => (
+                            <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                              <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                                <Receipt className="h-3.5 w-3.5 shrink-0" />일시 납입액
+                              </FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 50000000" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      ) : (
+                        <FormField
+                          control={form.control}
+                          name="premiumPerCycleKrw"
+                          render={({ field }) => (
+                            <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                              <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                                <Banknote className="h-3.5 w-3.5 shrink-0" />주기당 납입액
+                              </FormLabel>
+                              <FormControl>
+                                <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 300000" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       )}
-                    />
+                      {/* 예상 공시이율 */}
+                      <FormField
+                        control={form.control}
+                        name="expectedReturnRatePct"
+                        render={({ field }) => (
+                          <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                            <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                              <TrendingUp className="h-3.5 w-3.5 shrink-0" />예상 공시이율 (%)
+                            </FormLabel>
+                            <FormControl>
+                              <div className="flex gap-2 items-center">
+                                <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 3.5" className="flex-1" />
+                                <div className="flex gap-1 shrink-0">
+                                  {([
+                                    ['simple', '단리', Minus, 'text-orange-400'],
+                                    ['monthly', '복리', TrendingUp, 'text-emerald-400'],
+                                  ] as const).map(([type, label, Icon, iconColor]) => {
+                                    const active = form.watch('compoundType') === type
+                                    return (
+                                      <button
+                                        key={type}
+                                        type="button"
+                                        onClick={() => form.setValue('compoundType', active ? null : type)}
+                                        className={cn(
+                                          'rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap flex items-center gap-1',
+                                          active
+                                            ? 'bg-indigo-500/20 border-indigo-400/60 text-indigo-300'
+                                            : 'border-white/20 bg-white/[0.04] text-white/50 hover:text-white/80 hover:bg-white/[0.08]',
+                                        )}
+                                      >
+                                        <Icon className={cn('h-3 w-3 shrink-0', active ? 'text-indigo-300' : iconColor)} />
+                                        {label}
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      {/* 현재 해지환급금 */}
+                      <FormField
+                        control={form.control}
+                        name="initialSurrenderValue"
+                        render={({ field }) => (
+                          <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
+                            <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
+                              <Wallet className="h-3.5 w-3.5 shrink-0" />현재 해지환급금 (선택)
+                            </FormLabel>
+                            <FormControl>
+                              <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 10500000" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </>
                 )}
-
-                {/* 현재까지 납입 내역 (선택) */}
-                <FormField
-                  control={form.control}
-                  name="initialPricePerUnit"
-                  render={({ field }) => (
-                    <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
-                      <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
-                        <Receipt className="h-3.5 w-3.5 shrink-0" />현재까지 총납입 보험료 (선택)
-                      </FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 12000000" />
-                      </FormControl>
-                      <p className="text-[11px] text-white/40">누적 납입액. 이후 납입은 월납 버튼으로 기록하세요.</p>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="initialSurrenderValue"
-                  render={({ field }) => (
-                    <FormItem className="rounded-xl border border-white/40 bg-white/[0.05] p-4 flex flex-col gap-2">
-                      <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground/80">
-                        <Wallet className="h-3.5 w-3.5 shrink-0" />현재 해지환급금 (선택)
-                      </FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 10500000" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
             ) : (
               <div className="flex flex-col gap-3">
