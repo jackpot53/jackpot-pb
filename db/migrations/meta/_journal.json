@@ -64,6 +64,13 @@
       "when": 1776533501526,
       "tag": "0008_lazy_masked_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1776533557445,
+      "tag": "0031_add_kis_oauth_tokens",
+      "breakpoints": true
     }
   ]
 }
