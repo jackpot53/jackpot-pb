@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Search, TrendingUp, BarChart3, ArrowUpDown, Layers,
   Cpu, Landmark, Car, Pill, FlaskConical, Building2, Wifi,
@@ -175,6 +176,7 @@ const StockRow = ({
 }
 
 export function RoboAdvisorPageClient({ universe, statsMap }: Props) {
+  const router = useRouter()
   const [filter, setFilter] = useState<FilterTab>('sector')
   const [sort, setSort] = useState<SortKey>('marketcap')
   const [search, setSearch] = useState('')
@@ -398,7 +400,13 @@ export function RoboAdvisorPageClient({ universe, statsMap }: Props) {
                         displayRank={filter === 'top200' ? realRank : undefined}
                         winRate={undefined}
                         highlightSignal={true}
-                        onClick={() => setSelectedStock(stock)}
+                        onClick={() => {
+                          if (stock.signals.some(s => s.triggered)) {
+                            router.push(`/robo-advisor/${stock.ticker}`)
+                          } else {
+                            setSelectedStock(stock)
+                          }
+                        }}
                       />
                     )
                   })}
@@ -418,7 +426,13 @@ export function RoboAdvisorPageClient({ universe, statsMap }: Props) {
                   displayRank={undefined}
                   winRate={getPrimaryWinRate(stock)}
                   highlightSignal={false}
-                  onClick={() => setSelectedStock(stock)}
+                  onClick={() => {
+                    if (stock.signals.some(s => s.triggered)) {
+                      router.push(`/robo-advisor/${stock.ticker}`)
+                    } else {
+                      setSelectedStock(stock)
+                    }
+                  }}
                 />
               </div>
             )

@@ -18,6 +18,14 @@ export type UniverseStockWithSignals = UniverseStock & {
   changeAmount: number | null
 }
 
+export const getUniverseStock = async (ticker: string): Promise<UniverseStock | null> => {
+  const result = await db
+    .select()
+    .from(universeStocks)
+    .where(and(eq(universeStocks.ticker, ticker), eq(universeStocks.isActive, true)))
+  return result[0] ?? null
+}
+
 export const getUniverse = cache(async (): Promise<UniverseStock[]> => {
   return db
     .select()
@@ -140,6 +148,14 @@ export const getBacktestStatsMap = cache(
     return map
   },
 )
+
+export const getStockSignals = async (ticker: string): Promise<Signal[]> => {
+  return db
+    .select()
+    .from(signals)
+    .where(eq(signals.ticker, ticker))
+    .orderBy(signals.signalType)
+}
 
 type UpsertStockInput = {
   ticker: string
