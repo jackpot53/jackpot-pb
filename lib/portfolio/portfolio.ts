@@ -4,6 +4,7 @@
  * All money values are KRW integers (BIGINT convention, Phase 1 D-04).
  */
 import { computeCurrentSavingsValueKrw, generateVirtualRecurringBuys, type CompoundType, type SavingsDetails, type SavingsBuy } from '@/lib/savings'
+import { computeCurrentInsuranceValueKrw, type InsuranceBuy } from '@/lib/insurance'
 import type { InsuranceDetailsRow } from '@/db/schema/insurance-details'
 
 export interface AssetHoldingInput {
@@ -88,10 +89,11 @@ export function computeAssetPerformance(params: {
   // savings 전용: 자동 이자 계산에 필요한 메타 + 납입 내역
   savingsDetails?: SavingsDetails | null
   savingsBuys?: SavingsBuy[]
-  // 보험 전용: 계약 메타데이터
+  // 보험 전용: 계약 메타데이터 + 납입 내역
   insuranceDetails?: InsuranceDetailsRow | null
+  insuranceBuys?: InsuranceBuy[]
 }): AssetPerformance {
-  const { holding, currentPriceKrw, currentPriceUsd = null, currentFxRate = null, isStale, cachedAt, latestManualValuationKrw, dailyChangeBps = null, savingsDetails = null, savingsBuys = [], insuranceDetails = null } = params
+  const { holding, currentPriceKrw, currentPriceUsd = null, currentFxRate = null, isStale, cachedAt, latestManualValuationKrw, dailyChangeBps = null, savingsDetails = null, savingsBuys = [], insuranceDetails = null, insuranceBuys = [] } = params
 
   // 정기적금(recurring): 가입일 기준 월납입 × 경과월수로 항상 가상 납입 내역 생성
   // 실제 거래 내역 여부와 무관하게 계약 금액 기준으로 평가액 산출
@@ -115,6 +117,56 @@ export function computeAssetPerformance(params: {
     effectiveBuys !== savingsBuys && effectiveBuys.length > 0
       ? effectiveBuys.reduce((s, b) => s + b.amountKrw, 0)
       : holding.totalCostKrw
+
+  // 보험 자동계산: 이자율 기반으로 경과일수 × 이자를 각 납입건별 합산.
+  // latestManualValuationKrw(실지급액 덮어쓰기)가 있으면 자동계산을 무시.
+  const isInsuranceAuto =
+    holding.assetType === 'insurance' &&
+    insuranceDetails != null &&
+    insuranceDetails.category === 'savings' &&
+    insuranceDetails.expectedReturnRateBp != null &&
+    insuranceDetails.expectedReturnRateBp > 0
+
+  if (isInsuranceAuto && insuranceDetails) {
+    const autoValue = computeCurrentInsuranceValueKrw({
+      buys: insuranceBuys,
+      expectedReturnRateBp: insuranceDetails.expectedReturnRateBp!,
+      paymentStartDate: insuranceDetails.paymentStartDate
+        ? insuranceDetails.paymentStartDate.toISOString().split('T')[0]
+        : null,
+      paymentEndDate: insuranceDetails.paymentEndDate
+        ? insuranceDetails.paymentEndDate.toISOString().split('T')[0]
+        : null,
+      compoundType: insuranceDetails.compoundType as CompoundType,
+      paymentCycle: insuranceDetails.paymentCycle as 'monthly' | 'quarterly' | 'yearly' | 'lump_sum',
+      premiumPerCycleKrw: insuranceDetails.premiumPerCycleKrw ?? null,
+    })
+    const currentValueKrw = latestManualValuationKrw ?? autoValue
+    const returnPct =
+      holding.totalCostKrw > 0
+        ? ((currentValueKrw - holding.totalCostKrw) / holding.totalCostKrw) * 100
+        : 0
+    return {
+      ...holding,
+      currentPriceKrw: currentValueKrw,
+      currentPriceUsd: null,
+      currentValueKrw,
+      returnPct,
+      stockReturnPct: null,
+      fxReturnPct: null,
+      currentFxRate: null,
+      isStale: false,
+      cachedAt: null,
+      dailyChangeBps: null,
+      missingValuation: false,
+      initialTransactionDate: null,
+      maturityDate: null,
+      interestRateBp: null,
+      monthlyContributionKrw: null,
+      insuranceDetails,
+      compoundType: insuranceDetails.compoundType as CompoundType,
+    }
+  }
 
   // savings 자동계산: 이자율 기반으로 경과일수 × 이자를 각 납입건별 합산.
   // latestManualValuationKrw(실지급액 덮어쓰기)가 있으면 자동계산을 무시.
