@@ -23,6 +23,13 @@ const FAQS = [
     color: 'bg-green-500',
     renderAnswer: true,
   },
+  {
+    id: 6,
+    question: '시장동향은 어디서 조회하나요?',
+    answer: '시장동향은 Naver Finance와 Yahoo Finance에서 스크래핑/API로 조회합니다.',
+    color: 'bg-cyan-500',
+    renderAnswer: true,
+  },
 ]
 
 export default function HelpPage() {
@@ -60,7 +67,7 @@ export default function HelpPage() {
 
         {/* 나머지 FAQ */}
         {FAQS.map((faq, idx) => {
-          const numberEmoji = ['2️⃣', '3️⃣', '4️⃣'][idx];
+          const numberEmoji = ['2️⃣', '3️⃣', '4️⃣', '5️⃣'][idx];
           return (
           <div
             key={faq.id}
@@ -94,6 +101,44 @@ export default function HelpPage() {
                         <span className="block mt-2 font-semibold text-foreground">2순위: <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/20 px-2 py-0.5 font-mono text-xs font-semibold text-blue-300">Yahoo Finance</span></span>
                         1순위 조회 불가 시 활용됩니다.<br/>
                         <span className="block mt-3 text-xs text-muted-foreground">🔄 환율 캐시 시간: 1시간 (주식 가격 5분 vs 환율 1시간 - 환율은 천천히 변하기 때문)</span>
+                      </>
+                    ) : faq.id === 6 ? (
+                      <>
+                        insights 페이지의 시장동향 섹션에서는 한국과 미국 주식시장의 투자자 흐름과 거래량 동향을 보여줍니다.<br/>
+                        <div className="mt-4 overflow-x-auto">
+                          <table className="w-full text-xs border-collapse">
+                            <thead>
+                              <tr className="border-b border-border">
+                                <th className="text-left py-2 px-2 font-semibold text-foreground">섹션</th>
+                                <th className="text-left py-2 px-2 font-semibold text-foreground">소스</th>
+                                <th className="text-left py-2 px-2 font-semibold text-foreground">데이터</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr className="border-b border-border">
+                                <td className="py-2 px-2">외국인 순매수</td>
+                                <td className="py-2 px-2"><span className="inline-flex items-center gap-1 rounded-md bg-orange-500/20 px-1.5 py-0.5 font-mono text-xs text-orange-300">Naver Finance</span></td>
+                                <td className="py-2 px-2">상위 5종목 (순매수액)</td>
+                              </tr>
+                              <tr className="border-b border-border">
+                                <td className="py-2 px-2">기관 순매수</td>
+                                <td className="py-2 px-2"><span className="inline-flex items-center gap-1 rounded-md bg-orange-500/20 px-1.5 py-0.5 font-mono text-xs text-orange-300">Naver Finance</span></td>
+                                <td className="py-2 px-2">상위 5종목 (순매수액)</td>
+                              </tr>
+                              <tr className="border-b border-border">
+                                <td className="py-2 px-2">거래량 HOT</td>
+                                <td className="py-2 px-2"><span className="inline-flex items-center gap-1 rounded-md bg-orange-500/20 px-1.5 py-0.5 font-mono text-xs text-orange-300">Naver Finance</span></td>
+                                <td className="py-2 px-2">상위 5종목 (거래량 기준)</td>
+                              </tr>
+                              <tr>
+                                <td className="py-2 px-2">US Trending</td>
+                                <td className="py-2 px-2"><span className="inline-flex items-center gap-1 rounded-md bg-blue-500/20 px-1.5 py-0.5 font-mono text-xs text-blue-300">Yahoo Finance</span></td>
+                                <td className="py-2 px-2">상위 8개 심볼 (가격 + 일간 변화율)</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        <span className="block mt-3 text-xs text-muted-foreground">📊 캐시 시간: 7일 (데이터 조회 실패 시 이전 데이터 유지)</span>
                       </>
                     ) : null
                   ) : (
