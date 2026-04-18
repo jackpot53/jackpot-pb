@@ -74,6 +74,13 @@ export async function GET(request: NextRequest) {
     const details = detailsMap.get(assetId)
     if (!details) return Response.json({ assetId, points: [], kind: 'line-projected' } satisfies AssetHistoryResponse)
 
+    // DEBUG: coverageEndDate 확인
+    console.log(`[DEBUG] insurance details for ${assetId}:`, {
+      paymentEndDate: details.paymentEndDate,
+      coverageEndDate: details.coverageEndDate,
+      category: details.category,
+    })
+
     const buys = buysMap.get(assetId) ?? []
 
     const formatDate = (date: Date | string | null): string | null => {
@@ -96,7 +103,11 @@ export async function GET(request: NextRequest) {
         : buys
 
     // paymentEndDate가 없으면 coverageEndDate 사용 (미래값 표시)
-    const endDate = formatDate(details.paymentEndDate) || formatDate(details.coverageEndDate)
+    // 타입 안전성: coverageEndDate가 null이 아닌지 확인
+    const endDate = formatDate(details.paymentEndDate) || (details.coverageEndDate ? formatDate(details.coverageEndDate) : null)
+
+    // DEBUG
+    console.log(`[Insurance Chart] assetId=${assetId}, paymentEndDate=${details.paymentEndDate}, coverageEndDate=${details.coverageEndDate}, endDate=${endDate}`)
 
     const points = buildInsuranceCurvePoints({
       buys: effectiveBuys,

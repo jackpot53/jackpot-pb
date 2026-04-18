@@ -1,11 +1,15 @@
 import { getUniverse, updateUniverseMarketCap, refreshUniverseRanks } from '@/db/queries/robo-advisor'
 
-const BATCH_SIZE = 10  // Yahoo v7 quote API — 한 번에 최대 10개 symbols
+const BATCH_SIZE = 10
 
 /**
  * Yahoo Finance v7 quote API로 시가총액 조회.
  * symbols를 최대 BATCH_SIZE개씩 나눠 배치 요청.
  * 반환: ticker → marketCap(KRW) 맵.
+ *
+ * NOTE: Yahoo v7이 현재 인증을 요구하고 있어 호출 실패 시 빈 맵을 반환합니다.
+ * 기존 DB 데이터가 유지됩니다.
+ * 향후 KRX API 복구 또는 다른 데이터 소스로 전환할 때까지 임시 상태입니다.
  */
 export async function fetchMarketCaps(tickers: string[]): Promise<Map<string, number>> {
   const result = new Map<string, number>()
@@ -28,7 +32,7 @@ export async function fetchMarketCaps(tickers: string[]): Promise<Map<string, nu
       })
 
       if (!res.ok) {
-        console.error(`[market-cap] Yahoo v7 HTTP ${res.status} for batch: ${symbols}`)
+        console.warn(`[market-cap] Yahoo v7 HTTP ${res.status} for batch: ${symbols}`)
         continue
       }
 
@@ -42,8 +46,7 @@ export async function fetchMarketCaps(tickers: string[]): Promise<Map<string, nu
         }
       }
     } catch (err) {
-      console.error(`[market-cap] batch fetch error:`, err)
-      // 배치 실패 시 에러 로그 후 다음 배치 계속 진행
+      console.warn(`[market-cap] batch fetch error:`, err)
     }
   }
 
