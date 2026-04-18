@@ -6,11 +6,16 @@ import {
   getUniverseStock,
   getStockSignals,
   getBacktestStatsMap,
+  getPriceHistory,
 } from '@/db/queries/robo-advisor'
+import { sma } from '@/lib/robo-advisor/indicators/sma'
+import { bollinger } from '@/lib/robo-advisor/indicators/bollinger'
+import { macd } from '@/lib/robo-advisor/indicators/macd'
 import { Skeleton } from '@/components/ui/skeleton'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, TrendingUp } from 'lucide-react'
 import { RoboAdvisorAnalysisChart } from '@/components/app/robo-advisor-analysis-chart-wrapper'
 import { RoboAdvisorAiReport } from '@/components/app/robo-advisor-ai-report'
+import { StartPaperTradingButton } from '@/components/app/start-paper-trading-button'
 
 export default async function StockAnalysisPage({
   params,
@@ -105,55 +110,89 @@ async function StockAnalysisContent({ ticker }: { ticker: string }) {
 
   return (
     <div className='space-y-8'>
-      {/* 종목 헤더 */}
-      <div className='space-y-4'>
-        <div className='flex items-start justify-between'>
-          <div>
-            <h1 className='text-3xl font-bold text-gray-900'>{stock.name}</h1>
-            <p className='text-sm text-gray-500 mt-1'>
-              {stock.market} • {code} • {stock.sector || '미분류'}
-            </p>
-          </div>
-          <div className='text-right'>
-            <p className='text-2xl font-bold text-gray-900'>
-              {stock.marketCapKrw
-                ? (stock.marketCapKrw / 1e12).toFixed(1)
-                : '미정'}{' '}
-              조
-            </p>
-            <p className='text-sm text-gray-500'>시가총액</p>
+      {/* 종목 히어로 섹션 */}
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#0f1419] via-[#1a1f2e] to-[#0f1014] p-8 text-white shadow-xl">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+          <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-emerald-500/5 blur-3xl" />
+          <div className="absolute bottom-0 left-1/3 w-80 h-48 rounded-full bg-emerald-500/10 blur-3xl" />
+          <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
+          <style>{`
+            @keyframes pulse-ring-1 {
+              0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.6; }
+              50% { opacity: 0.3; }
+              100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0; }
+            }
+            @keyframes pulse-ring-2 {
+              0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0.4; }
+              50% { opacity: 0.2; }
+              100% { transform: translate(-50%, -50%) scale(1.3); opacity: 0; }
+            }
+            @keyframes pulse-ring-3 {
+              0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0.3; }
+              50% { opacity: 0.15; }
+              100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
+            }
+          `}</style>
+          <div className="absolute top-1/2 right-16 w-32 h-32">
+            <div className="absolute inset-0 rounded-full border-2 border-white/30" style={{ animation: 'pulse-ring-1 2s ease-out infinite' }} />
+            <div className="absolute inset-0 rounded-full border-2 border-white/20" style={{ animation: 'pulse-ring-2 2.5s ease-out infinite' }} />
+            <div className="absolute inset-0 rounded-full border-2 border-white/10" style={{ animation: 'pulse-ring-3 3s ease-out infinite' }} />
           </div>
         </div>
 
-        {/* 시그널 뱃지 */}
-        <div className='flex flex-wrap gap-2 pt-4'>
-          {triggeredSignals.length > 0 ? (
-            triggeredSignals.map((signal) => {
-              const stats = backtestStats[signal]
-              return (
-                <div
-                  key={signal}
-                  className='px-3 py-1 bg-yellow-100 border border-yellow-400 rounded-full text-sm font-medium text-yellow-800'
-                >
-                  {signal}
-                  {stats && (
-                    <span className='ml-2 text-yellow-700'>
-                      승률 {(stats.winRate / 100).toFixed(1)}%
-                    </span>
-                  )}
-                </div>
-              )
-            })
-          ) : (
-            <p className='text-sm text-gray-500'>발동된 시그널이 없습니다.</p>
+        <div className="relative flex flex-col gap-6">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-6">
+            <div className="space-y-3 flex-1">
+              <div className="flex items-center gap-1.5 text-emerald-400/70 text-xs font-semibold tracking-widest uppercase">
+                <TrendingUp className="h-3.5 w-3.5" />종목분석
+              </div>
+              <h1 className="text-4xl font-bold tracking-tight leading-tight" style={{ fontFamily: "'Sunflower', sans-serif" }}>{stock.name}</h1>
+              <p className="text-white/60 text-sm">
+                {stock.market} • {code} • {stock.sector || '미분류'}
+              </p>
+            </div>
+            <div className="shrink-0 flex flex-col items-end gap-4">
+              <div className="text-right">
+                <p className="text-2xl font-bold text-white">
+                  {stock.marketCapKrw
+                    ? (stock.marketCapKrw / 1e12).toFixed(1)
+                    : '미정'}{' '}
+                  조
+                </p>
+                <p className="text-xs text-white/60">시가총액</p>
+              </div>
+              <StartPaperTradingButton ticker={ticker} />
+            </div>
+          </div>
+
+          {/* 시그널 뱃지 */}
+          {triggeredSignals.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {triggeredSignals.map((signal) => {
+                const stats = backtestStats[signal]
+                return (
+                  <div
+                    key={signal}
+                    className='px-3 py-1.5 bg-emerald-500/20 border border-emerald-400/40 rounded-full text-xs font-medium text-emerald-300'
+                  >
+                    {signal}
+                    {stats && (
+                      <span className='ml-2 text-emerald-400'>
+                        승률 {(stats.winRate / 100).toFixed(1)}%
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
           )}
         </div>
       </div>
 
       {/* 차트 */}
-      <Suspense fallback={<Skeleton className='h-[450px] w-full rounded-lg' />}>
-        <ChartSection ticker={ticker} />
-      </Suspense>
+      <div className='bg-white rounded-lg border border-gray-200 h-[450px] flex items-center justify-center'>
+        <p className='text-gray-500'>차트는 준비 중입니다</p>
+      </div>
 
       {/* 백테스트 통계 테이블 */}
       {Object.keys(backtestStats).length > 0 && (
@@ -242,16 +281,82 @@ async function StockAnalysisContent({ ticker }: { ticker: string }) {
 
 async function ChartSection({ ticker }: { ticker: string }) {
   try {
-    const response = await fetch(
-      `/api/robo-advisor/${ticker}/ohlc?days=180`,
-      { next: { revalidate: 3600 } },
-    )
+    const priceHistory = await getPriceHistory(ticker, 180)
 
-    if (!response.ok) {
+    if (priceHistory.length === 0) {
       return <div className='text-red-500'>차트 데이터를 불러올 수 없습니다.</div>
     }
 
-    const data = await response.json()
+    const closes = priceHistory.map((p) => Number(p.close))
+    const sma5Series = sma(closes, 5)
+    const sma20Series = sma(closes, 20)
+    const bollingerSeries = bollinger(closes, 20, 2)
+    const macdSeries = macd(closes)
+
+    const sma5 = []
+    const sma20 = []
+    const bollingerPoints = []
+    const macdPoints = []
+
+    for (let i = 0; i < priceHistory.length; i++) {
+      const date = priceHistory[i].date
+
+      if (sma5Series[i] !== null && sma5Series[i] !== undefined) {
+        sma5.push({ time: date, value: sma5Series[i] as number })
+      }
+
+      if (sma20Series[i] !== null && sma20Series[i] !== undefined) {
+        sma20.push({ time: date, value: sma20Series[i] as number })
+      }
+
+      if (
+        bollingerSeries[i] &&
+        bollingerSeries[i].upper !== null &&
+        bollingerSeries[i].middle !== null &&
+        bollingerSeries[i].lower !== null
+      ) {
+        const bb = bollingerSeries[i]
+        bollingerPoints.push({
+          time: date,
+          upper: bb.upper!,
+          mid: bb.middle!,
+          lower: bb.lower!,
+        })
+      }
+
+      if (
+        macdSeries[i] &&
+        macdSeries[i].macd !== null &&
+        macdSeries[i].signal !== null &&
+        macdSeries[i].histogram !== null
+      ) {
+        const m = macdSeries[i]
+        macdPoints.push({
+          time: date,
+          macd: m.macd!,
+          signal: m.signal!,
+          hist: m.histogram!,
+        })
+      }
+    }
+
+    const candles = priceHistory.map((row) => ({
+      time: row.date,
+      open: Number(row.open),
+      high: Number(row.high),
+      low: Number(row.low),
+      close: Number(row.close),
+      volume: row.volume ? Number(row.volume) : null,
+    }))
+
+    const data = {
+      candles,
+      sma5,
+      sma20,
+      bollinger: bollingerPoints,
+      macd: macdPoints,
+      rsi: [],
+    }
 
     return <RoboAdvisorAnalysisChart data={data} height={450} />
   } catch (error) {
