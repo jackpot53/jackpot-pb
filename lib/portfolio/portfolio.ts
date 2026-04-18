@@ -155,8 +155,17 @@ export function computeAssetPerformance(params: {
     // insurance 차트 데이터 생성 (savings와 유사)
     let insuranceChartData: Array<{ date: string; value: number; projected: boolean }> | undefined = undefined
 
+    // 일시납 보험: buys가 없으면 paymentStartDate에 totalCostKrw 만큼의 거래 생성
+    const effectiveInsuranceBuys =
+      insuranceBuys.length === 0 &&
+      insuranceDetails.paymentCycle === 'lump_sum' &&
+      insuranceDetails.paymentStartDate &&
+      holding.totalCostKrw > 0
+        ? [{ transactionDate: formatDate(insuranceDetails.paymentStartDate)!, amountKrw: holding.totalCostKrw }]
+        : insuranceBuys
+
     const curvePoints = buildInsuranceCurvePoints({
-      buys: insuranceBuys,
+      buys: effectiveInsuranceBuys,
       expectedReturnRateBp: insuranceDetails.expectedReturnRateBp ?? null,
       paymentStartDate: formatDate(insuranceDetails.paymentStartDate),
       paymentEndDate: formatDate(insuranceDetails.paymentEndDate),
@@ -291,15 +300,24 @@ export function computeAssetPerformance(params: {
   // insurance 차트 데이터 생성 (savings와 유사)
   let insuranceChartData: Array<{ date: string; value: number; projected: boolean }> | undefined = undefined
 
-  if (holding.assetType === 'insurance' && insuranceDetails && insuranceBuys) {
+  if (holding.assetType === 'insurance' && insuranceDetails) {
     const formatDate = (date: Date | string | null): string | null => {
       if (!date) return null
       if (typeof date === 'string') return date
       return date.toISOString().split('T')[0]
     }
 
+    // 일시납 보험: buys가 없으면 paymentStartDate에 totalCostKrw 만큼의 거래 생성
+    const effectiveInsuranceBuys =
+      insuranceBuys.length === 0 &&
+      insuranceDetails.paymentCycle === 'lump_sum' &&
+      insuranceDetails.paymentStartDate &&
+      holding.totalCostKrw > 0
+        ? [{ transactionDate: formatDate(insuranceDetails.paymentStartDate)!, amountKrw: holding.totalCostKrw }]
+        : insuranceBuys
+
     const curvePoints = buildInsuranceCurvePoints({
-      buys: insuranceBuys,
+      buys: effectiveInsuranceBuys,
       expectedReturnRateBp: insuranceDetails.expectedReturnRateBp ?? null,
       paymentStartDate: formatDate(insuranceDetails.paymentStartDate),
       paymentEndDate: formatDate(insuranceDetails.paymentEndDate),
