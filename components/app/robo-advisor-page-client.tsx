@@ -100,6 +100,8 @@ const StockRow = ({
     : '0';
 
   const hasSignal = stock.signals.some(s => s.triggered);
+  const triggeredSignals = stock.signals.filter(s => s.triggered);
+  const signalCount = triggeredSignals.length;
   const showColorfulAnim = highlightSignal && hasSignal;
 
   return (
@@ -141,7 +143,17 @@ const StockRow = ({
             />
           </div>
           {hasSignal && (
-            <div className="w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0" />
+            <div className="flex items-center gap-0.75">
+              {signalCount <= 5 ? (
+                Array.from({ length: signalCount }).map((_, i) => (
+                  <div key={i} className="w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0" />
+                ))
+              ) : (
+                <div className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-400/20 border border-yellow-400/30 text-yellow-300 font-semibold">
+                  +{signalCount}
+                </div>
+              )}
+            </div>
           )}
           <span className="text-[13px] font-medium text-white/90 group-hover:text-white transition-colors truncate">
             {stock.name}
