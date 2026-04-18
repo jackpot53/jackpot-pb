@@ -24,6 +24,11 @@ const PERIOD_OPTIONS = [
 ]
 
 const INITIAL_CAPITAL = 100_000_000
+const EARLIEST_YEAR = 2000
+
+const formatDateToISO = (date: Date): string => {
+  return date.toLocaleDateString('en-CA')
+}
 
 export function PaperTradingClient() {
   const [period, setPeriod] = useState<PeriodType>('1y')
@@ -49,17 +54,18 @@ export function PaperTradingClient() {
         startDate.setFullYear(endDate.getFullYear() - 5)
         break
       case 'all':
-        startDate.setFullYear(2000)
+        startDate.setFullYear(EARLIEST_YEAR)
         break
     }
 
     return {
-      startDate: startDate.toISOString().split('T')[0],
-      endDate: endDate.toISOString().split('T')[0],
+      startDate: formatDateToISO(startDate),
+      endDate: formatDateToISO(endDate),
     }
   }
 
   const dateRange = getDateRange()
+  const isValidDateRange = !customRange || new Date(customRange.startDate) <= new Date(customRange.endDate)
 
   return (
     <div className="space-y-6">
@@ -93,11 +99,11 @@ export function PaperTradingClient() {
               <label className="text-xs text-white/60">시작일</label>
               <input
                 type="date"
-                value={customRange?.startDate || dateRange.startDate}
+                value={customRange?.startDate ?? dateRange.startDate}
                 onChange={(e) =>
                   setCustomRange((prev) => ({
                     startDate: e.target.value,
-                    endDate: prev?.endDate || dateRange.endDate,
+                    endDate: prev?.endDate ?? dateRange.endDate,
                   }))
                 }
                 className="px-3 py-2 bg-white/[0.05] border border-white/[0.1] rounded text-sm text-white"
@@ -108,10 +114,10 @@ export function PaperTradingClient() {
               <label className="text-xs text-white/60">종료일</label>
               <input
                 type="date"
-                value={customRange?.endDate || dateRange.endDate}
+                value={customRange?.endDate ?? dateRange.endDate}
                 onChange={(e) =>
                   setCustomRange((prev) => ({
-                    startDate: prev?.startDate || dateRange.startDate,
+                    startDate: prev?.startDate ?? dateRange.startDate,
                     endDate: e.target.value,
                   }))
                 }
@@ -124,6 +130,7 @@ export function PaperTradingClient() {
                 setShowDatePicker(false)
               }}
               size="sm"
+              disabled={!isValidDateRange}
             >
               적용
             </Button>
