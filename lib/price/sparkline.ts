@@ -1,3 +1,5 @@
+import { fetchKisOhlc } from '@/lib/price/kis'
+
 export interface OhlcPoint {
   date: string  // 'YYYY-MM-DD'
   open: number
@@ -61,18 +63,43 @@ export async function fetchSparklineData(
   }
 }
 
+const KIS_ASSET_TYPES = new Set(['stock_kr', 'etf_kr', 'stock_us', 'etf_us'])
+
+// Converts a range string (e.g. '1mo', '3mo', '1y') to a KST start date string.
+function rangeToStartDate(range: string): string {
+  const days = range === '3mo' ? 90 : range === '1y' ? 365 : 30
+  const d = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+  return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' })
+}
+
+function todayKst(): string {
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' })
+}
+
 /**
  * Fetches OHLC data for multiple tickers in parallel.
+ * Routes KR/US stock and ETF tickers through KIS; all others use Yahoo Finance.
  * Tickers that fail or are unsupported are silently omitted from the result map.
  */
 export async function fetchSparklinesForTickers(
   tickers: string[],
   interval = '1d',
   range = '1mo',
+  assetTypes?: Map<string, string>,
 ): Promise<Map<string, OhlcPoint[]>> {
   const results = await Promise.allSettled(
     tickers.map(async (ticker) => {
-      const data = await fetchSparklineData(ticker, interval, range)
+      const assetType = assetTypes?.get(ticker)
+      let data: OhlcPoint[] | null
+
+      if (assetType && KIS_ASSET_TYPES.has(assetType)) {
+        const startDate = rangeToStartDate(range)
+        const endDate = todayKst()
+        data = await fetchKisOhlc(ticker, assetType, startDate, endDate)
+      } else {
+        data = await fetchSparklineData(ticker, interval, range)
+      }
+
       return { ticker, data }
     })
   )
