@@ -90,35 +90,44 @@ export default function HelpPage() {
                         <thead>
                           <tr className="border-b border-border">
                             <th className="text-left py-2 px-2 font-semibold text-foreground">섹션</th>
-                            <th className="text-left py-2 px-2 font-semibold text-foreground">소스</th>
+                            <th className="text-left py-2 px-2 font-semibold text-foreground">소스 & URL</th>
                             <th className="text-left py-2 px-2 font-semibold text-foreground">데이터</th>
                           </tr>
                         </thead>
                         <tbody>
                           <tr className="border-b border-border">
                             <td className="py-2 px-2">외국인 순매수</td>
-                            <td className="py-2 px-2"><span className="inline-flex items-center gap-1 rounded-md bg-orange-500/20 px-1.5 py-0.5 font-mono text-xs text-orange-300">Naver Finance</span></td>
+                            <td className="py-2 px-2">
+                              <span className="inline-flex items-center gap-1 rounded-md bg-orange-500/20 px-1.5 py-0.5 font-mono text-xs text-orange-300">Naver Finance</span><br/>
+                              <a href="https://finance.naver.com/sise/sise_deal_rank.naver?investor_gubun=1000" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all text-xs">sise_deal_rank.naver?investor_gubun=1000</a>
+                            </td>
                             <td className="py-2 px-2">상위 5종목 (순매수액)</td>
                           </tr>
                           <tr className="border-b border-border">
                             <td className="py-2 px-2">기관 순매수</td>
-                            <td className="py-2 px-2"><span className="inline-flex items-center gap-1 rounded-md bg-orange-500/20 px-1.5 py-0.5 font-mono text-xs text-orange-300">Naver Finance</span></td>
+                            <td className="py-2 px-2">
+                              <span className="inline-flex items-center gap-1 rounded-md bg-orange-500/20 px-1.5 py-0.5 font-mono text-xs text-orange-300">Naver Finance</span><br/>
+                              <a href="https://finance.naver.com/sise/sise_deal_rank.naver?investor_gubun=9000" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all text-xs">sise_deal_rank.naver?investor_gubun=9000</a>
+                            </td>
                             <td className="py-2 px-2">상위 5종목 (순매수액)</td>
                           </tr>
                           <tr className="border-b border-border">
                             <td className="py-2 px-2">거래량 HOT</td>
-                            <td className="py-2 px-2"><span className="inline-flex items-center gap-1 rounded-md bg-orange-500/20 px-1.5 py-0.5 font-mono text-xs text-orange-300">Naver Finance</span></td>
+                            <td className="py-2 px-2">
+                              <span className="inline-flex items-center gap-1 rounded-md bg-orange-500/20 px-1.5 py-0.5 font-mono text-xs text-orange-300">Naver Finance</span><br/>
+                              <a href="https://finance.naver.com/sise/sise_quant.naver?sosok=0" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline break-all text-xs">sise_quant.naver?sosok=0</a>
+                            </td>
                             <td className="py-2 px-2">상위 5종목 (거래량 기준)</td>
                           </tr>
                           <tr>
                             <td className="py-2 px-2">US Trending</td>
-                            <td className="py-2 px-2"><span className="inline-flex items-center gap-1 rounded-md bg-blue-500/20 px-1.5 py-0.5 font-mono text-xs text-blue-300">Yahoo Finance</span></td>
+                            <td className="py-2 px-2"><span className="inline-flex items-center gap-1 rounded-md bg-blue-500/20 px-1.5 py-0.5 font-mono text-xs text-blue-300">Yahoo Finance API</span></td>
                             <td className="py-2 px-2">상위 8개 심볼 (가격 + 일간 변화율)</td>
                           </tr>
                         </tbody>
                       </table>
                     </div>
-                    <p className="text-xs text-muted-foreground">📊 캐시 시간: 7일 (데이터 조회 실패 시 이전 데이터 유지)</p>
+                    <p className="text-xs text-muted-foreground">📊 캐시 시간: 7일 (데이터 조회 실패 시 이전 데이터 유지) | ⚠️ 네이버 페이지 레이아웃 변경 시 스크래핑이 실패할 수 있습니다.</p>
                   </div>
                 ) : (
                   <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
