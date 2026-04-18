@@ -47,8 +47,8 @@ export function buildInsuranceCurvePoints({
   const todayStr = toDateStr(today)
   const endStr = paymentEndDate ?? todayStr
 
-  // 샘플 날짜 목록: start ~ end (주 단위, 종료일 포함)
-  const sampleDates = weekSamples(startStr, endStr)
+  // 샘플 날짜 목록: start ~ end (월 단위, 종료일 포함) — 10년 장기 보험에 최적화
+  const sampleDates = monthSamples(startStr, endStr)
 
   const points: InsuranceProjectionPoint[] = sampleDates.map(dateStr => {
     const asOf = parseLocalDate(dateStr)
@@ -97,16 +97,21 @@ function toDateStr(d: Date): string {
   return `${y}-${m}-${day}`
 }
 
-/** startStr ~ endStr (inclusive) 의 주별 샘플 날짜 배열 */
-function weekSamples(startStr: string, endStr: string): string[] {
+/** startStr ~ endStr (inclusive) 의 월별 샘플 날짜 배열 */
+function monthSamples(startStr: string, endStr: string): string[] {
   const dates: string[] = []
-  const start = parseLocalDate(startStr)
-  const end = parseLocalDate(endStr)
+  const [sy, sm] = startStr.split('-').map(Number)
+  const [ey, em] = endStr.split('-').map(Number)
 
-  const current = new Date(start)
-  while (current <= end) {
-    dates.push(toDateStr(current))
-    current.setDate(current.getDate() + 7)
+  let y = sy, m = sm
+  while (y < ey || (y === ey && m <= em)) {
+    const mm = String(m).padStart(2, '0')
+    const candidate = `${y}-${mm}-01`
+    // 시작 월: 실제 시작일 사용, 이후는 1일
+    const dateStr = (y === sy && m === sm) ? startStr : candidate
+    if (dateStr <= endStr) dates.push(dateStr)
+    m++
+    if (m > 12) { m = 1; y++ }
   }
 
   // 종료일이 마지막 샘플과 다르면 추가
