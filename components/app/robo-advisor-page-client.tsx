@@ -108,13 +108,26 @@ const StockRow = ({
     <button
       onClick={onClick}
       className={cn(
-        "relative w-full flex items-center justify-between py-2 px-2 rounded-lg transition-colors group text-left overflow-hidden border",
+        "relative w-full flex items-center justify-between py-2 px-2 rounded-lg transition-colors group text-left overflow-visible border",
         showColorfulAnim
           ? "border-rose-400/30 hover:border-rose-400/50 bg-white/[0.02]"
           : "border-transparent hover:bg-white/[0.04]",
         !showColorfulAnim && hasSignal && !highlightSignal && "bg-yellow-400/[0.02] hover:bg-white/[0.06]"
       )}
     >
+      {hasSignal && (
+        <div className="absolute -top-2.5 left-0 flex items-center gap-0.75 z-20">
+          {signalCount <= 5 ? (
+            Array.from({ length: signalCount }).map((_, i) => (
+              <div key={i} className="w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0" />
+            ))
+          ) : (
+            <div className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-400/20 border border-yellow-400/30 text-yellow-300 font-semibold">
+              +{signalCount}
+            </div>
+          )}
+        </div>
+      )}
       {showColorfulAnim && (
         <div
           className="absolute inset-0 opacity-20 pointer-events-none"
@@ -125,20 +138,7 @@ const StockRow = ({
           }}
         />
       )}
-      <div className="relative z-10 flex flex-col items-start gap-0.5 max-w-[140px]">
-        {hasSignal && (
-          <div className="flex items-center gap-0.75">
-            {signalCount <= 5 ? (
-              Array.from({ length: signalCount }).map((_, i) => (
-                <div key={i} className="w-1.5 h-1.5 rounded-full bg-yellow-400 shrink-0" />
-              ))
-            ) : (
-              <div className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-400/20 border border-yellow-400/30 text-yellow-300 font-semibold">
-                +{signalCount}
-              </div>
-            )}
-          </div>
-        )}
+      <div className="relative z-10 flex flex-col items-start gap-1 max-w-[140px]">
         <div className="flex items-center gap-1.5 w-full">
           {(displayRank !== undefined || stock.rank !== null) && (
             <span className="text-[11px] text-white/40 font-normal tabular-nums min-w-[18px] shrink-0 text-center">
