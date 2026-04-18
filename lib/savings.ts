@@ -9,7 +9,7 @@
  *   계산 시: annualRate = rateBp / 1_000_000  (0.0525)
  */
 
-export type CompoundType = 'simple' | 'monthly'
+export type CompoundType = 'simple' | 'monthly' | 'yearly'
 export type TaxType = 'taxable' | 'tax_free' | 'preferential'
 
 /** 단일 납입건 정보 (transactions에서 추출) */
