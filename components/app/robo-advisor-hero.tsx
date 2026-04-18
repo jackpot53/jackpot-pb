@@ -341,7 +341,7 @@ export function RoboAdvisorHero() {
               <Bot className="h-3.5 w-3.5" />
               로보어드바이저
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">알고리즘 시그널</h1>
+            <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "'Sunflower', sans-serif" }}>알고리즘 시그널</h1>
             <p className="text-white/60 text-sm leading-relaxed">
               알고리즘이 시장을 스캔하는 중 —{' '}
               <span className="text-rose-300 font-medium">매수 시그널이 발생한 종목</span>을
