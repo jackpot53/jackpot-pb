@@ -1,0 +1,1359 @@
+{
+  "id": "b27573ea-7466-4c8d-b14d-d2435f523fbb",
+  "prevId": "b81554ad-dcb8-458d-91fd-e7a7019b1d90",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.assets": {
+      "name": "assets",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ticker": {
+          "name": "ticker",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "asset_type": {
+          "name": "asset_type",
+          "type": "asset_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "price_type": {
+          "name": "price_type",
+          "type": "price_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "currency",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "account_type": {
+          "name": "account_type",
+          "type": "account_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "brokerage_id": {
+          "name": "brokerage_id",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "withdrawal_bank_id": {
+          "name": "withdrawal_bank_id",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "owner": {
+          "name": "owner",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "insurance_type": {
+          "name": "insurance_type",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fund_nav_history": {
+      "name": "fund_nav_history",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "ticker": {
+          "name": "ticker",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nav_krw": {
+          "name": "nav_krw",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recorded_at": {
+          "name": "recorded_at",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source": {
+          "name": "source",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "fund_nav_history_ticker_date": {
+          "name": "fund_nav_history_ticker_date",
+          "nullsNotDistinct": false,
+          "columns": [
+            "ticker",
+            "recorded_at"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.goals": {
+      "name": "goals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_amount_krw": {
+          "name": "target_amount_krw",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_date": {
+          "name": "target_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.holdings": {
+      "name": "holdings",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "asset_id": {
+          "name": "asset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_quantity": {
+          "name": "total_quantity",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "avg_cost_per_unit": {
+          "name": "avg_cost_per_unit",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_cost_krw": {
+          "name": "total_cost_krw",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "avg_cost_per_unit_original": {
+          "name": "avg_cost_per_unit_original",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "avg_exchange_rate_at_time": {
+          "name": "avg_exchange_rate_at_time",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "holdings_asset_id_assets_id_fk": {
+          "name": "holdings_asset_id_assets_id_fk",
+          "tableFrom": "holdings",
+          "tableTo": "assets",
+          "columnsFrom": [
+            "asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "holdings_asset_id_unique": {
+          "name": "holdings_asset_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "asset_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.insurance_details": {
+      "name": "insurance_details",
+      "schema": "",
+      "columns": {
+        "asset_id": {
+          "name": "asset_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_cycle": {
+          "name": "payment_cycle",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'monthly'"
+        },
+        "premium_per_cycle_krw": {
+          "name": "premium_per_cycle_krw",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contract_date": {
+          "name": "contract_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payment_start_date": {
+          "name": "payment_start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payment_end_date": {
+          "name": "payment_end_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "coverage_end_date": {
+          "name": "coverage_end_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sum_insured_krw": {
+          "name": "sum_insured_krw",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expected_return_rate_bp": {
+          "name": "expected_return_rate_bp",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_paid_up": {
+          "name": "is_paid_up",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "compound_type": {
+          "name": "compound_type",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'simple'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "insurance_details_asset_id_assets_id_fk": {
+          "name": "insurance_details_asset_id_assets_id_fk",
+          "tableFrom": "insurance_details",
+          "tableTo": "assets",
+          "columnsFrom": [
+            "asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.manual_valuations": {
+      "name": "manual_valuations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "asset_id": {
+          "name": "asset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value_krw": {
+          "name": "value_krw",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "currency",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "exchange_rate_at_time": {
+          "name": "exchange_rate_at_time",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "valued_at": {
+          "name": "valued_at",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notes": {
+          "name": "notes",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "manual_valuations_asset_id_assets_id_fk": {
+          "name": "manual_valuations_asset_id_assets_id_fk",
+          "tableFrom": "manual_valuations",
+          "tableTo": "assets",
+          "columnsFrom": [
+            "asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.portfolio_snapshot_breakdowns": {
+      "name": "portfolio_snapshot_breakdowns",
+      "schema": "",
+      "columns": {
+        "snapshot_id": {
+          "name": "snapshot_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "asset_type": {
+          "name": "asset_type",
+          "type": "asset_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_value_krw": {
+          "name": "total_value_krw",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_cost_krw": {
+          "name": "total_cost_krw",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "portfolio_snapshot_breakdowns_snapshot_id_portfolio_snapshots_id_fk": {
+          "name": "portfolio_snapshot_breakdowns_snapshot_id_portfolio_snapshots_id_fk",
+          "tableFrom": "portfolio_snapshot_breakdowns",
+          "tableTo": "portfolio_snapshots",
+          "columnsFrom": [
+            "snapshot_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "portfolio_snapshot_breakdowns_snapshot_id_asset_type_pk": {
+          "name": "portfolio_snapshot_breakdowns_snapshot_id_asset_type_pk",
+          "columns": [
+            "snapshot_id",
+            "asset_type"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.portfolio_snapshots": {
+      "name": "portfolio_snapshots",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "snapshot_date": {
+          "name": "snapshot_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_value_krw": {
+          "name": "total_value_krw",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_cost_krw": {
+          "name": "total_cost_krw",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "return_bps": {
+          "name": "return_bps",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.price_cache": {
+      "name": "price_cache",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "ticker": {
+          "name": "ticker",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "price_krw": {
+          "name": "price_krw",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "price_original": {
+          "name": "price_original",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "currency",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "change_bps": {
+          "name": "change_bps",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cached_at": {
+          "name": "cached_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "price_cache_ticker_unique": {
+          "name": "price_cache_ticker_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "ticker"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.price_history": {
+      "name": "price_history",
+      "schema": "",
+      "columns": {
+        "ticker": {
+          "name": "ticker",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "open": {
+          "name": "open",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "high": {
+          "name": "high",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "low": {
+          "name": "low",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "close": {
+          "name": "close",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "volume": {
+          "name": "volume",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "price_history_ticker_date_pk": {
+          "name": "price_history_ticker_date_pk",
+          "columns": [
+            "ticker",
+            "date"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.savings_details": {
+      "name": "savings_details",
+      "schema": "",
+      "columns": {
+        "asset_id": {
+          "name": "asset_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "interest_rate_bp": {
+          "name": "interest_rate_bp",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deposit_start_date": {
+          "name": "deposit_start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "maturity_date": {
+          "name": "maturity_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "monthly_contribution_krw": {
+          "name": "monthly_contribution_krw",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "compound_type": {
+          "name": "compound_type",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'simple'"
+        },
+        "tax_type": {
+          "name": "tax_type",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'taxable'"
+        },
+        "auto_renew": {
+          "name": "auto_renew",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "savings_details_asset_id_assets_id_fk": {
+          "name": "savings_details_asset_id_assets_id_fk",
+          "tableFrom": "savings_details",
+          "tableTo": "assets",
+          "columnsFrom": [
+            "asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.signal_backtest_stats": {
+      "name": "signal_backtest_stats",
+      "schema": "",
+      "columns": {
+        "signal_type": {
+          "name": "signal_type",
+          "type": "varchar(40)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "holding_days": {
+          "name": "holding_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sample_count": {
+          "name": "sample_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "win_rate_bps": {
+          "name": "win_rate_bps",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "avg_return_bps": {
+          "name": "avg_return_bps",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "median_return_bps": {
+          "name": "median_return_bps",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "max_drawdown_bps": {
+          "name": "max_drawdown_bps",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "signal_backtest_stats_signal_type_holding_days_pk": {
+          "name": "signal_backtest_stats_signal_type_holding_days_pk",
+          "columns": [
+            "signal_type",
+            "holding_days"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.signals": {
+      "name": "signals",
+      "schema": "",
+      "columns": {
+        "ticker": {
+          "name": "ticker",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "signal_type": {
+          "name": "signal_type",
+          "type": "signal_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "triggered": {
+          "name": "triggered",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "triggered_at": {
+          "name": "triggered_at",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "confidence": {
+          "name": "confidence",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "detail": {
+          "name": "detail",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "signals_ticker_signal_type_pk": {
+          "name": "signals_ticker_signal_type_pk",
+          "columns": [
+            "ticker",
+            "signal_type"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.transactions": {
+      "name": "transactions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "asset_id": {
+          "name": "asset_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "transaction_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "price_per_unit": {
+          "name": "price_per_unit",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fee": {
+          "name": "fee",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "currency": {
+          "name": "currency",
+          "type": "currency",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "exchange_rate_at_time": {
+          "name": "exchange_rate_at_time",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "transaction_date": {
+          "name": "transaction_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_voided": {
+          "name": "is_voided",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "notes": {
+          "name": "notes",
+          "type": "varchar(1000)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "transactions_asset_id_assets_id_fk": {
+          "name": "transactions_asset_id_assets_id_fk",
+          "tableFrom": "transactions",
+          "tableTo": "assets",
+          "columnsFrom": [
+            "asset_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.universe_stocks": {
+      "name": "universe_stocks",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "ticker": {
+          "name": "ticker",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "varchar(6)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "market": {
+          "name": "market",
+          "type": "kr_market",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sector": {
+          "name": "sector",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "market_cap_krw": {
+          "name": "market_cap_krw",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rank": {
+          "name": "rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "universe_stocks_ticker": {
+          "name": "universe_stocks_ticker",
+          "nullsNotDistinct": false,
+          "columns": [
+            "ticker"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.account_type": {
+      "name": "account_type",
+      "schema": "public",
+      "values": [
+        "isa",
+        "irp",
+        "pension",
+        "dc",
+        "brokerage",
+        "spot",
+        "cma",
+        "insurance",
+        "upbit",
+        "bithumb",
+        "coinone",
+        "korbit",
+        "binance",
+        "coinbase",
+        "kraken",
+        "okx",
+        "fund_mirae",
+        "fund_samsung",
+        "fund_kb",
+        "fund_shinhan",
+        "fund_hanwha",
+        "fund_nh",
+        "fund_korea",
+        "fund_kiwoom",
+        "fund_hana",
+        "fund_woori",
+        "fund_ibk",
+        "fund_daishin",
+        "fund_timefolio",
+        "fund_truston",
+        "bank_kb",
+        "bank_shinhan",
+        "bank_woori",
+        "bank_hana",
+        "bank_nh",
+        "bank_kakao",
+        "bank_toss",
+        "bank_k",
+        "bank_ibk",
+        "bank_kdb",
+        "bank_busan",
+        "bank_daegu",
+        "bank_gwangju",
+        "bank_jeonbuk",
+        "bank_jeju",
+        "bank_sbi",
+        "bank_ok",
+        "bank_welcome",
+        "bank_pepper",
+        "bank_shincom",
+        "bank_saemaul",
+        "ins_samsung_life",
+        "ins_hanwha_life",
+        "ins_kyobo",
+        "ins_shinhan_life",
+        "ins_nh_life",
+        "ins_kb_life",
+        "ins_aia",
+        "ins_metlife",
+        "ins_prudential",
+        "ins_samsung_fire",
+        "ins_hyundai",
+        "ins_db_fire",
+        "ins_kb_fire",
+        "ins_meritz",
+        "ins_hanwha_fire",
+        "ins_lotte_fire",
+        "ins_im_life"
+      ]
+    },
+    "public.asset_type": {
+      "name": "asset_type",
+      "schema": "public",
+      "values": [
+        "stock_kr",
+        "stock_us",
+        "etf_kr",
+        "etf_us",
+        "crypto",
+        "savings",
+        "real_estate",
+        "fund",
+        "insurance",
+        "precious_metal",
+        "cma"
+      ]
+    },
+    "public.currency": {
+      "name": "currency",
+      "schema": "public",
+      "values": [
+        "KRW",
+        "USD"
+      ]
+    },
+    "public.price_type": {
+      "name": "price_type",
+      "schema": "public",
+      "values": [
+        "live",
+        "manual"
+      ]
+    },
+    "public.signal_type": {
+      "name": "signal_type",
+      "schema": "public",
+      "values": [
+        "golden_cross",
+        "rsi_oversold_bounce",
+        "macd_cross",
+        "volume_breakout",
+        "bollinger_breakout",
+        "stochastic_oversold",
+        "adx_trend",
+        "composite"
+      ]
+    },
+    "public.transaction_type": {
+      "name": "transaction_type",
+      "schema": "public",
+      "values": [
+        "buy",
+        "sell"
+      ]
+    },
+    "public.kr_market": {
+      "name": "kr_market",
+      "schema": "public",
+      "values": [
+        "KOSPI",
+        "KOSDAQ"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
