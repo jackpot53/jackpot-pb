@@ -954,7 +954,7 @@ export function SummaryCards({ grouped, performances, valueCandles, showTypeStri
         <div className="relative flex items-stretch gap-10 flex-wrap">
           <div>
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2">총 투자</p>
-            <p className="text-3xl font-bold tabular-nums">{grandTotalCost > 0 ? formatKrw(animatedCost) : '—'}</p>
+            <p className="text-2xl font-bold tabular-nums">{grandTotalCost > 0 ? formatKrw(animatedCost) : '—'}</p>
             <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs">
               <PiggyBank className="h-3 w-3" />투자한 원금 합계
             </span>
@@ -964,7 +964,7 @@ export function SummaryCards({ grouped, performances, valueCandles, showTypeStri
               <div className="w-px bg-border self-stretch" />
               <div>
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2">평가금액</p>
-                <p className="text-3xl font-bold tabular-nums">{formatKrw(animatedValue)}</p>
+                <p className="text-2xl font-bold tabular-nums">{formatKrw(animatedValue)}</p>
                 <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs">
                   <BarChart2 className="h-3 w-3" />현재 시세 기준 총 자산
                 </span>
@@ -972,7 +972,7 @@ export function SummaryCards({ grouped, performances, valueCandles, showTypeStri
               <div className="w-px bg-border self-stretch" />
               <div className="text-right">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2">평가손익</p>
-                <p className={`text-3xl font-bold tabular-nums ${grandProfit >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>
+                <p className={`text-2xl font-bold tabular-nums ${grandProfit >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>
                   {grandProfit >= 0 ? '+' : '-'}{formatKrw(animatedProfit)}
                 </p>
                 {grandReturnPct !== null && (
