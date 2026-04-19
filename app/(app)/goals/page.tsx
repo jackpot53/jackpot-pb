@@ -18,7 +18,7 @@ import { timed, perfMark, perfLog } from '@/lib/perf'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { SummaryCards } from '@/components/app/assets-page-client'
+import { SummaryCards } from '@/components/app/summary-cards'
 
 export default async function GoalsPage() {
   const pageStart = perfMark()

@@ -6,7 +6,7 @@ import { refreshAllPricesInternal } from '@/app/actions/prices'
 import { loadPerformances } from '@/lib/server/load-performances'
 import { TodayReport } from '@/components/app/today-report'
 import { TodayHero } from '@/components/app/today-hero'
-import { SummaryCards } from '@/components/app/assets-page-client'
+import { SummaryCards } from '@/components/app/summary-cards'
 import { TodayAssetPnl } from '@/components/app/today-asset-pnl'
 
 export default async function TodayInsightPage() {
