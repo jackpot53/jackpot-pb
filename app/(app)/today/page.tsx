@@ -31,7 +31,7 @@ export default async function TodayInsightPage() {
     <div className="space-y-6">
       <TodayHero dateStr={dateStr} dayStr={dayStr} />
 
-      <SummaryCards grouped={grouped} performances={performances} showTypeStrip={false} />
+      <SummaryCards grouped={grouped} performances={performances} />
 
       <TodayReport performances={performances} />
 

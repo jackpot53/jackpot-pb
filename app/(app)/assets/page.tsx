@@ -6,7 +6,7 @@ import { refreshAllPricesInternal } from '@/app/actions/prices'
 import { loadPerformances } from '@/lib/server/load-performances'
 import { getAllSnapshotsWithBreakdowns } from '@/db/queries/portfolio-snapshots'
 import { toMonthlyData, toAnnualData, toDailyData, snapshotsForType } from '@/lib/snapshot/aggregation'
-import { AssetsPageClient } from '@/components/app/assets-page-client'
+import { AssetsPageClient, SummaryCards } from '@/components/app/assets-page-client'
 import { timed } from '@/lib/perf'
 import { AssetsHero } from '@/components/app/assets-hero'
 
@@ -54,15 +54,24 @@ async function AssetsContent({ userId }: { userId: string }) {
     dailyByType[type] = toDailyData(typeSnaps)
   }
 
+  const grouped = performances.reduce<Record<string, typeof performances>>((acc, a) => {
+    if (!acc[a.assetType]) acc[a.assetType] = []
+    acc[a.assetType].push(a)
+    return acc
+  }, {})
+
   return (
-    <AssetsPageClient
-      performances={performances}
-      sparklines={{}}
-      monthlyData={monthlyData}
-      annualData={annualData}
-      monthlyByType={monthlyByType}
-      annualByType={annualByType}
-      dailyByType={dailyByType}
-    />
+    <>
+      <SummaryCards grouped={grouped} performances={performances} showTypeStrip={false} />
+      <AssetsPageClient
+        performances={performances}
+        sparklines={{}}
+        monthlyData={monthlyData}
+        annualData={annualData}
+        monthlyByType={monthlyByType}
+        annualByType={annualByType}
+        dailyByType={dailyByType}
+      />
+    </>
   )
 }
