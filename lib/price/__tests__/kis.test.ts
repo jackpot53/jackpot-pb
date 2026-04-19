@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { fetchKisQuote, fetchKisOhlc } from '../kis'
+import { fetchKisQuote, fetchKisOhlc, fetchKisMarketCap } from '../kis'
 
 // Mock kis-token module
 vi.mock('@/lib/price/kis-token', () => ({
@@ -196,6 +196,51 @@ describe('fetchKisOhlc — empty result', () => {
 
     const result = await fetchKisOhlc('BTC-USD', 'crypto', '2023-01-01', '2023-01-03')
 
+    expect(result).toBeNull()
+  })
+})
+
+describe('fetchKisMarketCap', () => {
+  it('converts hts_avls (억원) to KRW', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      makeMockResponse(true, { output: { hts_avls: '5078500' } }),
+    ))
+
+    const result = await fetchKisMarketCap('005930.KS')
+
+    // 5,078,500 억원 = 507,850,000,000,000 KRW
+    expect(result).toBe(507_850_000_000_000)
+  })
+
+  it('returns null when ticker is not a KR ticker', async () => {
+    const result = await fetchKisMarketCap('AAPL')
+    expect(result).toBeNull()
+  })
+
+  it('returns null when hts_avls is missing', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      makeMockResponse(true, { output: {} }),
+    ))
+
+    const result = await fetchKisMarketCap('005930.KS')
+    expect(result).toBeNull()
+  })
+
+  it('returns null on non-2xx response', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      makeMockResponse(false, {}),
+    ))
+
+    const result = await fetchKisMarketCap('005930.KS')
+    expect(result).toBeNull()
+  })
+
+  it('returns null when hts_avls parses to 0', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      makeMockResponse(true, { output: { hts_avls: '0' } }),
+    ))
+
+    const result = await fetchKisMarketCap('005930.KS')
     expect(result).toBeNull()
   })
 })

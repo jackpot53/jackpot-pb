@@ -92,6 +92,42 @@ export async function fetchKisQuote(
   }
 }
 
+/**
+ * Fetches market capitalization for a Korean stock from KIS 주식현재가 시세.
+ * Returns market cap in KRW (raw won), or null on failure.
+ *
+ * KIS returns `hts_avls` in 억원 units (1억 = 100,000,000 KRW).
+ * Example: 삼성전자 hts_avls = "5078500" → 5,078,500억 = 507,850,000,000,000 KRW.
+ */
+export async function fetchKisMarketCap(ticker: string): Promise<number | null> {
+  try {
+    const parsed = parseKrTicker(ticker)
+    if (!parsed) return null
+
+    const res = await kisGet(
+      '/uapi/domestic-stock/v1/quotations/inquire-price',
+      'FHKST01010100',
+      {
+        FID_COND_MRKT_DIV_CODE: 'J',
+        FID_INPUT_ISCD: parsed.code,
+      },
+    )
+    if (!res.ok) return null
+
+    const data = await res.json()
+    const htsAvls = data?.output?.hts_avls
+    if (!htsAvls) return null
+
+    const eokWon = parseInt(htsAvls, 10)
+    if (!Number.isFinite(eokWon) || eokWon <= 0) return null
+
+    return eokWon * 100_000_000
+  } catch (err) {
+    console.warn('[kis] fetchKisMarketCap failed:', err instanceof Error ? err.message : String(err))
+    return null
+  }
+}
+
 // Converts YYYYMMDD string to YYYY-MM-DD
 function formatDate(yyyymmdd: string): string {
   if (yyyymmdd.length !== 8) return ''
