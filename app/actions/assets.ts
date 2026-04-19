@@ -338,6 +338,7 @@ export async function updateAsset(
     paymentEndDate, coverageEndDate, sumInsuredKrw, expectedReturnRatePct,
     savingsKind, interestRatePct, depositStartDate, maturityDate,
     monthlyContributionKrw, compoundType, taxType, autoRenew,
+    contributionDividendRates: _contributionDividendRates, // handled by separate upsert action
     ...rest
   } = parsed.data
 
