@@ -39,7 +39,7 @@ function Reel({ symbol, isSpinning }: { symbol: string; isSpinning: boolean }) {
     if (!isSpinning) { setDisplay(symbol); return }
     const id = setInterval(() => {
       setDisplay(SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)])
-    }, 70)
+    }, 100)
     return () => clearInterval(id)
   }, [isSpinning, symbol])
 

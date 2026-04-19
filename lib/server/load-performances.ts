@@ -22,39 +22,25 @@ export const loadPerformances = cache(async (userId: string): Promise<{
   return timed('loadPerformances', async () => {
   const assetsWithHoldings = await timed('  getAssetsWithHoldings', () => getAssetsWithHoldings(userId))
 
-  // Include live assets AND fund assets with a ticker (may have priceType='manual' in legacy data)
   const liveTickers = assetsWithHoldings
     .filter((a) => (a.priceType === 'live' || a.assetType === 'fund') && a.ticker)
     .map((a) => a.ticker!)
-  const priceMap = await timed('  getPriceCacheByTickers', () => getPriceCacheByTickers([...liveTickers, 'USD_KRW']))
+  const savingsIds = assetsWithHoldings.filter((a) => a.assetType === 'savings').map((a) => a.assetId)
+  const insuranceIds = assetsWithHoldings.filter((a) => a.assetType === 'insurance').map((a) => a.assetId)
+  const contributionIds = assetsWithHoldings.filter((a) => a.assetType === 'contribution').map((a) => a.assetId)
 
-  // savings 전용: 이자 자동계산에 필요한 메타 + 납입 내역 (savings 자산만 추가 쿼리)
-  const savingsIds = assetsWithHoldings
-    .filter((a) => a.assetType === 'savings')
-    .map((a) => a.assetId)
-  const [savingsDetailsMap, savingsBuysMap] = await timed('  savings details+buys', () => Promise.all([
-    getSavingsDetails(savingsIds),
-    getSavingsBuys(savingsIds),
+  // All secondary queries run in parallel after we have asset IDs
+  const [
+    priceMap,
+    [savingsDetailsMap, savingsBuysMap],
+    [insuranceDetailsMap, insuranceBuysMap],
+    contributionDividendRatesMap,
+  ] = await timed('  parallel secondary queries', () => Promise.all([
+    getPriceCacheByTickers([...liveTickers, 'USD_KRW']),
+    Promise.all([getSavingsDetails(savingsIds), getSavingsBuys(savingsIds)]),
+    Promise.all([getInsuranceDetails(insuranceIds), getInsuranceBuys(insuranceIds)]),
+    getContributionDividendRates(contributionIds),
   ]))
-
-  // insurance 전용: 계약 메타데이터 + 납입 내역 bulk 조회
-  const insuranceIds = assetsWithHoldings
-    .filter((a) => a.assetType === 'insurance')
-    .map((a) => a.assetId)
-  const [insuranceDetailsMap, insuranceBuysMap] = await timed('  insurance details+buys', () =>
-    Promise.all([
-      getInsuranceDetails(insuranceIds),
-      getInsuranceBuys(insuranceIds),
-    ])
-  )
-
-  // contribution 전용: 배당률 메타데이터
-  const contributionIds = assetsWithHoldings
-    .filter((a) => a.assetType === 'contribution')
-    .map((a) => a.assetId)
-  const contributionDividendRatesMap = await timed('  contribution dividend rates', () =>
-    getContributionDividendRates(contributionIds)
-  )
 
   const fxCacheRow = priceMap.get('USD_KRW')
   const currentFxRate = fxCacheRow ? fxCacheRow.priceKrw / 10000 : null

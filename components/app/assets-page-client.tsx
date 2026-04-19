@@ -1,6 +1,5 @@
 'use client'
-import { useState, useEffect, useTransition, useRef, useCallback } from 'react'
-import confetti from 'canvas-confetti'
+import { useState, useEffect, useTransition, useRef, useCallback, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Layers, LayoutGrid, TrendingUp, TrendingDown, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown, HelpCircle, ShieldCheck, Gem, CreditCard, RefreshCw, Wallet } from 'lucide-react'
 
@@ -897,7 +896,7 @@ function FloatingLogos({ performances }: { performances: AssetPerformance[] }) {
   )
 }
 
-export function SummaryCards({ grouped, performances, valueCandles, showTypeStrip = true }: { grouped: Record<string, AssetPerformance[]>; performances: AssetPerformance[]; valueCandles?: CandlestickPoint[]; showTypeStrip?: boolean }) {
+export const SummaryCards = memo(function SummaryCards({ grouped, performances, valueCandles, showTypeStrip = true }: { grouped: Record<string, AssetPerformance[]>; performances: AssetPerformance[]; valueCandles?: CandlestickPoint[]; showTypeStrip?: boolean }) {
   const types = Object.keys(grouped)
 
   const grandTotalCost = performances.reduce((s, a) => s + Number(a.totalCostKrw), 0)
@@ -918,7 +917,9 @@ export function SummaryCards({ grouped, performances, valueCandles, showTypeStri
 
   const fireworks = useCallback(() => {
     const burst = (x: number, y: number, delay: number) => setTimeout(() => {
-      confetti({ particleCount: 120, spread: 80, startVelocity: 55, origin: { x, y }, colors: ['#ff6b6b', '#a78bfa', '#34d399', '#60a5fa', '#f97316', '#facc15'] })
+      import('canvas-confetti').then(({ default: confetti }) => {
+        confetti({ particleCount: 120, spread: 80, startVelocity: 55, origin: { x, y }, colors: ['#ff6b6b', '#a78bfa', '#34d399', '#60a5fa', '#f97316', '#facc15'] })
+      })
     }, delay)
     burst(0.5, 0.4, 0)
     burst(0.3, 0.5, 200)
@@ -1048,7 +1049,7 @@ export function SummaryCards({ grouped, performances, valueCandles, showTypeStri
       </div>}
     </div>
   )
-}
+})
 
 interface AssetsPageClientProps {
   performances: AssetPerformance[]
