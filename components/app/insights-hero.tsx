@@ -31,13 +31,6 @@ export function InsightsHero({ yearStr }: Props) {
           0%,100% { opacity: .25; transform: scale(1);   }
           50%      { opacity: .55; transform: scale(1.3); }
         }
-        @keyframes ih-scan {
-          0%   { transform: translateX(-100%); }
-          100% { transform: translateX(500%);  }
-        }
-        @keyframes ih-badge {
-          0%,100% { opacity: .7; } 50% { opacity: 1; }
-        }
         @keyframes ih-hex {
           0%,100% { opacity: .018; } 50% { opacity: .04; }
         }
@@ -64,15 +57,6 @@ export function InsightsHero({ yearStr }: Props) {
         <div
           className="absolute inset-0"
           style={{ background: 'radial-gradient(ellipse 45% 80% at 0% 50%, rgba(6,182,212,.08) 0%, transparent 65%)' }}
-        />
-
-        {/* Scan beam */}
-        <div
-          className="absolute top-0 bottom-0 w-[15%]"
-          style={{
-            background: 'linear-gradient(to right, transparent, rgba(34,211,238,.04), transparent)',
-            animation: 'ih-scan 8s cubic-bezier(.4,0,.6,1) 1s infinite',
-          }}
         />
 
         {/* Line chart — right half */}
@@ -149,7 +133,6 @@ export function InsightsHero({ yearStr }: Props) {
           {/* Badge */}
           <div
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/20 bg-cyan-500/[0.07] text-cyan-400/80 text-[11px] font-bold tracking-widest uppercase"
-            style={{ animation: 'ih-badge 2.5s ease-in-out infinite' }}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
             {yearStr} · 인사이트
@@ -158,13 +141,10 @@ export function InsightsHero({ yearStr }: Props) {
           {/* Title */}
           <div style={{ animation: 'ih-num .6s ease-out .2s both' }}>
             <h1
-              className="text-[28px] sm:text-4xl font-black leading-tight"
+              className="text-[28px] sm:text-4xl font-black leading-tight text-white"
               style={{
                 fontFamily: "'Sunflower', sans-serif",
                 letterSpacing: '-0.02em',
-                background: 'linear-gradient(90deg, #ffffff 0%, rgba(34,211,238,0.85) 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
               }}
             >
               포트폴리오 인사이트
