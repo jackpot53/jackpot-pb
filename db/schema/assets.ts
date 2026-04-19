@@ -1,7 +1,7 @@
 import { pgTable, uuid, varchar, timestamp, pgEnum, index } from 'drizzle-orm/pg-core'
 
 export const assetTypeEnum = pgEnum('asset_type', [
-  'stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'savings', 'real_estate', 'fund', 'insurance', 'precious_metal', 'cma'
+  'stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'savings', 'real_estate', 'fund', 'insurance', 'precious_metal', 'cma', 'contribution', 'bond'
 ])
 
 export const priceTypeEnum = pgEnum('price_type', ['live', 'manual'])
