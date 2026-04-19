@@ -47,6 +47,10 @@ const assetSchema = z.object({
   // Savings-specific fields
   savingsKind: z.enum(['term', 'recurring', 'free']).optional().nullable(),
   interestRatePct: z.string().optional().nullable(),  // e.g. "5.25"
+  contributionDividendRates: z.array(z.object({
+    year: z.number().int(),
+    ratePct: z.string(),
+  })).optional().nullable(),
   depositStartDate: z.string().optional().nullable(),  // 'YYYY-MM-DD'
   maturityDate: z.string().optional().nullable(),      // 'YYYY-MM-DD'
   monthlyContributionKrw: z.string().optional().nullable(),
@@ -77,6 +81,7 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
     paymentEndDate, coverageEndDate, sumInsuredKrw, expectedReturnRatePct,
     savingsKind, interestRatePct, depositStartDate, maturityDate,
     monthlyContributionKrw, compoundType, taxType, autoRenew,
+    contributionDividendRates: contributionDividendRatesInput,  // rename to avoid DB import collision
     ...rest
   } = parsed.data
 
@@ -119,15 +124,20 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
       userId: user.id,
       depositDate: normalizedDepositDate,
     })
-    if (interestRatePct && !isNaN(parseFloat(interestRatePct))) {
-      const rateBp = Math.round(parseFloat(interestRatePct) * 10000)
-      const currentYear = new Date().getFullYear()
-      await db.insert(contributionDividendRates).values({
-        assetId: newAsset.id,
-        userId: user.id,
-        year: currentYear,
-        rateBp,
-      })
+    if (contributionDividendRatesInput && contributionDividendRatesInput.length > 0) {
+      const validRates = contributionDividendRatesInput.filter(
+        r => r.ratePct.trim() !== '' && !isNaN(parseFloat(r.ratePct))
+      )
+      if (validRates.length > 0) {
+        await db.insert(contributionDividendRates).values(
+          validRates.map(r => ({
+            assetId: newAsset.id,
+            userId: user.id,
+            year: r.year,
+            rateBp: Math.round(parseFloat(r.ratePct) * 10000),
+          }))
+        )
+      }
     }
     revalidatePath('/assets')
     revalidatePath('/transactions')
