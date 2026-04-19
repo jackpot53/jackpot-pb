@@ -1,4 +1,5 @@
 import { HelpCircle } from 'lucide-react'
+import { PageHeader } from '@/components/app/page-header'
 
 
 const FAQS = [
@@ -49,16 +50,11 @@ const FAQS = [
 export default function HelpPage() {
   return (
     <div className="space-y-6">
-      {/* 페이지 헤더 */}
-      <div className="flex items-center gap-3 py-2">
-        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-cyan-500/10">
-          <HelpCircle className="h-4.5 w-4.5 text-cyan-600" />
-        </div>
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">자주 묻는 질문</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">도움말 및 API 정보</p>
-        </div>
-      </div>
+      <PageHeader
+        icon={HelpCircle}
+        title="자주 묻는 질문"
+        description="도움말 및 API 정보"
+      />
 
       {/* FAQ 영역 */}
       <div className="space-y-3">
@@ -181,8 +177,6 @@ export default function HelpPage() {
         })}
       </div>
 
-      {/* 하단 여유공간 */}
-      <div className="h-32" />
     </div>
   )
 }

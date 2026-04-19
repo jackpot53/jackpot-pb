@@ -10,32 +10,28 @@ import { toMonthlyData, toAnnualData, toDailyData, snapshotsForType } from '@/li
 import { AssetsPageClient } from '@/components/app/assets-page-client'
 import Link from 'next/link'
 import { timed } from '@/lib/perf'
+import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/app/page-header'
 
 export default async function AssetsPage() {
   const user = await getAuthUser()
   if (!user) redirect('/login')
 
+  const action = (
+    <Button render={<Link href="/assets/new" />} size="sm" className="gap-1.5 rounded-xl font-semibold">
+      <PlusCircle className="h-4 w-4" />
+      자산 추가
+    </Button>
+  )
+
   return (
     <div className="space-y-6">
-      {/* 페이지 헤더 */}
-      <div className="flex items-center justify-between gap-4 py-2">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10">
-            <Wallet className="h-4.5 w-4.5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">내 포트폴리오</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">보유 자산을 등록하고 실시간 수익률을 추적합니다</p>
-          </div>
-        </div>
-        <Link
-          href="/assets/new"
-          className="group flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold transition-colors shrink-0"
-        >
-          <PlusCircle className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />
-          자산 추가
-        </Link>
-      </div>
+      <PageHeader
+        icon={Wallet}
+        title="내 포트폴리오"
+        description="보유 자산을 등록하고 실시간 수익률을 추적합니다"
+        action={action}
+      />
 
       <Suspense fallback={
         <div className="h-96 rounded-2xl bg-muted/40 animate-pulse" />
