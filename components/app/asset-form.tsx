@@ -23,6 +23,8 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { AssetFormValues } from '@/app/actions/assets'
+import type { ContributionDividendRateRow } from '@/db/schema/contribution-dividend-rates'
+import { upsertDividendRate, deleteDividendRate } from '@/app/actions/contribution'
 
 const TRADEABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'real_estate', 'savings']
 const SEARCHABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us']
@@ -62,10 +64,10 @@ interface TickerSuggestion {
 
 const assetSchema = z.object({
   name: z.string().min(1, '종목명을 입력해주세요.').max(255),
-  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal', 'cma']),
+  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal', 'cma', 'contribution', 'bond']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
-  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_im_life', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire']).optional().nullable(),
+  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul', 'coop_shincom', 'coop_saemaul', 'coop_suhyup', 'coop_nh', 'coop_nfcf', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_im_life', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire']).optional().nullable(),
   brokerageId: z.string().max(50).optional().nullable(),
   withdrawalBankId: z.string().max(50).optional().nullable(),
   owner: z.string().max(20).optional().nullable(),
@@ -114,6 +116,7 @@ const ASSET_TYPE_LABELS: Record<string, string> = {
   fund: '펀드',
   savings: '예적금',
   real_estate: '부동산',
+  contribution: '출자금',
 }
 
 const ASSET_TYPE_ICONS: Record<string, LucideIcon> = {
@@ -125,9 +128,10 @@ const ASSET_TYPE_ICONS: Record<string, LucideIcon> = {
   fund: Briefcase,
   savings: Landmark,
   real_estate: Building2,
+  contribution: Coins,
 }
 
-const MANUAL_PRICE_TYPES = ['savings', 'real_estate']
+const MANUAL_PRICE_TYPES = ['savings', 'real_estate', 'contribution']
 
 const tileClass = (active: boolean) =>
   `rounded-md border py-2.5 px-1.5 text-[11px] text-center leading-snug transition-all duration-150 cursor-pointer flex flex-col items-center gap-1.5 ${
@@ -154,9 +158,118 @@ interface AssetFormProps {
   submitLabel: string
   showInitialTransaction?: boolean
   transactionSectionLabel?: string
+  contributionDividendRates?: ContributionDividendRateRow[]
+  assetId?: string
 }
 
-export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, showInitialTransaction, transactionSectionLabel }: AssetFormProps) {
+function ContributionDividendSection({
+  assetId,
+  rates: initialRates,
+}: {
+  assetId: string
+  rates: ContributionDividendRateRow[]
+}) {
+  const [rates, setRates] = useState<ContributionDividendRateRow[]>(initialRates)
+  const [yearInput, setYearInput] = useState(String(new Date().getFullYear()))
+  const [rateInput, setRateInput] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [pending, startTransition] = useTransition()
+
+  function handleAdd() {
+    const year = parseInt(yearInput, 10)
+    if (isNaN(year) || !rateInput) { setError('연도와 배당률을 입력해주세요.'); return }
+    setError(null)
+    startTransition(async () => {
+      const result = await upsertDividendRate(assetId, year, rateInput)
+      if (result?.error) { setError(result.error); return }
+      setRates(prev => {
+        const filtered = prev.filter(r => r.year !== year)
+        return [...filtered, {
+          id: '', assetId, userId: '', year,
+          rateBp: Math.round(parseFloat(rateInput) * 10000),
+          createdAt: new Date(),
+        }].sort((a, b) => a.year - b.year)
+      })
+      setRateInput('')
+    })
+  }
+
+  function handleDelete(year: number) {
+    startTransition(async () => {
+      await deleteDividendRate(assetId, year)
+      setRates(prev => prev.filter(r => r.year !== year))
+    })
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-muted/50 p-4 flex flex-col gap-3">
+      <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground pb-2.5 border-b border-border">
+        <span className="flex items-center justify-center w-6 h-6 rounded-md bg-muted">
+          <TrendingUp className="h-3.5 w-3.5 shrink-0" />
+        </span>
+        배당 이력
+      </p>
+
+      {rates.length > 0 ? (
+        <div className="flex flex-col gap-1.5">
+          {[...rates].sort((a, b) => a.year - b.year).map(r => (
+            <div key={r.year} className="flex items-center justify-between px-3 py-2 rounded-lg bg-card border border-border">
+              <span className="text-sm font-medium">{r.year}년</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-mono text-green-400">{(r.rateBp / 10000).toFixed(2)}%</span>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(r.year)}
+                  disabled={pending}
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground text-center py-2">배당 이력이 없습니다.</p>
+      )}
+
+      <div className="flex gap-2 items-end">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-muted-foreground">연도</label>
+          <Input
+            type="number"
+            value={yearInput}
+            onChange={e => setYearInput(e.target.value)}
+            className="w-20"
+            placeholder="2025"
+          />
+        </div>
+        <div className="flex flex-col gap-1 flex-1">
+          <label className="text-xs text-muted-foreground">배당률 (%)</label>
+          <Input
+            type="number"
+            step="0.01"
+            value={rateInput}
+            onChange={e => setRateInput(e.target.value)}
+            placeholder="예: 3.5"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleAdd}
+          disabled={pending}
+          className="rounded-md bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+        >
+          {pending ? '저장 중…' : '추가'}
+        </button>
+      </div>
+
+      {error && <p className="text-xs text-destructive">{error}</p>}
+    </div>
+  )
+}
+
+export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, showInitialTransaction, transactionSectionLabel, contributionDividendRates, assetId }: AssetFormProps) {
   const [isPending, startTransition] = useTransition()
   const [suggestions, setSuggestions] = useState<TickerSuggestion[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -567,6 +680,79 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
           )}
         </div>
 
+        {/* 출자금 도움말 */}
+        {assetType === 'contribution' && (
+          <div className="col-span-2 rounded-xl border border-border overflow-hidden text-xs text-foreground/80">
+            <div className="px-4 py-3 border-b border-border bg-muted/40 flex items-center gap-2">
+              <Info className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="font-semibold text-sm">출자금이란?</span>
+            </div>
+            <div className="px-4 py-3 leading-relaxed border-b border-border text-muted-foreground">
+              조합(신협, 새마을금고, 농협 등)에 조합원으로 가입하면서 납입하는 돈으로, 예금이 아닌 <strong className="text-foreground">조합의 주인(조합원)이 되는 지분</strong> 성격의 자산입니다.
+            </div>
+
+            <div className="px-4 py-3 border-b border-border">
+              <p className="font-semibold mb-2 text-foreground/70 tracking-wide uppercase text-[10px]">핵심 정보 한눈에 보기</p>
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-1.5 pr-4 font-medium text-muted-foreground w-32">항목</th>
+                    <th className="text-left py-1.5 font-medium text-muted-foreground">내용</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {([
+                    ['법적 성격', '지분 (조합원 자격)'],
+                    ['원금 보장', '❌ 비보장 (조합 부실 시 손실 가능)'],
+                    ['예금자보호', '❌ 적용 안 됨'],
+                    ['수익 방식', '연 1회 배당 (조합 결산 후)'],
+                    ['배당률', '매년 조합 실적에 따라 변동 (0원 가능)'],
+                    ['중도 인출', '❌ 불가 (탈퇴 신청 후 처리 기간 필요)'],
+                    ['비과세 한도', '출자금 1,000만원 이하 배당소득 비과세'],
+                    ['초과 시 세금', '1,000만원 초과분 배당에 15.4% 부과'],
+                  ] as const).map(([item, content]) => (
+                    <tr key={item}>
+                      <td className="py-1.5 pr-4 text-muted-foreground">{item}</td>
+                      <td className="py-1.5">{content}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="px-4 py-3 border-b border-border">
+              <p className="font-semibold mb-2 text-foreground/70 tracking-wide uppercase text-[10px]">비과세 예시</p>
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-border">
+                    {['출자금', '배당률', '배당금', '비과세', '과세', '실수령'].map((h) => (
+                      <th key={h} className="text-left py-1.5 pr-3 last:pr-0 font-medium text-muted-foreground whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {([
+                    ['500만원', '3%', '15만원', '15만원 전액', '없음', '15만원'],
+                    ['1,000만원', '3%', '30만원', '30만원 전액', '없음', '30만원'],
+                    ['1,500만원', '3%', '45만원', '30만원', '15만원 × 15.4% = 2.3만원', '42.7만원'],
+                    ['2,000만원', '3%', '60만원', '30만원', '30만원 × 15.4% = 4.6만원', '55.4만원'],
+                  ] as const).map((row) => (
+                    <tr key={row[0]}>
+                      {row.map((cell, i) => (
+                        <td key={i} className="py-1.5 pr-3 last:pr-0 whitespace-nowrap">{cell}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="px-4 py-3 text-muted-foreground leading-relaxed">
+              ⚠️ 비과세 한도 및 적용 조건은 변경될 수 있으며, 여러 조합에 분산 출자 시 합산 기준 적용 여부는 가입 전 해당 조합에 직접 확인하세요.
+            </div>
+          </div>
+        )}
+
         {/* 숨겨진 필드 */}
         <div className="col-span-2 hidden">
           <FormField
@@ -600,6 +786,12 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
 
         {form.formState.errors.root && (
           <p className="col-span-2 text-sm text-destructive pt-2">{form.formState.errors.root.message}</p>
+        )}
+
+        {assetType === 'contribution' && assetId && contributionDividendRates !== undefined && (
+          <div className="col-span-2">
+            <ContributionDividendSection assetId={assetId} rates={contributionDividendRates} />
+          </div>
         )}
 
         <div className="col-span-2 flex items-center justify-end gap-2 pt-4 mt-2 border-t">
