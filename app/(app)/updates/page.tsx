@@ -30,9 +30,9 @@ export default async function UpdatesPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-900 shadow-sm p-6 sm:p-8 space-y-6">
+      <div className="bg-card rounded-2xl border border-border shadow-sm p-6 sm:p-8 space-y-6">
         {items.length === 0 ? (
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-12 text-center text-gray-400">
+          <div className="rounded-xl border border-border bg-muted/50 p-12 text-center text-muted-foreground">
             아직 업데이트 내역이 없습니다.
           </div>
         ) : (
