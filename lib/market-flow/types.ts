@@ -1,5 +1,5 @@
 export type KrAssetType = 'stock_kr' | 'etf_kr'
-export type UsAssetType = 'stock_us' | 'crypto'
+export type UsAssetType = 'stock_us' | 'etf_us'
 
 export interface FlowEntry {
   code: string           // 6자리 (KR) or symbol (US)

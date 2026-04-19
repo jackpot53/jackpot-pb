@@ -1,6 +1,6 @@
-import { fetchKrInvestorFlow } from './naver-investor'
-import { fetchKrHotStocks } from './naver-hot'
-import { fetchYahooTrending } from './yahoo-trending'
+import { fetchKrInvestorFlow } from './kis-investor'
+import { fetchKrHotStocks } from './kis-volume'
+import { fetchUsTrending } from './kis-overseas-flow'
 import type { MarketFlowData, KrFlowData, UsFlowData } from './types'
 
 // 주간 캐시 (서버 인스턴스 내 in-memory)
@@ -20,7 +20,7 @@ async function fetchKrFlow(): Promise<KrFlowData> {
 }
 
 async function fetchUsFlow(): Promise<UsFlowData> {
-  const trending = await fetchYahooTrending()
+  const trending = await fetchUsTrending()
   return { trending }
 }
 
