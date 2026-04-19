@@ -19,6 +19,7 @@ export const accountTypeEnum = pgEnum('account_type', [
   'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju',
   'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper',
   'bank_shincom', 'bank_saemaul',
+  'coop_shincom', 'coop_saemaul', 'coop_suhyup', 'coop_nh', 'coop_nfcf',
   'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life',
   'ins_aia', 'ins_metlife', 'ins_prudential',
   'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire', 'ins_im_life',

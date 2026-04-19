@@ -30,7 +30,7 @@ import { AssetLogo } from '@/components/app/asset-logo'
 
 const TRADEABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'real_estate', 'savings', 'cma']
 const SEARCHABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'fund', 'crypto']
-const ACCOUNT_TYPE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'fund', 'real_estate', 'crypto', 'savings', 'insurance', 'cma']
+const ACCOUNT_TYPE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'fund', 'real_estate', 'crypto', 'savings', 'insurance', 'cma', 'contribution']
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   isa: 'ISA', irp: 'IRP', pension: '연금저축', dc: 'DC', brokerage: '위탁', spot: '현물', cma: 'CMA', insurance: '보험',
@@ -45,6 +45,7 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   bank_busan: '부산', bank_daegu: '대구', bank_gwangju: '광주', bank_jeonbuk: '전북', bank_jeju: '제주',
   bank_sbi: 'SBI저축', bank_ok: 'OK저축', bank_welcome: '웰컴저축', bank_pepper: '페퍼저축',
   bank_shincom: '신협', bank_saemaul: '새마을금고',
+  coop_shincom: '신협', coop_saemaul: '새마을금고', coop_suhyup: '수협', coop_nh: '농협', coop_nfcf: '산림조합',
   ins_samsung_life: '삼성생명', ins_hanwha_life: '한화생명', ins_kyobo: '교보생명',
   ins_shinhan_life: '신한라이프', ins_nh_life: 'NH농협생명', ins_kb_life: 'KB라이프',
   ins_aia: 'AIA생명', ins_metlife: '메트라이프', ins_prudential: '푸르덴셜',
@@ -65,6 +66,7 @@ const ACCOUNT_TYPE_ICONS: Record<string, LucideIcon> = {
   bank_busan: Landmark, bank_daegu: Landmark, bank_gwangju: Landmark, bank_jeonbuk: Landmark, bank_jeju: Landmark,
   bank_sbi: Landmark, bank_ok: Landmark, bank_welcome: Landmark, bank_pepper: Landmark,
   bank_shincom: Landmark, bank_saemaul: Landmark,
+  coop_shincom: Users, coop_saemaul: Users, coop_suhyup: Users, coop_nh: Users, coop_nfcf: Users,
   ins_samsung_life: Heart, ins_hanwha_life: Heart, ins_kyobo: Heart,
   ins_shinhan_life: Heart, ins_nh_life: Heart, ins_kb_life: Heart,
   ins_aia: Heart, ins_metlife: Heart, ins_prudential: Heart,
@@ -81,6 +83,11 @@ const ACCOUNT_TYPE_COLORS: Record<string, { icon: string; bg: string }> = {
   spot:      { icon: 'text-amber-400',   bg: 'bg-amber-500/10' },
   cma:       { icon: 'text-teal-400',    bg: 'bg-teal-500/10' },
   insurance: { icon: 'text-cyan-400',    bg: 'bg-cyan-500/10' },
+  coop_shincom: { icon: 'text-green-400', bg: 'bg-green-500/10' },
+  coop_saemaul: { icon: 'text-green-400', bg: 'bg-green-500/10' },
+  coop_suhyup:  { icon: 'text-blue-400',  bg: 'bg-blue-500/10' },
+  coop_nh:      { icon: 'text-green-400', bg: 'bg-green-500/10' },
+  coop_nfcf:    { icon: 'text-emerald-400', bg: 'bg-emerald-500/10' },
 }
 const ACCOUNT_TYPE_BY_ASSET: Record<string, string[]> = {
   real_estate: ['spot'],
@@ -93,6 +100,7 @@ const ACCOUNT_TYPE_BY_ASSET: Record<string, string[]> = {
   savings: ['bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul'],
   cma: ['bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb'],
   insurance: ['ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_im_life', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire'],
+  contribution: ['coop_shincom', 'coop_saemaul', 'coop_suhyup', 'coop_nh', 'coop_nfcf'],
 }
 const EXCHANGE_GROUPS = [
   { label: '국내', items: ['upbit', 'bithumb', 'coinone', 'korbit'] },
@@ -115,6 +123,9 @@ const INSURANCE_GROUPS = [
   { label: '생명보험', items: ['ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_im_life'] },
   { label: '손해보험', items: ['ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire'] },
 ]
+const COOP_GROUPS = [
+  { label: '상호금융', items: ['coop_shincom', 'coop_saemaul', 'coop_suhyup', 'coop_nh', 'coop_nfcf'] },
+]
 const DOMAIN_LOGO_MAP: Record<string, string> = {
   upbit: 'upbit.com', bithumb: 'bithumb.com', coinone: 'coinone.co.kr', korbit: 'korbit.co.kr',
   binance: 'binance.com', coinbase: 'coinbase.com', kraken: 'kraken.com', okx: 'okx.com',
@@ -131,6 +142,7 @@ const DOMAIN_LOGO_MAP: Record<string, string> = {
   bank_jeonbuk: 'jbbank.co.kr', bank_jeju: 'jejubank.co.kr',
   bank_sbi: 'sbi.co.kr', bank_ok: 'oksavingsbank.com', bank_welcome: 'welcomebank.co.kr', bank_pepper: 'pepperbank.co.kr',
   bank_shincom: 'cu.co.kr', bank_saemaul: 'kfcc.co.kr',
+  coop_shincom: 'cu.co.kr', coop_saemaul: 'kfcc.co.kr', coop_suhyup: 'suhyup.co.kr', coop_nh: 'nonghyup.com', coop_nfcf: 'nfcf.or.kr',
   ins_samsung_life: 'samsunglife.com', ins_hanwha_life: 'hanwhalife.com', ins_kyobo: 'kyobo.co.kr',
   ins_shinhan_life: 'shinhanlife.co.kr', ins_nh_life: 'nhlife.co.kr', ins_kb_life: 'kblife.co.kr',
   ins_aia: 'aia.co.kr', ins_metlife: 'metlife.co.kr', ins_prudential: 'prudential.co.kr',
@@ -253,10 +265,10 @@ function getTickerLabel(assetType: string): string {
 
 const assetSchema = z.object({
   name: z.string().max(255),
-  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal', 'cma']),
+  assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal', 'cma', 'contribution', 'bond']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
-  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_im_life', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire']).optional().nullable(),
+  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul', 'coop_shincom', 'coop_saemaul', 'coop_suhyup', 'coop_nh', 'coop_nfcf', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_im_life', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire']).optional().nullable(),
   brokerageId: z.string().max(50).optional().nullable(),
   withdrawalBankId: z.string().max(50).optional().nullable(),
   owner: z.string().max(20).optional().nullable(),
@@ -407,6 +419,13 @@ export function NewAssetForm({ onSubmit }: {
   const insuranceType = form.watch('insuranceType')
   const insuranceCategory = form.watch('insuranceCategory')
 
+  // contribution: accountType 선택 시 종목명 자동 세팅
+  useEffect(() => {
+    if (assetType !== 'contribution' || !accountType) return
+    const label = ACCOUNT_TYPE_LABELS[accountType]
+    if (label) form.setValue('name', `${label} 출자금`)
+  }, [accountType, assetType])
+
   // insuranceType → insuranceCategory 자동 세팅
   useEffect(() => {
     if (!insuranceType) return
@@ -434,7 +453,7 @@ export function NewAssetForm({ onSubmit }: {
     if (!STOCK_ETF_TYPES.includes(assetType)) {
       form.setValue('brokerageId', null)
     }
-    form.setValue('priceType', ['savings', 'real_estate', 'insurance', 'precious_metal', 'cma'].includes(assetType) ? 'manual' : 'live')
+    form.setValue('priceType', ['savings', 'real_estate', 'insurance', 'precious_metal', 'cma', 'contribution', 'bond'].includes(assetType) ? 'manual' : 'live')
     if (['stock_kr', 'etf_kr', 'fund'].includes(assetType)) {
       form.setValue('currency', 'KRW')
     }
@@ -784,11 +803,11 @@ export function NewAssetForm({ onSubmit }: {
                   <FormItem className="flex-1 min-w-0">
                     <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground pb-2.5 mb-3 border-b border-border">
                       <Wallet className="h-4 w-4" />
-                      {assetType === 'crypto' ? '거래소' : assetType === 'fund' ? '운용사' : assetType === 'savings' ? '은행' : assetType === 'insurance' ? '보험사' : '금융회사'}
+                      {assetType === 'crypto' ? '거래소' : assetType === 'fund' ? '운용사' : assetType === 'savings' ? '은행' : assetType === 'insurance' ? '보험사' : assetType === 'contribution' ? '조합' : '금융회사'}
                     </FormLabel>
                     <FormControl>
                       <div className="rounded-xl border border-border bg-muted/50 p-2">
-                        {(assetType === 'crypto' ? EXCHANGE_GROUPS : assetType === 'fund' ? FUND_COMPANY_GROUPS : assetType === 'insurance' ? INSURANCE_GROUPS : BANK_GROUPS).map((group) => (
+                        {(assetType === 'crypto' ? EXCHANGE_GROUPS : assetType === 'fund' ? FUND_COMPANY_GROUPS : assetType === 'insurance' ? INSURANCE_GROUPS : assetType === 'contribution' ? COOP_GROUPS : BANK_GROUPS).map((group) => (
                           <div key={group.label} className="mb-1.5 last:mb-0">
                             <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{group.label}</p>
                             <div className={cn('grid gap-1.5', assetType === 'savings' ? 'grid-cols-5' : 'grid-cols-4')}>
@@ -1168,7 +1187,7 @@ export function NewAssetForm({ onSubmit }: {
 
             {/* 하: 종목코드 + 메모 */}
             {/* 좌: 종목코드 */}
-              {assetType !== 'insurance' && priceType !== 'manual' && <FormField
+              {assetType !== 'insurance' && assetType !== 'contribution' && assetType !== 'bond' && priceType !== 'manual' && <FormField
                 control={form.control}
                 name="ticker"
                 render={({ field }) => {
@@ -1217,6 +1236,76 @@ export function NewAssetForm({ onSubmit }: {
                 </FormItem>
               )}
             />
+
+            {/* 출자금 도움말 */}
+            {assetType === 'contribution' && (
+              <div className="rounded-xl border border-border overflow-hidden text-xs text-foreground/80">
+                <div className="px-4 py-3 border-b border-border bg-muted/40 flex items-center gap-2">
+                  <Info className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span className="font-semibold text-sm">출자금이란?</span>
+                </div>
+                <div className="px-4 py-3 leading-relaxed border-b border-border text-muted-foreground">
+                  조합(신협, 새마을금고, 농협 등)에 조합원으로 가입하면서 납입하는 돈으로, 예금이 아닌 <strong className="text-foreground">조합의 주인(조합원)이 되는 지분</strong> 성격의 자산입니다.
+                </div>
+                <div className="px-4 py-3 border-b border-border">
+                  <p className="font-semibold mb-2 text-foreground/70 tracking-wide uppercase text-[10px]">핵심 정보 한눈에 보기</p>
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-1.5 pr-4 font-medium text-muted-foreground w-32">항목</th>
+                        <th className="text-left py-1.5 font-medium text-muted-foreground">내용</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                      {([
+                        ['법적 성격', '지분 (조합원 자격)'],
+                        ['원금 보장', '❌ 비보장 (조합 부실 시 손실 가능)'],
+                        ['예금자보호', '❌ 적용 안 됨'],
+                        ['수익 방식', '연 1회 배당 (조합 결산 후)'],
+                        ['배당률', '매년 조합 실적에 따라 변동 (0원 가능)'],
+                        ['중도 인출', '❌ 불가 (탈퇴 신청 후 처리 기간 필요)'],
+                        ['비과세 한도', '출자금 1,000만원 이하 배당소득 비과세'],
+                        ['초과 시 세금', '1,000만원 초과분 배당에 15.4% 부과'],
+                      ] as [string, string][]).map(([item, content]) => (
+                        <tr key={item}>
+                          <td className="py-1.5 pr-4 text-muted-foreground">{item}</td>
+                          <td className="py-1.5">{content}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="px-4 py-3 border-b border-border">
+                  <p className="font-semibold mb-2 text-foreground/70 tracking-wide uppercase text-[10px]">비과세 예시</p>
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-border">
+                        {['출자금', '배당률', '배당금', '비과세', '과세', '실수령'].map((h) => (
+                          <th key={h} className="text-left py-1.5 pr-3 last:pr-0 font-medium text-muted-foreground whitespace-nowrap">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                      {([
+                        ['500만원', '3%', '15만원', '15만원 전액', '없음', '15만원'],
+                        ['1,000만원', '3%', '30만원', '30만원 전액', '없음', '30만원'],
+                        ['1,500만원', '3%', '45만원', '30만원', '15만원 × 15.4% = 2.3만원', '42.7만원'],
+                        ['2,000만원', '3%', '60만원', '30만원', '30만원 × 15.4% = 4.6만원', '55.4만원'],
+                      ] as string[][]).map((r) => (
+                        <tr key={r[0]}>
+                          {r.map((c, i) => (
+                            <td key={i} className="py-1.5 pr-3 last:pr-0 whitespace-nowrap">{c}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="px-4 py-3 text-muted-foreground leading-relaxed">
+                  ⚠️ 비과세 한도 및 적용 조건은 변경될 수 있으며, 여러 조합에 분산 출자 시 합산 기준 적용 여부는 가입 전 해당 조합에 직접 확인하세요.
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1296,7 +1385,7 @@ export function NewAssetForm({ onSubmit }: {
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-border" />
               <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                {assetType === 'insurance' ? '보험 납입 내역' : assetType === 'savings' ? '예적금 정보' : '초기 매수 내역'}
+                {assetType === 'insurance' ? '보험 납입 내역' : assetType === 'savings' ? '예적금 정보' : assetType === 'contribution' ? '출자 정보' : '초기 매수 내역'}
               </span>
               <div className="h-px flex-1 bg-border" />
             </div>
@@ -1398,6 +1487,50 @@ export function NewAssetForm({ onSubmit }: {
                   />
                 )}
 
+              </div>
+            ) : assetType === 'contribution' ? (
+              <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField control={form.control} name="initialPricePerUnit"
+                    render={({ field }) => (
+                      <FormItem className="rounded-xl border border-border bg-muted/50 p-4 flex flex-col gap-2">
+                        <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                          <Banknote className="h-3.5 w-3.5 shrink-0" />출자금액 (₩)
+                        </FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ''} inputMode="numeric" placeholder="예: 1000000" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField control={form.control} name="interestRatePct"
+                    render={({ field }) => (
+                      <FormItem className="rounded-xl border border-border bg-muted/50 p-4 flex flex-col gap-2">
+                        <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                          <TrendingUp className="h-3.5 w-3.5 shrink-0" />배당률 (%)
+                        </FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 3.5" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField control={form.control} name="depositStartDate"
+                  render={({ field }) => (
+                    <FormItem className="rounded-xl border border-border bg-muted/50 p-4 flex flex-col gap-2">
+                      <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                        <Calendar className="h-3.5 w-3.5 shrink-0" />출자일자
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} value={field.value ?? ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             ) : assetType === 'insurance' ? (
               <div className="flex flex-col gap-3">

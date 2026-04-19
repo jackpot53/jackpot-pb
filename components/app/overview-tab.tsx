@@ -1,6 +1,6 @@
 'use client'
 import { useState, useTransition } from 'react'
-import { Loader2, PiggyBank, TrendingUp, Calendar, Banknote, ShieldCheck } from 'lucide-react'
+import { Loader2, PiggyBank, TrendingUp, Calendar, Banknote, ShieldCheck, Info } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -694,6 +694,79 @@ export function OverviewTab({ asset, valuations, holding, savingsDetails = null,
           )}
         </div>
       </div>
+
+      {/* 출자금 도움말 */}
+      {asset.assetType === 'contribution' && (
+        <>
+          <Separator />
+          <div className="rounded-xl border border-border overflow-hidden text-xs text-foreground/80">
+            <div className="px-4 py-3 border-b border-border bg-muted/40 flex items-center gap-2">
+              <Info className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="font-semibold text-sm">출자금이란?</span>
+            </div>
+            <div className="px-4 py-3 leading-relaxed border-b border-border text-muted-foreground">
+              조합(신협, 새마을금고, 농협 등)에 조합원으로 가입하면서 납입하는 돈으로, 예금이 아닌 <strong className="text-foreground">조합의 주인(조합원)이 되는 지분</strong> 성격의 자산입니다.
+            </div>
+            <div className="px-4 py-3 border-b border-border">
+              <p className="font-semibold mb-2 text-foreground/70 tracking-wide uppercase text-[10px]">핵심 정보 한눈에 보기</p>
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-1.5 pr-4 font-medium text-muted-foreground w-32">항목</th>
+                    <th className="text-left py-1.5 font-medium text-muted-foreground">내용</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {([
+                    ['법적 성격', '지분 (조합원 자격)'],
+                    ['원금 보장', '❌ 비보장 (조합 부실 시 손실 가능)'],
+                    ['예금자보호', '❌ 적용 안 됨'],
+                    ['수익 방식', '연 1회 배당 (조합 결산 후)'],
+                    ['배당률', '매년 조합 실적에 따라 변동 (0원 가능)'],
+                    ['중도 인출', '❌ 불가 (탈퇴 신청 후 처리 기간 필요)'],
+                    ['비과세 한도', '출자금 1,000만원 이하 배당소득 비과세'],
+                    ['초과 시 세금', '1,000만원 초과분 배당에 15.4% 부과'],
+                  ] as [string, string][]).map(([item, content]) => (
+                    <tr key={item}>
+                      <td className="py-1.5 pr-4 text-muted-foreground">{item}</td>
+                      <td className="py-1.5">{content}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-4 py-3 border-b border-border">
+              <p className="font-semibold mb-2 text-foreground/70 tracking-wide uppercase text-[10px]">비과세 예시</p>
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-border">
+                    {['출자금', '배당률', '배당금', '비과세', '과세', '실수령'].map((h) => (
+                      <th key={h} className="text-left py-1.5 pr-3 last:pr-0 font-medium text-muted-foreground whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {([
+                    ['500만원', '3%', '15만원', '15만원 전액', '없음', '15만원'],
+                    ['1,000만원', '3%', '30만원', '30만원 전액', '없음', '30만원'],
+                    ['1,500만원', '3%', '45만원', '30만원', '15만원 × 15.4% = 2.3만원', '42.7만원'],
+                    ['2,000만원', '3%', '60만원', '30만원', '30만원 × 15.4% = 4.6만원', '55.4만원'],
+                  ] as string[][]).map((r) => (
+                    <tr key={r[0]}>
+                      {r.map((c, i) => (
+                        <td key={i} className="py-1.5 pr-3 last:pr-0 whitespace-nowrap">{c}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-4 py-3 text-muted-foreground leading-relaxed">
+              ⚠️ 비과세 한도 및 적용 조건은 변경될 수 있으며, 여러 조합에 분산 출자 시 합산 기준 적용 여부는 가입 전 해당 조합에 직접 확인하세요.
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Manual valuation section (only for manual assets) */}
       {isManual && (
