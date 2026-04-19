@@ -49,15 +49,21 @@ export default async function DashboardPage() {
   // Pass 0 when FX rate unavailable — computePortfolio guards against divide-by-zero
   const summary = computePortfolio(performances, fxRateInt ?? 0)
   const byType: AllocationSlice[] = aggregateByType(performances)
+  const fxRateUnavailable = fxRateInt === null
 
   return (
     <div className="space-y-8">
+      {fxRateUnavailable && (
+        <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          환율 정보를 불러오는 중입니다. 미국 주식 평가금액이 일시적으로 부정확할 수 있습니다.
+        </div>
+      )}
       {/* Row 2: Allocation Pie Chart + Breakdown List (DASH-02) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Pie Chart */}
-        <Card className="border-l-4 border-l-blue-500 shadow-sm">
-          <CardHeader className="bg-gradient-to-r from-blue-50/60 to-transparent dark:from-blue-950/20 rounded-tl-[calc(var(--radius)-1px)]">
-            <CardTitle className="text-base font-semibold text-blue-700 dark:text-blue-400">자산 배분</CardTitle>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3 border-b">
+            <CardTitle className="text-base font-semibold">자산 배분</CardTitle>
             <p className="text-xs text-muted-foreground mt-0.5">자산 유형별 비중을 시각화합니다</p>
           </CardHeader>
           <CardContent>
@@ -66,14 +72,17 @@ export default async function DashboardPage() {
         </Card>
 
         {/* Right: Breakdown by type */}
-        <Card className="border-l-4 border-l-violet-500 shadow-sm">
-          <CardHeader className="bg-gradient-to-r from-violet-50/60 to-transparent dark:from-violet-950/20 rounded-tl-[calc(var(--radius)-1px)]">
-            <CardTitle className="text-base font-semibold text-violet-700 dark:text-violet-400">유형별 합계</CardTitle>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3 border-b">
+            <CardTitle className="text-base font-semibold">유형별 합계</CardTitle>
             <p className="text-xs text-muted-foreground mt-0.5">각 자산 유형의 평가금액 합계입니다</p>
           </CardHeader>
           <CardContent>
             {byType.length === 0 ? (
-              <p className="text-sm text-muted-foreground">데이터 없음</p>
+              <p className="text-sm text-muted-foreground py-8 text-center">
+                아직 자산이 없습니다.{' '}
+                <a href="/assets" className="underline text-foreground">첫 자산을 추가해보세요 →</a>
+              </p>
             ) : (
               <div className="space-y-0">
                 {byType.map((entry, i) => (
