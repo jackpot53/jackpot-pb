@@ -72,7 +72,9 @@ export function AssetCandleChart({ ticker, initialData, assetType }: AssetCandle
   const [containerWidth, setContainerWidth] = useState(0)
 
   const baseData = useMemo<OhlcPoint[]>(
-    () => (period === '일봉' ? initialData : (fetchedByPeriod[period] ?? [])),
+    () => period === '일봉'
+      ? (fetchedByPeriod['일봉'] ?? initialData)
+      : (fetchedByPeriod[period] ?? []),
     [period, initialData, fetchedByPeriod],
   )
 
@@ -88,6 +90,19 @@ export function AssetCandleChart({ ticker, initialData, assetType }: AssetCandle
     }
     return [...baseData.slice(0, -1), merged]
   }, [baseData, liveTick, period])
+
+  // initialData가 비어있으면 일봉 데이터를 직접 fetch
+  useEffect(() => {
+    if (initialData.length > 0) return
+    const { interval, range } = PERIOD_PARAMS['일봉']
+    fetch(`/api/sparklines?tickers=${encodeURIComponent(ticker)}&interval=${interval}&range=${range}`)
+      .then((r) => r.json())
+      .then((res: Record<string, OhlcPoint[]>) => {
+        const d = res[ticker]
+        if (d && d.length >= 2) setFetchedByPeriod((prev) => ({ ...prev, '일봉': d }))
+      })
+      .catch(() => {})
+  }, [ticker, initialData.length])
 
   // 주/월봉 전환 시 호출 — 사용자 액션에서 직접 트리거.
   const selectPeriod = useCallback(
@@ -240,7 +255,7 @@ export function AssetCandleChart({ ticker, initialData, assetType }: AssetCandle
   const isUp = tooltip ? tooltip.point.close >= tooltip.point.open : true
 
   return (
-    <div className="flex flex-col h-full">
+    <div data-component="AssetCandleChart" className="flex flex-col h-full">
       <div className="flex items-center gap-1 px-2 pt-2 pb-1">
         {PERIODS.map((p) => (
           <button

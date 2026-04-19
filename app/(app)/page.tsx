@@ -1,4 +1,3 @@
-import { Suspense } from 'react'
 import { after } from 'next/server'
 import { redirect } from 'next/navigation'
 import { getAuthUser } from '@/utils/supabase/server'
@@ -17,8 +16,6 @@ import { AllocationPieChart, type AllocationSlice } from '@/components/app/alloc
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { DashboardGoalsSection } from '@/components/app/dashboard-goals-section'
 import { TodayReport } from '@/components/app/today-report'
-import { fetchMarketNewsForTypes } from '@/lib/market-news/fetch'
-import type { AssetPerformance } from '@/lib/portfolio/portfolio'
 import { timed } from '@/lib/perf'
 
 export default async function DashboardPage() {
@@ -110,9 +107,7 @@ export default async function DashboardPage() {
       {/* 오늘의 리포트 */}
       <section className="space-y-4">
         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">오늘의 리포트</h2>
-        <Suspense fallback={<TodayReport performances={performances} />}>
-          <TodayReportWithNews performances={performances} />
-        </Suspense>
+        <TodayReport performances={performances} />
       </section>
 
       {/* 목표 */}
@@ -121,8 +116,3 @@ export default async function DashboardPage() {
   )
 }
 
-async function TodayReportWithNews({ performances }: { performances: AssetPerformance[] }) {
-  const assetTypes = [...new Set(performances.map((a) => a.assetType))]
-  const news = await fetchMarketNewsForTypes(assetTypes)
-  return <TodayReport performances={performances} news={news} />
-}

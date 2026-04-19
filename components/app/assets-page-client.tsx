@@ -381,11 +381,14 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
     const isDueSoon = days >= 0 && days <= 30
     const label = isExpired ? '만기 경과' : days === 0 ? 'D-Day' : `D-${days}`
     return (
-      <span className={`shrink-0 inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded-full tabular-nums ${isExpired ? 'bg-muted text-muted-foreground' : isDueSoon ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-700'}`}>
-        <span className="font-normal opacity-70">만기일 {asset.maturityDate.replace(/-/g, '.')}</span>
-        <span className="opacity-40 mx-0.5">·</span>
-        <span>{label}</span>
-      </span>
+      <>
+        <span className="text-xs text-muted-foreground tabular-nums shrink-0">
+          만기일 {asset.maturityDate.replace(/-/g, '.')}
+        </span>
+        <span className={`shrink-0 inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded-full tabular-nums ${isExpired ? 'bg-muted text-muted-foreground' : isDueSoon ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
+          {label}
+        </span>
+      </>
     )
   })()
 
@@ -549,7 +552,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
   return (
     <div className={cn("relative rounded-xl border border-border hover:shadow-md transition-all", ASSET_TYPE_ACCENT[asset.assetType] ?? 'bg-card')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* 차트 토글 — 우상단 */}
-      {((showSparkline && sparklineData) || lineData !== undefined) && (
+      {((showSparkline && asset.ticker) || lineData !== undefined) && (
         <button
           onClick={() => setChartOpen(v => !v)}
           className="absolute top-2.5 right-2.5 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded-lg hover:bg-muted/40"
@@ -589,10 +592,10 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
               </div>
             </div>
           )}
-          {showSparkline && sparklineData && asset.ticker && !lineData && (
+          {showSparkline && asset.ticker && !lineData && (
             <div className="px-4 pb-3">
               <div className="h-[280px] rounded-lg overflow-hidden border border-border/40 bg-white">
-                <AssetCandleChart ticker={asset.ticker} initialData={sparklineData} assetType={asset.assetType} />
+                <AssetCandleChart ticker={asset.ticker} initialData={sparklineData ?? []} assetType={asset.assetType} />
               </div>
             </div>
           )}
@@ -802,7 +805,7 @@ function AssetCardList({ assets, title, sparklines, lineDataMap }: {
             {hasDuplicates && (
               <button
                 onClick={() => setMerged((v) => !v)}
-                className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FEE500] hover:bg-[#FFD600] border-2 border-[#FEE500] text-black text-xs font-semibold transition-all duration-200 hover:shadow-md active:scale-95', !merged && 'opacity-60')}
+                className={cn('flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors', merged ? 'bg-muted border-border text-foreground' : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted')}
               >
                 <Layers className="h-3.5 w-3.5" />
                 종목 합산
@@ -944,7 +947,7 @@ export function SummaryCards({ grouped, performances, valueCandles, showTypeStri
   }, [totalDailyChangeKrw])
 
   return (
-    <div className="space-y-3">
+    <div data-component="SummaryCards" className="space-y-3">
       <ThunderOverlay active={thunder} />
       {/* Hero */}
       <div className="rounded-2xl bg-card border border-border px-8 py-6 relative overflow-hidden" style={{ fontFamily: 'var(--font-sunflower)' }}>
@@ -1017,7 +1020,7 @@ export function SummaryCards({ grouped, performances, valueCandles, showTypeStri
           return (
             <div key={type} className={cn("rounded-xl border border-border px-4 py-3 flex flex-col gap-1.5 shadow-sm", ASSET_TYPE_ACCENT[type] ?? 'bg-card')}>
               <div className="flex items-center justify-between mb-0.5">
-                <AssetTypeBadge assetType={type as AssetPerformance['assetType']} light />
+                <AssetTypeBadge assetType={type as AssetPerformance['assetType']} />
                 <span className="text-xs text-muted-foreground">{assets.length}종목</span>
               </div>
               <div className="flex items-baseline gap-1.5">
@@ -1079,20 +1082,15 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
     const lineAssets = performances.filter((p) => p.assetType === 'fund' || p.assetType === 'savings' || p.assetType === 'insurance')
     if (lineAssets.length === 0) return
 
-    Promise.all(
-      lineAssets.map((p) =>
-        fetch(`/api/asset-history?assetId=${p.assetId}`)
-          .then((r) => r.json())
-          .then((data) => ({ assetId: p.assetId, points: data.points as AssetHistoryPoint[] }))
-          .catch(() => null)
-      )
-    ).then((results) => {
-      const map: Record<string, AssetHistoryPoint[]> = {}
-      for (const r of results) {
-        if (r) map[r.assetId] = r.points ?? []
-      }
-      setLineDataMap(map)
-    })
+    const assetIds = [...new Set(lineAssets.map((p) => p.assetId))]
+    fetch(`/api/asset-history?assetIds=${assetIds.join(',')}`)
+      .then((r) => r.json())
+      .then((data: { results: Array<{ assetId: string; points: AssetHistoryPoint[] }> }) => {
+        const map: Record<string, AssetHistoryPoint[]> = {}
+        for (const r of data.results ?? []) map[r.assetId] = r.points ?? []
+        setLineDataMap(map)
+      })
+      .catch(() => {})
   }, [performances])
 
   const grouped = ASSET_TYPE_ORDER.reduce<Record<string, AssetPerformance[]>>((acc, type) => {
@@ -1105,7 +1103,7 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
 
   if (performances.length === 0) {
     return (
-      <div className="text-center py-16 space-y-2">
+      <div data-component="AssetsPageClient" className="text-center py-16 space-y-2">
         <p className="text-sm font-semibold text-foreground">등록된 자산이 없습니다</p>
         <p className="text-sm text-muted-foreground">첫 번째 자산을 추가하여 포트폴리오를 시작해보세요.</p>
       </div>
@@ -1113,7 +1111,7 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
   }
 
   return (
-    <div className="space-y-6">
+    <div data-component="AssetsPageClient" className="space-y-6">
       <TodayReport performances={performances} />
       <AssetFilter
         types={types}
