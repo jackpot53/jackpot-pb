@@ -16,18 +16,20 @@ import {
   ChevronRight,
   HelpCircle,
   History,
+  Sun,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
-  { label: '목표', href: '/goals', icon: Target, color: 'text-amber-400', bg: '', activeBg: '', activeColor: 'text-amber-300' },
-  { label: '포트폴리오', href: '/assets', icon: Wallet, color: 'text-emerald-400', bg: '', activeBg: '', activeColor: 'text-emerald-300' },
-  { label: '거래내역', href: '/transactions', icon: ArrowLeftRight, color: 'text-sky-400', bg: '', activeBg: '', activeColor: 'text-sky-300' },
-  { label: '차트', href: '/charts', icon: LineChart, color: 'text-violet-400', bg: '', activeBg: '', activeColor: 'text-violet-300' },
-  { label: '인사이트', href: '/insights', icon: Sparkles, color: 'text-pink-400', bg: '', activeBg: '', activeColor: 'text-pink-300' },
-  { label: '모의투자', href: '/paper-trading', icon: TrendingUp, color: 'text-cyan-400', bg: '', activeBg: '', activeColor: 'text-cyan-300' },
-  { label: 'Signals', href: '/robo-advisor', icon: Bot, color: 'text-orange-400', bg: '', activeBg: '', activeColor: 'text-orange-300' },
-  { label: '도움말', href: '/help', icon: HelpCircle, color: 'text-zinc-400', bg: '', activeBg: '', activeColor: 'text-zinc-300' },
-  { label: '업데이트 내역', href: '/updates', icon: History, color: 'text-teal-400', bg: '', activeBg: '', activeColor: 'text-teal-300' },
+  { label: '목표',         href: '/goals',         icon: Target,        color: 'text-amber-400',   activeColor: 'text-amber-300'   },
+  { label: '포트폴리오',   href: '/assets',         icon: Wallet,        color: 'text-emerald-400', activeColor: 'text-emerald-300' },
+  { label: '오늘',         href: '/today',          icon: Sun,           color: 'text-yellow-400',  activeColor: 'text-yellow-300'  },
+  { label: '거래내역',     href: '/transactions',   icon: ArrowLeftRight,color: 'text-sky-400',     activeColor: 'text-sky-300'     },
+  { label: '차트',         href: '/charts',         icon: LineChart,     color: 'text-violet-400',  activeColor: 'text-violet-300'  },
+  { label: '인사이트',     href: '/insights',       icon: Sparkles,      color: 'text-pink-400',    activeColor: 'text-pink-300'    },
+  { label: '모의투자',     href: '/paper-trading',  icon: TrendingUp,    color: 'text-cyan-400',    activeColor: 'text-cyan-300'    },
+  { label: 'Signals',      href: '/robo-advisor',   icon: Bot,           color: 'text-orange-400',  activeColor: 'text-orange-300'  },
+  { label: '도움말',       href: '/help',           icon: HelpCircle,    color: 'text-zinc-400',    activeColor: 'text-zinc-300'    },
+  { label: '업데이트 내역',href: '/updates',        icon: History,       color: 'text-teal-400',    activeColor: 'text-teal-300'    },
 ]
 
 const SYMBOLS = ['7', '₩', '★', '♦', '♠']
@@ -46,9 +48,9 @@ function Reel({ symbol, isSpinning }: { symbol: string; isSpinning: boolean }) {
   return (
     <div className={cn(
       'flex items-center justify-center w-6 h-8 rounded text-sm font-black select-none transition-opacity duration-100',
-      'bg-gray-100 border border-gray-300',
+      'bg-muted border border-border',
       isSpinning ? 'blur-[1.5px] opacity-60' : '',
-      !isSpinning && display === '7' ? 'text-amber-500' : 'text-gray-700',
+      !isSpinning && display === '7' ? 'text-amber-500' : 'text-foreground/80',
     )}>
       {display}
     </div>
@@ -103,8 +105,8 @@ function MiniSlotMachine() {
         className={cn(
           'flex items-center gap-1.5 px-2 py-1.5 rounded-xl border transition-colors duration-300 cursor-pointer',
           isJackpot
-            ? 'border-amber-400 bg-amber-50'
-            : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+            ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/30'
+            : 'border-border bg-background hover:border-border/70 hover:bg-muted'
         )}
         style={isJackpot ? { animation: 'jp-glow 1s ease-in-out infinite' } : {}}
       >
@@ -151,7 +153,7 @@ export function Sidebar() {
       />
       <aside
         className={cn(
-          'fixed lg:static inset-y-0 left-0 z-50 h-screen border-r border-gray-900 bg-white flex flex-col shrink-0 overflow-hidden',
+          'fixed lg:static inset-y-0 left-0 z-50 h-screen border-r border-sidebar-border bg-sidebar flex flex-col shrink-0 overflow-hidden',
           'transition-[transform,width] duration-300',
           collapsed ? 'lg:w-14' : 'lg:w-60',
           'w-60',
@@ -159,12 +161,12 @@ export function Sidebar() {
         )}
       >
       {/* 헤더: 슬롯머신 + 토글 */}
-      <div className="relative flex h-14 items-center justify-center shrink-0 border-b border-gray-900">
+      <div className="relative flex h-14 items-center justify-center shrink-0 border-b border-sidebar-border">
         {!collapsed && <MiniSlotMachine />}
         <button
           onClick={() => handleCollapse(!collapsed)}
           className={cn(
-            'p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors rounded-md',
+            'p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-md',
             collapsed ? '' : 'absolute right-2'
           )}
           aria-label={collapsed ? '펼치기' : '접기'}
@@ -174,7 +176,7 @@ export function Sidebar() {
       </div>
 
       {/* 자연인의 욕망 씬 - 낮 버전 */}
-      <div className="shrink-0 w-full overflow-hidden border-b border-gray-100" style={{ height: collapsed ? 56 : 96 }}>
+      <div className="shrink-0 w-full overflow-hidden border-b border-sidebar-border" style={{ height: collapsed ? 56 : 96 }}>
         <style>{`
           @keyframes sn-bird1 { 0%{transform:translateX(-10px)} 100%{transform:translateX(260px)} }
           @keyframes sn-bird2 { 0%{transform:translateX(-10px)} 100%{transform:translateX(260px)} }
@@ -280,26 +282,23 @@ export function Sidebar() {
                 'group flex items-center gap-3 border rounded-lg transition-all duration-200',
                 collapsed ? 'justify-center p-2.5' : 'px-3 py-2.5',
                 isActive
-                  ? 'bg-gray-900 border-gray-900 shadow-sm'
-                  : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm'
+                  ? 'bg-foreground border-foreground shadow-sm'
+                  : 'bg-sidebar border-sidebar-border hover:bg-sidebar-accent hover:border-sidebar-border/70 hover:shadow-sm'
               )}
             >
-              <div className={cn(
-                'shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors duration-200',
-                isActive ? item.activeBg : cn(item.bg, 'group-hover:brightness-125')
-              )}>
+              <div className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors duration-200">
                 <Icon size={15} className={cn(isActive ? item.activeColor : item.color)} />
               </div>
               {!collapsed && (
                 <span className={cn(
                   'whitespace-nowrap text-sm font-light transition-colors duration-200 font-[family-name:var(--font-sunflower)]',
-                  isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-800'
+                  isActive ? 'text-background' : 'text-sidebar-foreground/60 group-hover:text-sidebar-foreground'
                 )}>
                   {item.label}
                 </span>
               )}
               {!collapsed && isActive && (
-                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white/60" />
+                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-background/60" />
               )}
             </Link>
           )
