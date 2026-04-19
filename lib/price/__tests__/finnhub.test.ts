@@ -20,7 +20,7 @@ describe('fetchFinnhubQuote', () => {
     })
     const { fetchFinnhubQuote } = await import('../finnhub')
     const result = await fetchFinnhubQuote('AAPL')
-    expect(result).toBe(18543) // 185.43 * 100 rounded
+    expect(result).toEqual({ priceUsdCents: 18543, changePercent: 0.65 })
   })
 
   it('returns null when Finnhub returns c = 0 (unknown ticker)', async () => {

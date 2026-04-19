@@ -18,7 +18,7 @@ export default async function AssetsPage() {
   if (!user) redirect('/login')
 
   const action = (
-    <Button render={<Link href="/assets/new" />} size="sm" className="gap-1.5 rounded-xl font-semibold">
+    <Button render={<Link href="/assets/new" />} nativeButton={false} size="sm" className="gap-1.5 rounded-xl font-semibold">
       <PlusCircle className="h-4 w-4" />
       자산 추가
     </Button>
