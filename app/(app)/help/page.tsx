@@ -1,7 +1,20 @@
 import { HelpCircle } from 'lucide-react'
-import { FaqApiCard } from '@/components/app/faq-api-card'
 
 const FAQS = [
+  {
+    id: 1,
+    question: '한국 주식/ETF 실시간 시세는 어디서 조회하나요?',
+    answer: '',
+    color: 'bg-indigo-500',
+    renderAnswer: true,
+  },
+  {
+    id: 2,
+    question: '미국 주식/ETF 실시간 시세는 어디서 조회하나요?',
+    answer: '',
+    color: 'bg-blue-500',
+    renderAnswer: true,
+  },
   {
     id: 3,
     question: '암호화폐 실시간 시세는 어디서 조회하나요?',
@@ -48,41 +61,31 @@ export default function HelpPage() {
               <HelpCircle className="h-3.5 w-3.5" />도움말
             </div>
             <h1 className="text-3xl font-bold tracking-tight leading-tight" style={{ fontFamily: "'Sunflower', sans-serif" }}>자주 묻는 질문</h1>
-            <p className="text-white/60 text-sm">
-              jackpot을 사용하는 방법을 알아봅시다
-            </p>
           </div>
         </div>
       </div>
 
       {/* FAQ 영역 */}
       <div className="space-y-3">
-        {/* API 정보 카드 - 1번 */}
-        <div className="rounded-xl border border-border bg-card overflow-hidden hover:shadow-md transition-shadow">
-          <div className="h-1 bg-indigo-500" />
-          <div className="p-6">
-            <FaqApiCard />
-          </div>
-        </div>
-
-        {/* 나머지 FAQ */}
         {FAQS.map((faq, idx) => {
-          const numberEmoji = ['2️⃣', '3️⃣', '4️⃣', '5️⃣'][idx];
+          const numberEmoji = ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣'][idx];
           return (
           <div
             key={faq.id}
             className="rounded-xl border border-border bg-card overflow-hidden hover:shadow-md transition-shadow"
           >
             <div className={`h-1 ${faq.color}`} />
-            <div className="p-6">
+            <div className="h-px bg-white/10" />
+            <div className="px-6 py-4">
               <details className="group">
-                <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground">
+                <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground font-[family-name:var(--font-sunflower)]">
                   <span><span className="mr-2">{numberEmoji}</span>{faq.question}</span>
                   <span className="transition-transform group-open:rotate-180">▼</span>
                 </summary>
+                <div className="hidden group-open:block mt-3 mb-1 border-t border-border" />
                 {faq.id === 6 ? (
                   <div className="mt-4 space-y-3">
-                    <p className="text-sm leading-relaxed text-muted-foreground">
+                    <p className="text-sm leading-relaxed text-foreground/70">
                       insights 페이지의 시장동향 섹션에서는 한국과 미국 주식시장의 투자자 흐름과 거래량 동향을 보여줍니다.
                     </p>
                     <div className="overflow-x-auto">
@@ -130,9 +133,23 @@ export default function HelpPage() {
                     <p className="text-xs text-muted-foreground">📊 캐시 시간: 7일 (데이터 조회 실패 시 이전 데이터 유지) | ⚠️ 네이버 페이지 레이아웃 변경 시 스크래핑이 실패할 수 있습니다.</p>
                   </div>
                 ) : (
-                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                  <p className="mt-4 text-sm leading-relaxed text-foreground/70">
                     {faq.renderAnswer ? (
-                      faq.id === 3 ? (
+                      faq.id === 1 ? (
+                        <>
+                          한국 주식·ETF 시세는 <span className="inline-flex items-center gap-1 rounded-md bg-indigo-500/20 px-2 py-0.5 font-mono text-xs font-semibold text-indigo-300">한국투자증권 Open API</span>에서 실시간으로 조회합니다.<br/>
+                          KOSPI·KOSDAQ 상장 주식 및 ETF를 모두 지원하며, 현재가와 전일 대비 등락률을 반환합니다.<br/>
+                          <span className="block mt-3 font-semibold text-foreground">폴백: <span className="inline-flex items-center gap-1 rounded-md bg-blue-500/20 px-2 py-0.5 font-mono text-xs font-semibold text-blue-300">Yahoo Finance</span></span>
+                          KIS 조회 실패 시 <span className="font-mono text-xs">.KS</span>(KOSPI) · <span className="font-mono text-xs">.KQ</span>(KOSDAQ) 심볼로 비공식 API를 통해 조회합니다.<br/>
+                          <span className="block mt-3 text-xs text-muted-foreground">🔄 가격 캐시 시간: 5분 (조회 실패 시 이전 데이터 유지)</span>
+                        </>
+                      ) : faq.id === 2 ? (
+                        <>
+                          미국 주식·ETF 시세도 <span className="inline-flex items-center gap-1 rounded-md bg-indigo-500/20 px-2 py-0.5 font-mono text-xs font-semibold text-indigo-300">한국투자증권 Open API</span>에서 실시간으로 조회합니다.<br/>
+                          NYSE·NASDAQ 상장 주식 및 ETF를 지원하며, USD 가격으로 조회 후 자동으로 원화로 변환합니다.<br/>
+                          <span className="block mt-3 text-xs text-muted-foreground">🔄 가격 캐시 시간: 5분 (조회 실패 시 이전 데이터 유지)</span>
+                        </>
+                      ) : faq.id === 3 ? (
                         <>
                           암호화폐는 <span className="inline-flex items-center gap-1 rounded-md bg-orange-500/20 px-2 py-0.5 font-mono text-xs font-semibold text-orange-300">Finnhub API</span>에서 달러(USD) 단위로 조회한 후, 시스템이 자동으로 원화로 변환합니다.<br/>
                           암호화폐 가격은 24시간 실시간으로 변동하며, 5분마다 자동으로 갱신되어 포트폴리오에 반영됩니다.

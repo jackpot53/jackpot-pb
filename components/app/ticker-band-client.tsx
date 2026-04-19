@@ -23,8 +23,8 @@ export function TickerBandClient({ items }: TickerBandClientProps) {
   return (
     <div className="flex-1 min-w-0 overflow-hidden relative mx-4">
       {/* fade edges */}
-      <div className="absolute left-0 top-0 bottom-0 w-8 z-10 pointer-events-none bg-gradient-to-r from-black/60 to-transparent" />
-      <div className="absolute right-0 top-0 bottom-0 w-8 z-10 pointer-events-none bg-gradient-to-l from-black/60 to-transparent" />
+      <div className="absolute left-0 top-0 bottom-0 w-8 z-10 pointer-events-none bg-gradient-to-r from-white to-transparent" />
+      <div className="absolute right-0 top-0 bottom-0 w-8 z-10 pointer-events-none bg-gradient-to-l from-white to-transparent" />
 
       <div
         className="flex items-center gap-0 whitespace-nowrap"
@@ -40,18 +40,20 @@ export function TickerBandClient({ items }: TickerBandClientProps) {
           return (
             <span
               key={`${item.id}-${i}`}
-              className="inline-flex items-center gap-1.5 px-3 text-xs"
+              className="inline-flex items-center gap-2 px-3 text-xs"
             >
-              <span className="text-white/60 font-medium tracking-wide">{item.label}</span>
-              <span className={isPos ? 'text-red-400 font-semibold' : 'text-blue-400 font-semibold'}>
+              <span className="bg-gray-100 text-gray-800 font-semibold px-2 py-0.5 rounded-md tracking-wide">
+                {item.label || item.id}
+              </span>
+              <span className={isPos ? 'text-red-500 font-bold' : 'text-blue-500 font-bold'}>
                 {isPos ? '▲' : '▼'} {formatPct(item.returnPct)}
               </span>
               {daily !== null && (
-                <span className={`text-[10px] ${daily >= 0 ? 'text-red-400/60' : 'text-blue-400/60'}`}>
+                <span className={`text-[10px] ${daily >= 0 ? 'text-red-400' : 'text-blue-400'}`}>
                   ({formatPct(daily)})
                 </span>
               )}
-              <span className="text-white/15 ml-1">|</span>
+              <span className="text-gray-200 ml-1">|</span>
             </span>
           )
         })}

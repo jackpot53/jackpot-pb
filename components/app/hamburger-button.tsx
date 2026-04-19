@@ -10,7 +10,7 @@ export function HamburgerButton() {
       variant="ghost"
       size="sm"
       onClick={toggle}
-      className="lg:hidden text-white/80 hover:text-white hover:bg-white/15 border-0 shrink-0"
+      className="lg:hidden text-gray-500 hover:text-gray-800 hover:bg-gray-100 border-0 shrink-0"
       aria-label="메뉴 열기"
     >
       <Menu className="h-5 w-5" />
