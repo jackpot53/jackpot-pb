@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import type { SnapshotRow } from '@/db/queries/portfolio-snapshots'
 import type { GoalRow } from '@/db/queries/goals'
+import { formatKrwShort } from '@/lib/format'
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4']
 const ML = 64
@@ -65,11 +66,6 @@ function tickLabel(date: string, period: Period): string {
   return `${mm}.${dd}`
 }
 
-function formatKrwShort(v: number): string {
-  if (Math.abs(v) >= 1e8) return `${(v / 1e8).toFixed(1)}억`
-  if (Math.abs(v) >= 1e4) return `${(v / 1e4).toFixed(0)}만`
-  return String(v)
-}
 
 interface TooltipState {
   x: number

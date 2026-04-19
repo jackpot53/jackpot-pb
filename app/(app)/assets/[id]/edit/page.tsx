@@ -6,13 +6,7 @@ import { getContributionDividendRates } from '@/db/queries/contribution'
 import { AssetForm } from '@/components/app/asset-form'
 import { updateAsset } from '@/app/actions/assets'
 import type { ContributionDividendRateRow } from '@/db/schema/contribution-dividend-rates'
-
-function decodeQuantity(stored: number): string {
-  const intPart = Math.floor(stored / 1e8)
-  const fracPart = stored % 1e8
-  if (fracPart === 0) return intPart.toString()
-  return `${intPart}.${fracPart.toString().padStart(8, '0').replace(/0+$/, '')}`
-}
+import { decodeQuantity } from '@/lib/format'
 
 export default async function EditAssetPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

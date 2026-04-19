@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils'
 import type { TransactionWithAsset } from '@/db/queries/transactions'
 import { AnimatedLogo } from '@/components/app/animated-logo'
 import type { AssetType, Currency } from '@/lib/types/asset'
+import { decodeQuantity, formatKrwPlain as formatKrw } from '@/lib/format'
 
 interface AssetOption {
   id: string
@@ -26,19 +27,6 @@ interface AssetOption {
 interface Props {
   transactions: TransactionWithAsset[]
   assetOptions: AssetOption[]
-}
-
-const KRW_FMT = new Intl.NumberFormat('ko-KR')
-function formatKrw(value: number): string {
-  return KRW_FMT.format(value)
-}
-
-function decodeQuantity(stored: number): string {
-  const intPart = Math.floor(stored / 1e8)
-  const fracPart = stored % 1e8
-  const formattedInt = new Intl.NumberFormat('ko-KR').format(intPart)
-  if (fracPart === 0) return formattedInt
-  return `${formattedInt}.${fracPart.toString().padStart(8, '0').replace(/0+$/, '')}`
 }
 
 const USD_FMT = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -103,7 +91,7 @@ function TransactionCard({ tx, onDeleted }: { tx: TransactionWithAsset; onDelete
         <div className={cn('flex items-center gap-2 text-sm text-muted-foreground mt-0.5', tx.isVoided && 'line-through')}>
           <span><span className="text-muted-foreground/50 text-xs mr-1">{tx.assetType === 'savings' ? '가입날짜' : tx.type === 'buy' ? '매수일' : '매도일'}</span>{(tx.assetType === 'savings' ? tx.depositStartDate : null) ?? tx.transactionDate ?? '-'}</span>
           <span className="opacity-30">|</span>
-          <span>수량 {decodeQuantity(tx.quantity)}</span>
+          <span>수량 {decodeQuantity(tx.quantity, { grouping: true })}</span>
           <span className="opacity-30">|</span>
           <span>단가 {priceUsd != null ? formatUsd(priceUsd) : `₩${formatKrw(tx.pricePerUnit)}`}</span>
         </div>

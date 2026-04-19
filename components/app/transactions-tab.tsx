@@ -16,23 +16,11 @@ import { VoidTransactionDialog } from '@/components/app/void-transaction-dialog'
 import { createTransaction, updateTransaction } from '@/app/actions/transactions'
 import type { Transaction } from '@/db/queries/transactions'
 import type { Asset } from '@/db/queries/assets'
+import { decodeQuantity, formatKrwPlain as formatKrw } from '@/lib/format'
 
 interface TransactionsTabProps {
   asset: Asset
   transactions: Transaction[]
-}
-
-const KRW_FMT = new Intl.NumberFormat('ko-KR')
-function formatKrw(value: number): string {
-  return KRW_FMT.format(value)
-}
-
-function decodeQuantity(stored: number): string {
-  // Use integer arithmetic to avoid float rounding for large quantities (relevant for crypto)
-  const intPart = Math.floor(stored / 1e8)
-  const fracPart = stored % 1e8
-  if (fracPart === 0) return intPart.toString()
-  return `${intPart}.${fracPart.toString().padStart(8, '0').replace(/0+$/, '')}`
 }
 
 export function TransactionsTab({ asset, transactions }: TransactionsTabProps) {

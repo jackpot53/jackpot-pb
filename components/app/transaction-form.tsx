@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/select'
 import type { TransactionFormValues, TransactionActionError } from '@/app/actions/transactions'
 import type { AssetType, Currency } from '@/lib/types/asset'
+import { formatKrwRounded } from '@/lib/format'
 
 const STOCK_ETF_TYPES: AssetType[] = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us']
 
@@ -68,9 +69,6 @@ interface TransactionFormProps {
   hideActions?: boolean
 }
 
-function formatKrw(value: number): string {
-  return new Intl.NumberFormat('ko-KR').format(Math.round(value))
-}
 
 export function TransactionForm({
   assetType,
@@ -130,9 +128,9 @@ export function TransactionForm({
     const price = parseFloat(form.getValues('pricePerUnit') || '0')
     const rate = parseFloat(form.getValues('exchangeRate') || '1')
     if (isUSD && qty > 0 && price > 0 && rate > 0) {
-      setKrwPreview(`≈ ₩${formatKrw(qty * price * rate)}`)
+      setKrwPreview(`≈ ₩${formatKrwRounded(qty * price * rate)}`)
     } else if (!isUSD && qty > 0 && price > 0) {
-      setKrwPreview(`≈ ₩${formatKrw(qty * price)}`)
+      setKrwPreview(`≈ ₩${formatKrwRounded(qty * price)}`)
     } else {
       setKrwPreview(null)
     }

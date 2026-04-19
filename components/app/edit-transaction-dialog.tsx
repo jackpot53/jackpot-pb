@@ -16,17 +16,7 @@ import { TransactionForm } from '@/components/app/transaction-form'
 import { updateTransaction } from '@/app/actions/transactions'
 import type { TransactionWithAsset } from '@/db/queries/transactions'
 import type { AssetType } from '@/lib/types/asset'
-
-function decodeQty(stored: number): string {
-  const intPart = Math.floor(stored / 1e8)
-  const fracPart = stored % 1e8
-  if (fracPart === 0) return intPart.toString()
-  return `${intPart}.${fracPart.toString().padStart(8, '0').replace(/0+$/, '')}`
-}
-
-function formatKrw(value: number): string {
-  return new Intl.NumberFormat('ko-KR').format(value)
-}
+import { decodeQuantity, formatKrwPlain } from '@/lib/format'
 
 export function EditTransactionDialog({ tx }: { tx: TransactionWithAsset }) {
   const [open, setOpen] = useState(false)
@@ -41,7 +31,7 @@ export function EditTransactionDialog({ tx }: { tx: TransactionWithAsset }) {
   const defaultValues = {
     type: tx.type as 'buy' | 'sell',
     transactionDate: tx.transactionDate,
-    quantity: decodeQty(tx.quantity),
+    quantity: decodeQuantity(tx.quantity),
     pricePerUnit,
     fee: String(tx.fee),
     exchangeRate: exchangeRate ? String(exchangeRate) : '',
@@ -98,9 +88,9 @@ export function EditTransactionDialog({ tx }: { tx: TransactionWithAsset }) {
             <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
               <span>{tx.transactionDate}</span>
               <span className="opacity-30">·</span>
-              <span>수량 {decodeQty(tx.quantity)}</span>
+              <span>수량 {decodeQuantity(tx.quantity)}</span>
               <span className="opacity-30">·</span>
-              <span>단가 {formatKrw(tx.pricePerUnit)}</span>
+              <span>단가 {formatKrwPlain(tx.pricePerUnit)}</span>
             </div>
           </div>
         </div>

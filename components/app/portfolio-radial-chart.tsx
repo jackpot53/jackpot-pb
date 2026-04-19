@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from 'recharts'
+import { formatKrwShort } from '@/lib/format'
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
   stock_kr:      '주식 (국내)',
@@ -33,12 +34,6 @@ export interface AllocationItem {
   type: string
   valueKrw: number
   pct: number
-}
-
-function formatKrwShort(v: number): string {
-  if (v >= 100_000_000) return `${(v / 100_000_000).toFixed(1)}억`
-  if (v >= 10_000)      return `${(v / 10_000).toFixed(0)}만`
-  return v.toLocaleString()
 }
 
 interface ActiveShapeProps {

@@ -26,6 +26,7 @@ import type { ManualValuation } from '@/db/queries/manual-valuations'
 import type { HoldingRow } from '@/db/queries/holdings'
 import type { SavingsDetailsRow } from '@/db/schema/savings-details'
 import type { InsuranceDetailsRow } from '@/db/schema/insurance-details'
+import { decodeQuantity, formatKrwPlain as formatKrw } from '@/lib/format'
 
 const valuationSchema = z.object({
   valueKrw: z.string()
@@ -38,10 +39,6 @@ const valuationSchema = z.object({
 })
 
 type ValuationFormValues = z.infer<typeof valuationSchema>
-
-function formatKrw(value: number): string {
-  return new Intl.NumberFormat('ko-KR').format(value)
-}
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
   stock_kr: '주식 (국내)', stock_us: '주식 (미국)',
@@ -578,13 +575,6 @@ function ValuationUpdateForm({ asset, onSuccess }: { asset: Asset; onSuccess: ()
       </form>
     </Form>
   )
-}
-
-function decodeQuantity(stored: number): string {
-  const intPart = Math.floor(stored / 1e8)
-  const fracPart = stored % 1e8
-  if (fracPart === 0) return intPart.toString()
-  return `${intPart}.${fracPart.toString().padStart(8, '0').replace(/0+$/, '')}`
 }
 
 export function OverviewTab({ asset, valuations, holding, savingsDetails = null, savingsBuys = [], insuranceDetails = null }: OverviewTabProps) {
