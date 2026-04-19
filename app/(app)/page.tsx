@@ -58,57 +58,64 @@ export default async function DashboardPage() {
           환율 정보를 불러오는 중입니다. 미국 주식 평가금액이 일시적으로 부정확할 수 있습니다.
         </div>
       )}
-      {/* Row 2: Allocation Pie Chart + Breakdown List (DASH-02) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Pie Chart */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-base font-semibold">자산 배분</CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">자산 유형별 비중을 시각화합니다</p>
-          </CardHeader>
-          <CardContent>
-            <AllocationPieChart data={byType} />
-          </CardContent>
-        </Card>
 
-        {/* Right: Breakdown by type */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3 border-b">
-            <CardTitle className="text-base font-semibold">유형별 합계</CardTitle>
-            <p className="text-xs text-muted-foreground mt-0.5">각 자산 유형의 평가금액 합계입니다</p>
-          </CardHeader>
-          <CardContent>
-            {byType.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-8 text-center">
-                아직 자산이 없습니다.{' '}
-                <a href="/assets" className="underline text-foreground">첫 자산을 추가해보세요 →</a>
-              </p>
-            ) : (
-              <div className="space-y-0">
-                {byType.map((entry, i) => (
-                  <div key={entry.assetType}>
-                    <div className="flex items-center justify-between py-3">
-                      <AssetTypeBadge assetType={entry.assetType as 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate'} />
-                      <div className="text-right">
-                        <p className="text-base font-semibold">{formatKrw(entry.totalValueKrw)}</p>
-                        <p className="text-sm text-muted-foreground">{entry.sharePct.toFixed(1)}%</p>
+      {/* 자산 현황 */}
+      <section className="space-y-4">
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">자산 현황</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left: Pie Chart */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-base font-semibold">자산 배분</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">자산 유형별 비중을 시각화합니다</p>
+            </CardHeader>
+            <CardContent>
+              <AllocationPieChart data={byType} />
+            </CardContent>
+          </Card>
+
+          {/* Right: Breakdown by type */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-base font-semibold">유형별 합계</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">각 자산 유형의 평가금액 합계입니다</p>
+            </CardHeader>
+            <CardContent>
+              {byType.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-8 text-center">
+                  아직 자산이 없습니다.{' '}
+                  <a href="/assets" className="underline text-foreground">첫 자산을 추가해보세요 →</a>
+                </p>
+              ) : (
+                <div className="space-y-0">
+                  {byType.map((entry, i) => (
+                    <div key={entry.assetType}>
+                      <div className="flex items-center justify-between py-3">
+                        <AssetTypeBadge assetType={entry.assetType as 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate'} />
+                        <div className="text-right">
+                          <p className="text-base font-semibold">{formatKrw(entry.totalValueKrw)}</p>
+                          <p className="text-sm text-muted-foreground">{entry.sharePct.toFixed(1)}%</p>
+                        </div>
                       </div>
+                      {i < byType.length - 1 && <Separator />}
                     </div>
-                    {i < byType.length - 1 && <Separator />}
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </section>
 
-      {/* Row 3: Today's Report — news streamed via Suspense (no TTFB block) */}
-      <Suspense fallback={<TodayReport performances={performances} />}>
-        <TodayReportWithNews performances={performances} />
-      </Suspense>
+      {/* 오늘의 리포트 */}
+      <section className="space-y-4">
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">오늘의 리포트</h2>
+        <Suspense fallback={<TodayReport performances={performances} />}>
+          <TodayReportWithNews performances={performances} />
+        </Suspense>
+      </section>
 
-      {/* Row 4: Goals Section — hidden when no goals (D-03, D-04) */}
+      {/* 목표 */}
       <DashboardGoalsSection goals={goalsList} totalValueKrw={summary.totalValueKrw} />
     </div>
   )
