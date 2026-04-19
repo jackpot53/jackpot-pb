@@ -147,38 +147,11 @@
     background-attachment: fixed;
   }
 
-  @keyframes float-a {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50%       { transform: translate(12px, -18px) scale(1.04); }
-  }
-  @keyframes float-b {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50%       { transform: translate(-10px, 14px) scale(1.03); }
-  }
-
-  .main-bg::before,
-  .main-bg::after {
-    content: '';
-    position: fixed;
-    border-radius: 9999px;
-    filter: blur(80px);
-    pointer-events: none;
-    z-index: 0;
-  }
-  .main-bg::before,
-  .main-bg::after {
-    display: none;
-  }
-
   .main-bg > * {
     position: relative;
     z-index: 1;
   }
 
-  @keyframes logo-float-1 { 0%, 100% { transform: none; } }
-  @keyframes logo-float-2 { 0%, 100% { transform: none; } }
-  @keyframes logo-float-3 { 0%, 100% { transform: none; } }
-  @keyframes logo-float-4 { 0%, 100% { transform: none; } }
   @keyframes logo-float-5 {
     0%, 100% { transform: translate(0px,   0px) rotate(0deg)  scale(1); }
     50%       { transform: translate(6px,  -16px) rotate(9deg)  scale(1.05); }
@@ -188,10 +161,6 @@
     50%       { transform: translate(-12px, 10px) rotate(-8deg) scale(1.04); }
   }
 
-  .logo-float-1 { }
-  .logo-float-2 { }
-  .logo-float-3 { }
-  .logo-float-4 { }
   .logo-float-5 { }
   .logo-float-6 { }
 
