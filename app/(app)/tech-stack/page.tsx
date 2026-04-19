@@ -1,4 +1,4 @@
-import { Package } from 'lucide-react'
+import { Package, ExternalLink } from 'lucide-react'
 import { PageHeader } from '@/components/app/page-header'
 
 type LicenseKey = 'MIT' | 'Apache-2.0' | 'ISC' | 'Unlicense'
@@ -97,6 +97,70 @@ const API_ITEMS: ApiItem[] = [
   { name: 'FunETF',               purpose: '펀드 기준가(NAV)',                access: 'scraping',   url: 'https://www.funetf.co.kr' },
 ]
 
+const LICENSE_BADGE: Record<LicenseKey, string> = {
+  'MIT':        'bg-green-500/20 text-green-300',
+  'Apache-2.0': 'bg-blue-500/20 text-blue-300',
+  'ISC':        'bg-purple-500/20 text-purple-300',
+  'Unlicense':  'bg-zinc-500/20 text-zinc-300',
+}
+
+function LicenseBadge({ license }: { license: LicenseKey }) {
+  return (
+    <span className={`inline-flex items-center rounded-md px-2 py-0.5 font-mono text-xs font-semibold ${LICENSE_BADGE[license]}`}>
+      {license}
+    </span>
+  )
+}
+
+function ExternalLinkIcon({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`${label} 공식 사이트 열기`}
+      className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
+    >
+      <ExternalLink className="h-4 w-4" />
+    </a>
+  )
+}
+
+function OssSectionCard({ section }: { section: OssSection }) {
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className={`h-1 ${section.stripe}`} />
+      <div className="px-6 py-4">
+        <h2 className="font-semibold text-foreground font-[family-name:var(--font-sunflower)] mb-3">
+          {section.title}
+        </h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left py-2 px-2 font-semibold text-foreground">이름</th>
+                <th className="text-left py-2 px-2 font-semibold text-foreground">용도</th>
+                <th className="text-left py-2 px-2 font-semibold text-foreground">라이선스</th>
+                <th className="text-left py-2 px-2 font-semibold text-foreground w-12">링크</th>
+              </tr>
+            </thead>
+            <tbody>
+              {section.items.map((item) => (
+                <tr key={item.name} className="border-b border-border last:border-b-0">
+                  <td className="py-2 px-2 font-semibold text-foreground whitespace-nowrap">{item.name}</td>
+                  <td className="py-2 px-2 text-foreground/70">{item.purpose}</td>
+                  <td className="py-2 px-2"><LicenseBadge license={item.license} /></td>
+                  <td className="py-2 px-2"><ExternalLinkIcon href={item.url} label={item.name} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function TechStackPage() {
   return (
     <div className="space-y-6">
@@ -105,7 +169,9 @@ export default function TechStackPage() {
         title="기술스택 & 라이선스"
         description="이 앱을 구성하는 오픈소스와 외부 API"
       />
-      {/* 섹션 렌더링은 다음 태스크에서 추가 */}
+      {OSS_SECTIONS.map((section) => (
+        <OssSectionCard key={section.title} section={section} />
+      ))}
     </div>
   )
 }
