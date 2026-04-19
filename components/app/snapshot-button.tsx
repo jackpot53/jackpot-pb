@@ -26,7 +26,7 @@ export function SnapshotButton() {
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleClick} disabled={isPending}>
+    <Button data-component="SnapshotButton" variant="outline" size="sm" onClick={handleClick} disabled={isPending}>
       {isPending ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : done ? (

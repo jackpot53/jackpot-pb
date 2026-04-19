@@ -237,7 +237,7 @@ export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartP
   const insufficient = snapshots.length < 2 || goals.length === 0
 
   return (
-    <Card className="shadow-sm">
+    <Card data-component="GoalAchievementChart" className="shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-1">
         <div>
           <CardTitle className="flex items-center gap-2">

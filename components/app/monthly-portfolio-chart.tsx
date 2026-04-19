@@ -46,7 +46,7 @@ export interface MonthlyPortfolioChartProps {
 
 export function MonthlyPortfolioChart({ data }: MonthlyPortfolioChartProps) {
   return (
-    <Card className="shadow-sm">
+    <Card data-component="MonthlyPortfolioChart" className="shadow-sm">
       <CardHeader className="pb-3 border-b">
         <CardTitle>월별 자산 총액</CardTitle>
         <CardDescription>최근 12개월 포트폴리오 총액 (KRW)</CardDescription>

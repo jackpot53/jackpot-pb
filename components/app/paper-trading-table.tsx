@@ -32,7 +32,7 @@ export function PaperTradingTable({ dateRange }: { dateRange: DateRange }) {
   const years = [2023, 2024]
 
   return (
-    <Card className="p-4">
+    <Card data-component="PaperTradingTable" className="p-4">
       <h2 className="text-lg font-semibold mb-4">연도별 수익률 비교</h2>
       <div className="overflow-x-auto">
         <Table>

@@ -23,7 +23,7 @@ interface InsufficientDataMessageProps {
 export function InsufficientDataMessage({ count }: InsufficientDataMessageProps) {
   if (count === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-[320px] gap-3">
+      <div data-component="InsufficientDataMessage" className="flex flex-col items-center justify-center h-[320px] gap-3">
         <p className="text-base font-semibold text-foreground">데이터를 수집하고 있습니다</p>
         <p className="text-sm text-muted-foreground">
           첫 번째 스냅숏이 오늘 자정(KST)에 기록됩니다.
@@ -33,7 +33,7 @@ export function InsufficientDataMessage({ count }: InsufficientDataMessageProps)
   }
   // count === 1
   return (
-    <div className="flex flex-col items-center justify-center h-[320px] gap-3">
+    <div data-component="InsufficientDataMessage" className="flex flex-col items-center justify-center h-[320px] gap-3">
       <p className="text-base font-semibold text-foreground">데이터가 충분하지 않습니다</p>
       <p className="text-sm text-muted-foreground">
         차트를 표시하려면 최소 2일의 데이터가 필요합니다.
@@ -66,7 +66,7 @@ export interface AnnualReturnChartProps {
 
 export function AnnualReturnChart({ data }: AnnualReturnChartProps) {
   return (
-    <Card className="shadow-sm">
+    <Card data-component="AnnualReturnChart" className="shadow-sm">
       <CardHeader className="pb-3 border-b">
         <CardTitle>연간 수익률</CardTitle>
         <CardDescription>연도별 전체 자산 수익률 (%)</CardDescription>

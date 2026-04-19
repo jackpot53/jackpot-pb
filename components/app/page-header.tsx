@@ -9,7 +9,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ icon: Icon, title, description, action }: PageHeaderProps) {
   return (
-    <div className="flex items-center justify-between gap-4 py-2">
+    <div data-component="PageHeader" className="flex items-center justify-between gap-4 py-2">
       <div className="flex items-center gap-3">
         <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10">
           <Icon className="h-4.5 w-4.5 text-primary" />

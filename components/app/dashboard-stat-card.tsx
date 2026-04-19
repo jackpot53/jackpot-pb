@@ -15,7 +15,7 @@ export function DashboardStatCard({
   secondarySign = 'neutral',
 }: DashboardStatCardProps) {
   return (
-    <Card className="shadow-sm">
+    <Card data-component="DashboardStatCard" className="shadow-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-normal text-muted-foreground text-center">{label}</CardTitle>
       </CardHeader>

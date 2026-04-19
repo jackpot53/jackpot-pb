@@ -19,7 +19,7 @@ export function AddAssetDialog() {
   const router = useRouter()
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog data-component="AddAssetDialog" open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
           <Button aria-label="자산 추가" />

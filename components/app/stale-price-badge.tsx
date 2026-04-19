@@ -35,7 +35,7 @@ function formatAbsoluteTime(date: Date): string {
 
 export function StalePriceBadge({ cachedAt }: StalePriceBadgeProps) {
   return (
-    <TooltipProvider>
+    <TooltipProvider data-component="StalePriceBadge">
       <Tooltip>
         <TooltipTrigger
           className="cursor-default"

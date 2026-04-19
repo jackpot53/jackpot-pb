@@ -86,10 +86,6 @@ function TransactionCard({ tx, onDeleted }: { tx: TransactionWithAsset; onDelete
       <div className="flex-1 min-w-0">
         {/* Row1: 이름 + 매수/매도 배지 */}
         <div className="flex items-center gap-1.5">
-          <span className={cn('inline-block', tx.isVoided && 'line-through')}>
-            <span className="text-sm font-semibold text-foreground leading-snug">{tx.assetName}</span>
-            <span className="block h-[2px] w-full rounded-full" style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #f59e0b, #10b981)', backgroundSize: '200% 100%', animation: 'shimmer-underline 3s linear infinite' }} />
-          </span>
           <span className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 ${
             tx.type === 'buy' ? 'bg-red-500/15 text-red-400' : 'bg-blue-500/15 text-blue-400'
           }`}>
@@ -100,6 +96,9 @@ function TransactionCard({ tx, onDeleted }: { tx: TransactionWithAsset; onDelete
               : tx.type === 'buy'
                 ? <><TrendingUp className="h-3 w-3" />매수</>
                 : <><TrendingDown className="h-3 w-3" />매도</>}
+          </span>
+          <span className={cn('text-sm font-semibold text-foreground leading-snug', tx.isVoided && 'line-through')}>
+            {tx.assetName}
           </span>
         </div>
         {/* Row2: 날짜 · 수량 · 단가 (핵심 정보) */}
@@ -174,7 +173,7 @@ export function TransactionsPageClient({ transactions, assetOptions }: Props) {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   return (
-    <div className="space-y-6">
+    <div data-component="TransactionsPageClient" className="space-y-6">
       {/* 히어로 배너 */}
       <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-orange-500 via-rose-600 to-red-600 p-8 text-white shadow-xl">
         <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">

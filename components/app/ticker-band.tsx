@@ -25,5 +25,5 @@ export async function TickerBand() {
 
   if (items.length === 0) return null
 
-  return <TickerBandClient items={items} />
+  return <TickerBandClient data-component="TickerBand" items={items} />
 }

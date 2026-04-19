@@ -153,7 +153,7 @@ export function TransactionForm({
   const isSavings = assetType === 'savings'
 
   return (
-    <Form {...form}>
+    <Form data-component="TransactionForm" {...form}>
       <form id={formId} onSubmit={form.handleSubmit(handleSubmit)} className="space-y-2">
         <FormField control={form.control} name="type" render={({ field }) => (
           <FormItem className="flex flex-row items-center gap-4 rounded-xl border border-border bg-muted/20 px-4 py-2.5">

@@ -176,7 +176,7 @@ export function RoboAdvisorAnalysisChart({
   ]
 
   return (
-    <div className='w-full space-y-3'>
+    <div data-component="RoboAdvisorAnalysisChart" className='w-full space-y-3'>
       <div className='flex flex-wrap gap-1.5'>
         {indicators.map(({ key, label, activeClass }) => (
           <button

@@ -113,7 +113,7 @@ export function GoalDialog({ mode, goal, open, onOpenChange }: GoalDialogProps) 
   const isCreate = mode === 'create'
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog data-component="GoalDialog" open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 overflow-hidden max-w-md gap-0">
 
         {/* 그라디언트 헤더 */}

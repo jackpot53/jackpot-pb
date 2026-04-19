@@ -177,7 +177,7 @@ export function AssetLineChart({ data, kind, positive = true }: AssetLineChartPr
 
   if (data.length < 2) {
     return (
-      <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
+      <div data-component="AssetLineChart" className="flex items-center justify-center h-full text-xs text-muted-foreground">
         데이터 수집 중
       </div>
     )
@@ -186,7 +186,7 @@ export function AssetLineChart({ data, kind, positive = true }: AssetLineChartPr
   const tooltipLabel = kind === 'line-nav' ? 'NAV' : '평가금'
 
   return (
-    <div ref={containerRef} className="relative w-full h-full">
+    <div data-component="AssetLineChart" ref={containerRef} className="relative w-full h-full">
       {/* 오늘 수직선 */}
       {isProjected && todayX !== null && (
         <div

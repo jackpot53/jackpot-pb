@@ -303,7 +303,7 @@ export function AssetForm({ defaultValues, onSubmit, onCancel, submitLabel, show
   }
 
   return (
-    <Form {...form}>
+    <Form data-component="AssetForm" {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) e.preventDefault() }} className="grid grid-cols-[9rem_1fr] gap-y-3">
 
         {/* 자산 유형 + 계좌 유형 그룹 */}

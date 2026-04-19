@@ -42,7 +42,7 @@ export function PaperTradingHeatmap({ dateRange }: { dateRange: DateRange }) {
   }
 
   return (
-    <Card className="p-4">
+    <Card data-component="PaperTradingHeatmap" className="p-4">
       <h2 className="text-lg font-semibold mb-6">월별 수익률 히트맵</h2>
       <div className="space-y-6">
         {years.map((year) => (

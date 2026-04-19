@@ -237,7 +237,8 @@ export function RoboAdvisorHero() {
 
   return (
     <div
-      className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-amber-500 via-orange-600 to-rose-700 p-6 sm:p-8 text-white shadow-xl"
+      data-component="RoboAdvisorHero"
+      className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-amber-500 via-orange-600 to-rose-700 p-4 sm:p-6 text-white shadow-xl min-h-[160px]"
     >
       <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
         {/* 배경 글로우 */}
@@ -336,7 +337,7 @@ export function RoboAdvisorHero() {
       <div className="relative flex flex-col gap-4">
         {/* 헤더: 제목 + 알고리즘 보기 버튼 */}
         <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-          <div className="space-y-2 max-w-lg flex-1">
+          <div className="space-y-2 max-w-lg flex-1" style={{ fontFamily: "'Sunflower', sans-serif" }}>
             <div className="flex items-center gap-1.5 text-white/80 text-xs font-semibold tracking-widest uppercase">
               <Bot className="h-3.5 w-3.5" />
               로보어드바이저

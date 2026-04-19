@@ -8,7 +8,7 @@ import { HamburgerButton } from '@/components/app/hamburger-button'
 
 export async function Header() {
   return (
-    <header className="relative z-10 h-14 flex items-center px-4 sm:px-6 shrink-0 bg-background border-b border-border gap-3">
+    <header data-component="Header" className="relative z-10 h-14 flex items-center px-4 sm:px-6 shrink-0 bg-background border-b border-border gap-3">
       {/* 햄버거 버튼 — 모바일/태블릿만 표시 */}
       <HamburgerButton />
 

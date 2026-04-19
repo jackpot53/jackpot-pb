@@ -26,6 +26,7 @@ export function TakeSnapshotButton() {
 
   return (
     <button
+      data-component="TakeSnapshotButton"
       onClick={handleClick}
       disabled={state === 'loading' || state === 'done'}
       className={cn(

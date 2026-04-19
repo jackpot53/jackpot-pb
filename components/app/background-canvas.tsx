@@ -4,6 +4,7 @@
 export function BackgroundCanvas() {
   return (
     <div
+      data-component="BackgroundCanvas"
       aria-hidden="true"
       className="fixed inset-0 pointer-events-none overflow-hidden"
       style={{ zIndex: 0 }}

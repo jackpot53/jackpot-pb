@@ -1,4 +1,5 @@
 import { fetchKisOhlc } from '@/lib/price/kis'
+import { runKisBatched } from '@/lib/price/kis-bulk'
 
 export interface OhlcPoint {
   date: string  // 'YYYY-MM-DD'
@@ -91,8 +92,9 @@ export async function fetchSparklinesForTickers(
   range = '1mo',
   assetTypes?: Map<string, string>,
 ): Promise<Map<string, OhlcPoint[]>> {
-  const results = await Promise.allSettled(
-    tickers.map(async (ticker) => {
+  const results = await runKisBatched(
+    tickers,
+    async (ticker) => {
       const assetType = assetTypes?.get(ticker)
       let data: OhlcPoint[] | null
 
@@ -100,12 +102,13 @@ export async function fetchSparklinesForTickers(
         const startDate = rangeToStartDate(range)
         const endDate = todayKst()
         data = await fetchKisOhlc(ticker, assetType, startDate, endDate)
+        if (!data) data = await fetchSparklineData(ticker, interval, range)
       } else {
         data = await fetchSparklineData(ticker, interval, range)
       }
 
       return { ticker, data }
-    })
+    },
   )
 
   const map = new Map<string, OhlcPoint[]>()

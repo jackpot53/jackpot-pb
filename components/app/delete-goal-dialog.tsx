@@ -43,7 +43,7 @@ export function DeleteGoalDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog data-component="DeleteGoalDialog" open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>목표 삭제</DialogTitle>

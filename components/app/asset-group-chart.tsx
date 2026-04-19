@@ -179,7 +179,7 @@ export function AssetGroupChart({ assets, sparklines = {}, monthlyData = [], ann
     : annualCandlesticks
 
   return (
-    <div className="flex flex-col gap-3 h-full">
+    <div data-component="AssetGroupChart" className="flex flex-col gap-3 h-full">
       <div className="flex gap-1 bg-white/10 rounded-lg p-1 w-fit">
         {TABS.map(t => (
           <button

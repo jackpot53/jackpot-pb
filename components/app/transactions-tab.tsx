@@ -41,7 +41,7 @@ export function TransactionsTab({ asset, transactions }: TransactionsTabProps) {
   const [editingId, setEditingId] = useState<string | null>(null)
 
   return (
-    <div className="space-y-4 pt-4">
+    <div data-component="TransactionsTab" className="space-y-4 pt-4">
       <div className="flex justify-end">
         <Button onClick={() => { setShowAddForm(true); setEditingId(null) }} disabled={showAddForm}>
           + 거래 추가

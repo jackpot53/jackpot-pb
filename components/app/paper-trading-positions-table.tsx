@@ -9,14 +9,14 @@ export function PaperTradingPositionsTable({
 }) {
   if (positions.length === 0) {
     return (
-      <div className='text-center py-8 text-gray-500'>
+      <div data-component="PaperTradingPositionsTable" className='text-center py-8 text-gray-500'>
         보유 포지션이 없습니다.
       </div>
     )
   }
 
   return (
-    <div className='overflow-x-auto'>
+    <div data-component="PaperTradingPositionsTable" className='overflow-x-auto'>
       <table className='w-full text-sm'>
         <thead>
           <tr className='border-b border-gray-200'>

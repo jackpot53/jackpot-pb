@@ -32,7 +32,7 @@ export function PaperTradingMetrics({ dateRange }: { dateRange: DateRange }) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div data-component="PaperTradingMetrics" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <Card className="p-4">
         <h3 className="text-sm font-medium text-white/60 mb-2">평균 수익률</h3>
         <p className="text-3xl font-bold">

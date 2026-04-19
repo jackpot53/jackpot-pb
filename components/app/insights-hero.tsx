@@ -8,7 +8,8 @@ const LINE_POINTS = '0,52 20,48 40,44 55,46 70,36 88,30 105,22 118,25 132,14 148
 export function InsightsHero({ yearStr }: Props) {
   return (
     <div
-      className="relative rounded-2xl overflow-hidden"
+      data-component="InsightsHero"
+      className="relative rounded-2xl overflow-hidden min-h-[160px]"
       style={{
         background: 'linear-gradient(135deg, #020810 0%, #050f1a 50%, #071520 100%)',
         minHeight: 188,
@@ -127,7 +128,7 @@ export function InsightsHero({ yearStr }: Props) {
       </div>
 
       {/* ── Content ────────────────────────────────────── */}
-      <div className="relative px-6 sm:px-8 py-8 sm:py-10">
+      <div className="relative p-4 sm:p-6">
         <div className="space-y-3 max-w-sm">
 
           {/* Badge */}
@@ -139,7 +140,7 @@ export function InsightsHero({ yearStr }: Props) {
           </div>
 
           {/* Title */}
-          <div style={{ animation: 'ih-num .6s ease-out .2s both' }}>
+          <div style={{ animation: 'ih-num .6s ease-out .2s both', fontFamily: "'Sunflower', sans-serif" }}>
             <h1
               className="text-[28px] sm:text-4xl font-black leading-tight text-white"
               style={{

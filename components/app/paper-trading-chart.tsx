@@ -160,7 +160,7 @@ export function PaperTradingChart({ dateRange }: { dateRange: DateRange }) {
   }, [chartData])
 
   return (
-    <Card className="p-4">
+    <Card data-component="PaperTradingChart" className="p-4">
       <h2 className="text-lg font-semibold mb-4">누적 수익 추이</h2>
 
       <div className="flex flex-wrap items-center gap-3 mb-3 text-xs">

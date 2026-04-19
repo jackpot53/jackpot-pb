@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 
 export function StatCardSkeleton() {
   return (
-    <Card>
+    <Card data-component="StatCardSkeleton">
       <CardHeader className="pb-2">
         <Skeleton className="h-4 w-24" />
       </CardHeader>
@@ -16,12 +16,12 @@ export function StatCardSkeleton() {
 }
 
 export function PieChartSkeleton() {
-  return <Skeleton className="h-[300px] w-full rounded-xl" />
+  return <Skeleton data-component="PieChartSkeleton" className="h-[300px] w-full rounded-xl" />
 }
 
 export function BreakdownSkeleton() {
   return (
-    <div className="space-y-3">
+    <div data-component="BreakdownSkeleton" className="space-y-3">
       {[1, 2, 3].map((i) => (
         <Skeleton key={i} className="h-5 w-full" />
       ))}

@@ -56,7 +56,7 @@ export function LivePrice({
 
   return (
     <>
-      <span className={className}>
+      <span data-component="LivePrice" className={className}>
         <span className="text-foreground inline-flex items-center gap-1">
           {displayPriceLabel}
           {isLive && (

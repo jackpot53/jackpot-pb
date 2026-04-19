@@ -6,10 +6,8 @@ import { refreshAllPricesInternal } from '@/app/actions/prices'
 import { loadPerformances } from '@/lib/server/load-performances'
 import { TodayReport } from '@/components/app/today-report'
 import { TodayHero } from '@/components/app/today-hero'
-import { MarketFlowSection } from '@/components/app/market-flow-section'
-import { fetchMarketNewsForTypes } from '@/lib/market-news/fetch'
-import { getMarketFlow } from '@/lib/market-flow'
-import type { AssetPerformance } from '@/lib/portfolio/portfolio'
+import { SummaryCards } from '@/components/app/assets-page-client'
+import { TodayAssetPnl } from '@/components/app/today-asset-pnl'
 
 export default async function TodayInsightPage() {
   const user = await getAuthUser()
@@ -17,10 +15,13 @@ export default async function TodayInsightPage() {
 
   after(() => { void refreshAllPricesInternal().catch(() => {}) })
 
-  const [{ performances }, marketFlow] = await Promise.all([
-    loadPerformances(user.id),
-    getMarketFlow(),
-  ])
+  const { performances } = await loadPerformances(user.id)
+
+  const grouped = performances.reduce<Record<string, typeof performances>>((acc, a) => {
+    if (!acc[a.assetType]) acc[a.assetType] = []
+    acc[a.assetType].push(a)
+    return acc
+  }, {})
 
   const now = new Date()
   const dateStr = now.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })
@@ -30,17 +31,12 @@ export default async function TodayInsightPage() {
     <div className="space-y-6">
       <TodayHero dateStr={dateStr} dayStr={dayStr} />
 
-      <Suspense fallback={<TodayReport performances={performances} />}>
-        <TodayReportWithNews performances={performances} />
-      </Suspense>
+      <SummaryCards grouped={grouped} performances={performances} showTypeStrip={false} />
 
-      <MarketFlowSection data={marketFlow} />
+      <TodayReport performances={performances} />
+
+      <TodayAssetPnl performances={performances} />
     </div>
   )
 }
 
-async function TodayReportWithNews({ performances }: { performances: AssetPerformance[] }) {
-  const assetTypes = [...new Set(performances.map((a) => a.assetType))]
-  const news = await fetchMarketNewsForTypes(assetTypes)
-  return <TodayReport performances={performances} news={news} />
-}

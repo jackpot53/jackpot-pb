@@ -33,7 +33,7 @@ export function VoidTransactionDialog({ transactionId, assetId }: VoidTransactio
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog data-component="VoidTransactionDialog" open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
           <Button variant="ghost" size="sm" className="p-2" aria-label="거래 취소 처리" />

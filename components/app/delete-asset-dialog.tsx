@@ -25,7 +25,7 @@ export function DeleteAssetDialog({ assetId, assetName }: { assetId: string; ass
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog data-component="DeleteAssetDialog" open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
           <Button variant="ghost" size="sm" className="p-2" aria-label="자산 삭제" />

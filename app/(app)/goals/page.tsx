@@ -30,7 +30,7 @@ export default async function GoalsPage() {
   return (
     <div className="relative space-y-6">
       {/* 히어로 배너 — 정적 콘텐츠, 즉시 스트리밍 */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 p-6 sm:p-8 text-white shadow-xl">
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-700 p-4 sm:p-6 text-white shadow-xl min-h-[160px]">
         {/* 배경 장식 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
           <style>{`
@@ -85,7 +85,7 @@ export default async function GoalsPage() {
         </div>
 
         <div className="relative flex items-start justify-between gap-6">
-          <div className="space-y-3 flex-1 min-w-0">
+          <div className="space-y-3 flex-1 min-w-0" style={{ fontFamily: "'Sunflower', sans-serif" }}>
             <div className="flex items-center gap-1.5 text-blue-200 text-xs font-semibold tracking-widest uppercase">
               <Target className="h-3.5 w-3.5" />
               재정 목표

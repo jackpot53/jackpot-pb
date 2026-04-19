@@ -610,7 +610,7 @@ export function OverviewTab({ asset, valuations, holding, savingsDetails = null,
   }
 
   return (
-    <div className="space-y-6 pt-4">
+    <div data-component="OverviewTab" className="space-y-6 pt-4">
       {/* Holdings summary */}
       {hasPosition && (
         <>

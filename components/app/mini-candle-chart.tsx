@@ -83,6 +83,7 @@ export function MiniCandleChart({
 
   return (
     <div
+      data-component="MiniCandleChart"
       ref={containerRef}
       style={{ width, height }}
     />

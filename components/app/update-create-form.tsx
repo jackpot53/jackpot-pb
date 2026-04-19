@@ -67,7 +67,7 @@ export function UpdateCreateForm({ onSuccess }: { onSuccess?: () => void }) {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+    <div data-component="UpdateCreateForm" className="rounded-xl border border-gray-200 bg-gray-50 p-5">
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {/* 버전 + 날짜 */}
           <div className="grid grid-cols-2 gap-3">

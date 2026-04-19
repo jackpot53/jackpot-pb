@@ -16,7 +16,7 @@ function SentenceBreak({ text }: { text: string }) {
 
 export function FaqApiCard() {
   return (
-    <details className="group">
+    <details data-component="FaqApiCard" className="group">
       <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground">
         <span><span className="mr-2">1️⃣</span>한국 주식/ETF와 미국 주식/ETF 실시간 시세 조회는 어디서 하나요?</span>
         <span className="transition-transform group-open:rotate-180">▼</span>

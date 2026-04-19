@@ -17,7 +17,7 @@ export function StartPaperTradingButton({ ticker }: { ticker: string }) {
   }
 
   return (
-    <div className='space-y-2'>
+    <div data-component="StartPaperTradingButton" className='space-y-2'>
       <button
         onClick={() => startTransition(handleClick)}
         disabled={isPending}

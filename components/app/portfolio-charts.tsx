@@ -314,7 +314,7 @@ function ValueBarChart({ performances }: { performances: AssetPerformance[] }) {
 
 export function PortfolioCharts({ performances }: { performances: AssetPerformance[] }) {
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div data-component="PortfolioCharts" className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       <Card className="shadow-sm">
         <CardHeader className="pb-3 border-b">
           <CardTitle>자산 배분</CardTitle>

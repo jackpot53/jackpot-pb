@@ -34,7 +34,7 @@ export function EditAssetDialog({ asset }: EditAssetDialogProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog data-component="EditAssetDialog" open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
           <Button variant="ghost" size="sm" className="p-2" aria-label="자산 수정" />

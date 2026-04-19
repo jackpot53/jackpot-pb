@@ -19,7 +19,7 @@ export function DashboardGoalsSection({ goals, totalValueKrw }: DashboardGoalsSe
   if (goals.length === 0) return null
 
   return (
-    <section className="space-y-3">
+    <section data-component="DashboardGoalsSection" className="space-y-3">
       <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">목표</h2>
       <Card className="shadow-sm">
         <CardContent className="pt-4 pb-2">

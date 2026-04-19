@@ -16,7 +16,8 @@ const EDGES = [[0,1],[1,2],[1,5],[2,3],[2,4],[0,6],[6,7],[7,2]]
 export function TodayHero({ dateStr, dayStr }: Props) {
   return (
     <div
-      className="relative rounded-2xl overflow-hidden"
+      data-component="TodayHero"
+      className="relative rounded-2xl overflow-hidden min-h-[160px]"
       style={{
         background: 'linear-gradient(135deg, #04040e 0%, #090916 45%, #0e0826 100%)',
         minHeight: 188,
@@ -131,7 +132,7 @@ export function TodayHero({ dateStr, dayStr }: Props) {
       </div>
 
       {/* ── Content ───────────────────────────────────────── */}
-      <div className="relative px-6 sm:px-8 py-8 sm:py-10 flex items-start justify-between gap-4">
+      <div className="relative p-4 sm:p-6 flex items-start justify-between gap-4">
         <div className="space-y-3 min-w-0">
 
           {/* Live date badge */}
@@ -146,7 +147,7 @@ export function TodayHero({ dateStr, dayStr }: Props) {
           </div>
 
           {/* Title */}
-          <div>
+          <div style={{ fontFamily: "'Sunflower', sans-serif" }}>
             <h1
               className="text-[28px] sm:text-4xl font-black text-white leading-tight"
               style={{ fontFamily: "'Sunflower', sans-serif", letterSpacing: '-0.01em' }}

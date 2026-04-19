@@ -93,7 +93,7 @@ export function PortfolioRadialChart({ allocations, totalValueKrw }: PortfolioRa
   const showCenter = activeIndex === null
 
   return (
-    <div className="flex gap-10 items-center">
+    <div data-component="PortfolioRadialChart" className="flex gap-10 items-center">
       {/* Donut chart */}
       <div className="relative w-[300px] h-[300px] shrink-0">
         <ResponsiveContainer width="100%" height="100%">

@@ -91,7 +91,7 @@ export function RoboAdvisorDetailDialog({ stock, statsMap, onClose }: Props) {
       : '-'
 
   return (
-    <Dialog open={!!stock} onOpenChange={(open) => { if (!open) onClose() }}>
+    <Dialog data-component="RoboAdvisorDetailDialog" open={!!stock} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-start justify-between gap-4">

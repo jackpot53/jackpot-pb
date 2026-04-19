@@ -266,7 +266,7 @@ export function RoboAdvisorPageClient({ universe, statsMap }: Props) {
 
   if (universe.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-4 text-center">
+      <div data-component="RoboAdvisorPageClient" className="flex flex-col items-center justify-center py-24 gap-4 text-center">
         <div className="w-16 h-16 rounded-2xl bg-muted border border-border flex items-center justify-center">
           <BarChart3 className="w-8 h-8 text-muted-foreground" />
         </div>
@@ -281,7 +281,7 @@ export function RoboAdvisorPageClient({ universe, statsMap }: Props) {
   }
 
   return (
-    <div className="space-y-4">
+    <div data-component="RoboAdvisorPageClient" className="space-y-4">
       {/* 상단 통계 + 검색 */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex items-center gap-2 flex-wrap">

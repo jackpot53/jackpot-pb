@@ -70,6 +70,7 @@ export function RoboAdvisorTile({ stock, onClick }: Props) {
 
   return (
     <button
+      data-component="RoboAdvisorTile"
       onClick={onClick}
       className={cn(
         'group relative flex flex-col gap-0.5 w-full rounded-lg p-2 text-left transition-all duration-200',

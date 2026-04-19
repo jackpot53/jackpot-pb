@@ -146,7 +146,7 @@ export function MarketFlowSection({ data }: Props) {
   const { kr, us } = data
 
   return (
-    <div className="space-y-4">
+    <div data-component="MarketFlowSection" className="space-y-4">
       <Separator className="bg-border" />
 
       {/* 섹션 컨테이너 */}

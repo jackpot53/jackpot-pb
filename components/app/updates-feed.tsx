@@ -37,7 +37,7 @@ export function UpdatesFeed({ items }: { items: UpdateRow[] }) {
     : items.filter(item => item.category === activeFilter)
 
   return (
-    <div className="space-y-4">
+    <div data-component="UpdatesFeed" className="space-y-4">
       <div className="flex flex-wrap gap-2 pb-4 border-b border-gray-100">
         {CATEGORIES.map(cat => (
           <button

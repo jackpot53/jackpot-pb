@@ -21,7 +21,7 @@ export function TickerBandClient({ items }: TickerBandClientProps) {
   const doubled = [...items, ...items]
 
   return (
-    <div className="flex-1 min-w-0 overflow-hidden relative mx-4">
+    <div data-component="TickerBandClient" className="flex-1 min-w-0 overflow-hidden relative mx-4">
       {/* fade edges */}
       <div className="absolute left-0 top-0 bottom-0 w-8 z-10 pointer-events-none bg-gradient-to-r from-white to-transparent" />
       <div className="absolute right-0 top-0 bottom-0 w-8 z-10 pointer-events-none bg-gradient-to-l from-white to-transparent" />

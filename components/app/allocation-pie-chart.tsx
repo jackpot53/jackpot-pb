@@ -45,7 +45,7 @@ interface AllocationPieChartProps {
 export function AllocationPieChart({ data }: AllocationPieChartProps) {
   if (data.length === 0) {
     return (
-      <div className="flex h-[300px] items-center justify-center text-muted-foreground text-sm">
+      <div data-component="AllocationPieChart" className="flex h-[300px] items-center justify-center text-muted-foreground text-sm">
         보유 자산이 없습니다
       </div>
     )
@@ -59,7 +59,7 @@ export function AllocationPieChart({ data }: AllocationPieChartProps) {
   }))
 
   return (
-    <ResponsiveContainer width="100%" height={300}>
+    <ResponsiveContainer data-component="AllocationPieChart" width="100%" height={300}>
       <PieChart>
         <Pie
           data={chartData}

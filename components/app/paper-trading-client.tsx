@@ -72,7 +72,7 @@ export function PaperTradingClient({ positions = [] }: { positions?: Position[] 
   const isValidDateRange = !customRange || new Date(customRange.startDate) <= new Date(customRange.endDate)
 
   return (
-    <div className="space-y-6">
+    <div data-component="PaperTradingClient" className="space-y-6">
       {/* 제어판 */}
       <div className="bg-white/[0.02] border border-white/[0.08] rounded-lg p-4 space-y-4">
         <div className="flex flex-wrap gap-2">

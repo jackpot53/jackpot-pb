@@ -3,13 +3,11 @@ import React, { useState, useEffect } from 'react'
 import {
   TrendingUp, TrendingDown, Minus, TriangleAlert, ChevronDown,
   BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ShieldCheck, Gem, CreditCard,
-  Newspaper, ExternalLink,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AssetPerformance } from '@/lib/portfolio/portfolio'
 import { AssetLogo } from '@/components/app/asset-logo'
-import type { NewsItem } from '@/app/api/market-news/route'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -260,32 +258,11 @@ function generateNarrative(
   )
 }
 
-// ── news hook ────────────────────────────────────────────────────────────────
-
-function useMarketNews(assetTypes: string[], initial?: NewsItem[]) {
-  const [news, setNews] = useState<NewsItem[]>(initial ?? [])
-  const [loading, setLoading] = useState(!initial)
-
-  useEffect(() => {
-    if (initial) return // server already provided news — skip client fetch
-    const params = assetTypes.length > 0 ? `?types=${assetTypes.join(',')}` : ''
-    fetch(`/api/market-news${params}`)
-      .then((r) => r.json())
-      .then((data) => { setNews(data); setLoading(false) })
-      .catch(() => setLoading(false))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assetTypes.join(',')])
-
-  return { news, loading }
-}
-
 // ── component ───────────────────────────────────────────────────────────────
 
-export function TodayReport({ performances, news: serverNews }: { performances: AssetPerformance[]; news?: NewsItem[] }) {
+export function TodayReport({ performances }: { performances: AssetPerformance[] }) {
   const [open, setOpen] = useState(true)
   const { portfolioChangeBps, totalDailyChangeKrw, totalValueKrw, typeStats, topMovers, staleCount, liveCount } = computeReport(performances)
-  const assetTypes = [...new Set(performances.map((a) => a.assetType))]
-  const { news, loading: newsLoading } = useMarketNews(assetTypes, serverNews)
 
   if (liveCount === 0) return null
 
@@ -296,7 +273,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
   const narrative = generateNarrative(portfolioChangeBps, totalDailyChangeKrw, topMovers, typeStats)
 
   return (
-    <div className="rounded-2xl border border-border bg-card overflow-hidden" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div data-component="TodayReport" className="rounded-2xl border border-border bg-card overflow-hidden" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* Header */}
       <button
         onClick={() => setOpen((v) => !v)}
@@ -328,7 +305,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
 
       {open && (
         <>
-          <div className="border-t border-border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="border-t border-border grid grid-cols-1 sm:grid-cols-2">
             {/* 자산별 등락 */}
             <div className="px-4 sm:px-6 py-4 border-b sm:border-b-0 sm:border-r border-border">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-xs font-semibold text-muted-foreground mb-3">
@@ -381,7 +358,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
             </div>
 
             {/* 주요 종목 */}
-            <div className="px-4 sm:px-6 py-4 border-b lg:border-b-0 lg:border-r border-border">
+            <div className="px-4 sm:px-6 py-4">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-xs font-semibold text-muted-foreground mb-3">
                 <TrendingUp className="h-3 w-3" />
                 <span className="font-bold">주요 종목</span>
@@ -418,40 +395,6 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
               </div>
             </div>
 
-            {/* 증시 뉴스 */}
-            <div className="px-4 sm:px-6 py-4 sm:col-span-2 lg:col-span-1">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-xs font-semibold text-muted-foreground mb-3">
-                <Newspaper className="h-3 w-3" />
-                <span className="font-bold">증시 뉴스</span>
-              </div>
-              {newsLoading ? (
-                <div className="space-y-2.5">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="h-3.5 bg-muted rounded animate-pulse" style={{ width: `${65 + (i % 3) * 12}%` }} />
-                  ))}
-                </div>
-              ) : news.length > 0 ? (
-                <div className="divide-y divide-border">
-                  {news.map((item, i) => (
-                    <a
-                      key={i}
-                      href={item.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-start gap-2 py-2 group"
-                    >
-                      <span className="text-xs font-bold text-muted-foreground shrink-0 w-4 pt-px">{i + 1}</span>
-                      <span className="text-xs text-foreground/80 group-hover:text-foreground leading-relaxed flex-1 transition-colors">
-                        {item.title}
-                      </span>
-                      <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground group-hover:text-foreground/70 mt-px transition-colors" />
-                    </a>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">뉴스를 불러올 수 없습니다.</p>
-              )}
-            </div>
           </div>
 
           {staleCount > 0 && (

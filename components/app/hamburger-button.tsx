@@ -7,6 +7,7 @@ export function HamburgerButton() {
   const { toggle } = useMobileSidebar()
   return (
     <Button
+      data-component="HamburgerButton"
       variant="ghost"
       size="sm"
       onClick={toggle}

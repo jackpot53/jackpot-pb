@@ -193,7 +193,7 @@ export function CandlestickChart({ data, formatPrice = defaultFormatPrice }: Can
   const isTooltipUp = tooltip ? tooltip.point.close >= tooltip.point.open : true
 
   return (
-    <div ref={containerRef} className="relative w-full h-full">
+    <div data-component="CandlestickChart" ref={containerRef} className="relative w-full h-full">
       {tooltip && (
         <div
           className="pointer-events-none absolute z-10 rounded-lg border border-border bg-popover text-popover-foreground px-3 py-2 shadow text-xs min-w-[120px]"

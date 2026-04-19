@@ -196,7 +196,7 @@ export function GoalProgressD3({ goals, currentValueKrw }: GoalProgressD3Props) 
 
   if (goals.length === 0) {
     return (
-      <div className="w-full space-y-4 py-2">
+      <div data-component="GoalProgressD3" className="w-full space-y-4 py-2">
         {[...Array(3)].map((_, i) => (
           <div key={i} className="flex items-center gap-3">
             <Skeleton className="h-4 shrink-0 rounded" style={{ width: 80, opacity: 1 - i * 0.2 }} />
@@ -211,7 +211,7 @@ export function GoalProgressD3({ goals, currentValueKrw }: GoalProgressD3Props) 
   const svgH = goals.length * ROW_H + MT + MB
 
   return (
-    <div ref={wrapRef} className="relative w-full select-none">
+    <div data-component="GoalProgressD3" ref={wrapRef} className="relative w-full select-none">
       <svg ref={svgRef} height={svgH} style={{ display: 'block', overflow: 'visible' }} />
       {tooltip && (() => {
         const pct = Math.min(

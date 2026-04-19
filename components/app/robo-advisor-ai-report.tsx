@@ -89,7 +89,7 @@ export function RoboAdvisorAiReport({
   }
 
   return (
-    <div className='w-full space-y-4'>
+    <div data-component="RoboAdvisorAiReport" className='w-full space-y-4'>
       <Button onClick={handleAnalyze} disabled={isLoading} className='gap-2'>
         {isLoading ? <Loader2 className='w-4 h-4 animate-spin' /> : <Sparkles className='w-4 h-4' />}
         {isLoading ? 'AI 분석 중...' : 'AI 분석 시작'}

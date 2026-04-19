@@ -324,7 +324,7 @@ export default async function ChartsPage() {
   return (
     <div className="space-y-6">
       {/* 히어로 배너 */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-6 sm:p-8 text-white shadow-xl">
+      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-4 sm:p-6 text-white shadow-xl min-h-[160px]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
           <style>{`
             @keyframes charts-bar { 0%,100%{transform:scaleY(1);opacity:.35} 50%{transform:scaleY(1.18);opacity:.6} }
@@ -408,7 +408,7 @@ export default async function ChartsPage() {
             <AnimatedLogo size={108} />
           </div>
         </div>
-        <div className="relative space-y-2">
+        <div className="relative space-y-2" style={{ fontFamily: "'Sunflower', sans-serif" }}>
           <div className="flex items-center gap-1.5 text-violet-200 text-xs font-semibold tracking-widest uppercase">
             <LineChart className="h-3.5 w-3.5" />수익률 분석
           </div>

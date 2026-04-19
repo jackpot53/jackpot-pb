@@ -169,14 +169,14 @@ export function AssetLogo({ ticker, name, assetType, size = 24, className }: Pro
 
   if (!url || failed) {
     return (
-      <span className={wrapperCls} style={{ width: size, height: size }} aria-hidden>
+      <span data-component="AssetLogo" className={wrapperCls} style={{ width: size, height: size }} aria-hidden>
         <Icon className="text-muted-foreground" style={{ width: size * 0.6, height: size * 0.6 }} />
       </span>
     );
   }
 
   return (
-    <span className={wrapperCls} style={{ width: size, height: size }}>
+    <span data-component="AssetLogo" className={wrapperCls} style={{ width: size, height: size }}>
       <Image
         src={url}
         alt=""
