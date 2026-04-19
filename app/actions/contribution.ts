@@ -25,7 +25,7 @@ export async function upsertDividendRate(
 ): Promise<{ error: string } | void> {
   const user = await requireUser()
   const parsed = upsertSchema.safeParse({ assetId, year, ratePct })
-  if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? '입력 오류' }
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? '입력 오류' }
   const rateBp = Math.round(parseFloat(parsed.data.ratePct) * 10000)
   await upsertContributionDividendRate(assetId, user.id, year, rateBp)
   revalidatePath(`/assets/${assetId}/edit`)
