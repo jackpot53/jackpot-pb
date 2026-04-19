@@ -592,7 +592,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
           {showSparkline && sparklineData && asset.ticker && !lineData && (
             <div className="px-4 pb-3">
               <div className="h-[280px] rounded-lg overflow-hidden border border-border/40 bg-white">
-                <AssetCandleChart ticker={asset.ticker} initialData={sparklineData} />
+                <AssetCandleChart ticker={asset.ticker} initialData={sparklineData} assetType={asset.assetType} />
               </div>
             </div>
           )}

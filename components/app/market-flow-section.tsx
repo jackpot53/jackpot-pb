@@ -5,6 +5,12 @@ import { Separator } from '@/components/ui/separator'
 import { AssetLogo } from '@/components/app/asset-logo'
 import { cn } from '@/lib/utils'
 import type { MarketFlowData, FlowEntry } from '@/lib/market-flow/types'
+import { useKisLivePrice } from '@/lib/ws/kis-ws-context'
+
+// Subscription budget for the market-flow widget. Holdings page mounts first so
+// it gets priority on the 40-symbol cap; we keep market-flow well below that.
+const KR_LIVE_LIMIT = 3   // top-3 of each KR column
+const US_LIVE_LIMIT = 5   // top-5 of US trending
 
 // 백만원 → "XXX억" 표시
 function formatNetAmount(amountInMillions: number): string {
@@ -26,13 +32,18 @@ function FlowRow({
   entry,
   rank,
   showAmount,
+  enableLive,
 }: {
   entry: FlowEntry
   rank: number
   showAmount: boolean
+  enableLive: boolean
 }) {
   const assetType = entry.assetType as Parameters<typeof AssetLogo>[0]['assetType']
-  const isPositive = (entry.changePercent ?? 0) >= 0
+  const tick = useKisLivePrice(enableLive ? entry.ticker : null, enableLive ? entry.assetType : null)
+  const liveChange = tick?.changePercent ?? null
+  const displayChange = liveChange ?? entry.changePercent
+  const isPositive = (displayChange ?? 0) >= 0
 
   return (
     <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-muted/30 hover:bg-muted/60 transition-colors">
@@ -46,9 +57,13 @@ function FlowRow({
           {showAmount && entry.netAmount > 0 ? `+${formatNetAmount(entry.netAmount)}` : '\u00A0'}
         </p>
       </div>
-      {entry.changePercent !== undefined && (
-        <span className={cn('text-xs font-mono font-bold shrink-0', isPositive ? 'text-red-400' : 'text-blue-400')}>
-          {formatChangePercent(entry.changePercent)}
+      {displayChange !== undefined && (
+        <span className={cn(
+          'text-xs font-mono font-bold shrink-0 inline-flex items-center gap-1',
+          isPositive ? 'text-red-400' : 'text-blue-400',
+        )}>
+          {formatChangePercent(displayChange)}
+          {tick && <span className="inline-block w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />}
         </span>
       )}
     </div>
@@ -85,7 +100,13 @@ function FlowColumn({
           <div className="text-xs text-muted-foreground py-4 text-center">{emptyLabel}</div>
         ) : (
           entries.map((entry, i) => (
-            <FlowRow key={entry.code} entry={entry} rank={i + 1} showAmount={showAmount} />
+            <FlowRow
+              key={entry.code}
+              entry={entry}
+              rank={i + 1}
+              showAmount={showAmount}
+              enableLive={i < KR_LIVE_LIMIT}
+            />
           ))
         )}
       </div>
@@ -94,9 +115,10 @@ function FlowColumn({
 }
 
 // US 트렌딩 칩
-function TrendingChip({ entry }: { entry: FlowEntry }) {
+function TrendingChip({ entry, enableLive }: { entry: FlowEntry; enableLive: boolean }) {
   const assetType = entry.assetType as Parameters<typeof AssetLogo>[0]['assetType']
-  const pct = entry.changePercent
+  const tick = useKisLivePrice(enableLive ? entry.ticker : null, enableLive ? entry.assetType : null)
+  const pct = tick?.changePercent ?? entry.changePercent
   const isPositive = (pct ?? 0) >= 0
 
   return (
@@ -104,8 +126,12 @@ function TrendingChip({ entry }: { entry: FlowEntry }) {
       <AssetLogo ticker={entry.ticker} name={entry.name} assetType={assetType} size={20} />
       <div className="text-xs font-medium">{entry.ticker}</div>
       {pct !== undefined && (
-        <div className={cn('text-[10px] font-semibold', isPositive ? 'text-red-500' : 'text-blue-500')}>
+        <div className={cn(
+          'text-[10px] font-semibold inline-flex items-center gap-1',
+          isPositive ? 'text-red-500' : 'text-blue-500',
+        )}>
           {formatChangePercent(pct)}
+          {tick && <span className="inline-block w-1 h-1 rounded-full bg-emerald-400 animate-pulse" />}
         </div>
       )}
     </div>
@@ -172,12 +198,12 @@ export function MarketFlowSection({ data }: Props) {
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
               <div>
                 <span className="text-sm font-semibold">US 트렌딩</span>
-                <span className="text-[10px] text-muted-foreground ml-1.5">Yahoo Finance 기준</span>
+                <span className="text-[10px] text-muted-foreground ml-1.5">KIS 거래량 기준</span>
               </div>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
-              {us.trending.map((entry) => (
-                <TrendingChip key={entry.code} entry={entry} />
+              {us.trending.map((entry, i) => (
+                <TrendingChip key={entry.code} entry={entry} enableLive={i < US_LIVE_LIMIT} />
               ))}
             </div>
           </div>

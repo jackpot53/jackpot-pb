@@ -1,10 +1,11 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { scaleBand, scaleLinear } from 'd3-scale'
 import { select, pointer } from 'd3-selection'
 import { axisBottom, axisLeft } from 'd3-axis'
 import { min, max, range as d3range } from 'd3-array'
 import type { OhlcPoint } from '@/lib/price/sparkline'
+import { useKisLivePrice } from '@/lib/ws/kis-ws-context'
 
 type Period = '일봉' | '주봉' | '월봉'
 
@@ -25,6 +26,7 @@ interface TooltipState {
 interface AssetCandleChartProps {
   ticker: string
   initialData: OhlcPoint[]
+  assetType?: string
 }
 
 function fmtAxisPrice(v: number): string {
@@ -54,9 +56,25 @@ function fmtXLabel(date: string | undefined, idx: number, total: number, period:
   return `${parseInt(parts[1], 10)}/${parseInt(parts[2], 10)}`
 }
 
-export function AssetCandleChart({ ticker, initialData }: AssetCandleChartProps) {
+export function AssetCandleChart({ ticker, initialData, assetType }: AssetCandleChartProps) {
   const [period, setPeriod] = useState<Period>('일봉')
-  const [data, setData] = useState<OhlcPoint[]>(initialData)
+  const [baseData, setBaseData] = useState<OhlcPoint[]>(initialData)
+  const liveTick = useKisLivePrice(ticker, assetType ?? null)
+
+  // Overlay: live tick mutates the latest candle's close (and stretches high/low
+  // if the tick price exceeds the current intraday range). Older candles never change.
+  // Only applied on daily candles — weekly/monthly bars are closed historical data.
+  const data = useMemo<OhlcPoint[]>(() => {
+    if (!liveTick || baseData.length === 0 || period !== '일봉') return baseData
+    const last = baseData[baseData.length - 1]
+    const merged: OhlcPoint = {
+      ...last,
+      close: liveTick.price,
+      high: Math.max(last.high, liveTick.price),
+      low: Math.min(last.low, liveTick.price),
+    }
+    return [...baseData.slice(0, -1), merged]
+  }, [baseData, liveTick, period])
   const [loading, setLoading] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -78,7 +96,7 @@ export function AssetCandleChart({ ticker, initialData }: AssetCandleChartProps)
 
   useEffect(() => {
     if (period === '일봉') {
-      setData(initialData)
+      setBaseData(initialData)
       return
     }
     const { interval, range } = PERIOD_PARAMS[period]
@@ -87,7 +105,7 @@ export function AssetCandleChart({ ticker, initialData }: AssetCandleChartProps)
       .then(r => r.json())
       .then((res: Record<string, OhlcPoint[]>) => {
         const d = res[ticker]
-        if (d && d.length >= 2) setData(d)
+        if (d && d.length >= 2) setBaseData(d)
       })
       .catch(() => {})
       .finally(() => setLoading(false))
