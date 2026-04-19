@@ -26,7 +26,7 @@ export default async function StockAnalysisPage({
   return (
     <div className='space-y-6'>
       <Link
-        href='/robo-advisor'
+        href='/robo-advisor/stock'
         className='inline-flex items-center gap-1 text-muted-foreground hover:text-foreground font-medium text-sm transition-colors'
       >
         <ChevronLeft className='w-4 h-4' />

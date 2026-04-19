@@ -17,18 +17,44 @@ import {
   History,
   Sun,
   Crown,
+  Activity,
+  Layers,
+  BarChart3,
+  type LucideIcon,
 } from 'lucide-react'
 
-const NAV_ITEMS = [
+interface NavItem {
+  label: string
+  href: string
+  icon: LucideIcon
+  color: string
+  activeColor: string
+  pro?: boolean
+  children?: Omit<NavItem, 'children' | 'pro'>[]
+}
+
+const NAV_ITEMS: NavItem[] = [
   { label: '목표',         href: '/goals',         icon: Target,        color: 'text-amber-400',   activeColor: 'text-amber-300'   },
-  { label: '오늘의 인사이트', href: '/today',        icon: Sun,           color: 'text-yellow-400',  activeColor: 'text-yellow-300'  },
   { label: '포트폴리오',   href: '/assets',         icon: Wallet,        color: 'text-emerald-400', activeColor: 'text-emerald-300' },
+  { label: '오늘의 인사이트', href: '/today',        icon: Sun,           color: 'text-yellow-400',  activeColor: 'text-yellow-300'  },
   { label: '자산 거래내역', href: '/transactions',   icon: ArrowLeftRight,color: 'text-sky-400',     activeColor: 'text-sky-300'     },
   { label: '머니 대시',    href: '/charts',         icon: LineChart,     color: 'text-violet-400',  activeColor: 'text-violet-300'  },
   { label: '업데이트 정보',href: '/updates',        icon: History,       color: 'text-teal-400',    activeColor: 'text-teal-300'    },
   { label: '도움말',       href: '/help',           icon: HelpCircle,    color: 'text-zinc-400',    activeColor: 'text-zinc-300'    },
   { label: '모의투자',     href: '/paper-trading',  icon: TrendingUp,    color: 'text-cyan-400',    activeColor: 'text-cyan-300',   pro: true },
-  { label: '로보어드바이저', href: '/robo-advisor',   icon: Bot,           color: 'text-orange-400',  activeColor: 'text-orange-300', pro: true },
+  {
+    label: '로보어드바이저',
+    href: '/robo-advisor',
+    icon: Bot,
+    color: 'text-orange-400',
+    activeColor: 'text-orange-300',
+    pro: true,
+    children: [
+      { label: '시장시그널', href: '/robo-advisor/market', icon: Activity,   color: 'text-amber-400', activeColor: 'text-amber-300' },
+      { label: '섹터시그널', href: '/robo-advisor/sector', icon: Layers,     color: 'text-rose-400',  activeColor: 'text-rose-300'  },
+      { label: '종목시그널', href: '/robo-advisor/stock',  icon: BarChart3,  color: 'text-orange-400',activeColor: 'text-orange-300'},
+    ],
+  },
 ]
 
 const SYMBOLS = ['7', '₩', '★', '♦', '♠']
@@ -328,6 +354,35 @@ export function Sidebar() {
                 </span>
               )}
             </Link>
+            {!collapsed && item.children && (
+              <div className="mt-1 ml-5 pl-3 border-l border-sidebar-border/50 space-y-1">
+                {item.children.map((child) => {
+                  const ChildIcon = child.icon
+                  const childActive = pathname === child.href || pathname.startsWith(`${child.href}/`)
+                  return (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      onClick={closeMobile}
+                      className={cn(
+                        'group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition-all duration-200',
+                        childActive
+                          ? 'bg-sidebar-accent/70 border border-sidebar-border'
+                          : 'border border-transparent hover:bg-sidebar-accent/50 hover:border-sidebar-border/60'
+                      )}
+                    >
+                      <ChildIcon size={13} className={cn(childActive ? child.activeColor : child.color)} />
+                      <span className={cn(
+                        'whitespace-nowrap text-xs font-light transition-colors duration-200 font-[family-name:var(--font-sunflower)]',
+                        childActive ? 'text-sidebar-foreground font-medium' : 'text-sidebar-foreground/55 group-hover:text-sidebar-foreground'
+                      )}>
+                        {child.label}
+                      </span>
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
             </div>
           )
         })}
