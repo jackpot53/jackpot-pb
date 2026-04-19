@@ -1,4 +1,5 @@
-import { HelpCircle } from 'lucide-react'
+import { HelpCircle, Package } from 'lucide-react'
+import Link from 'next/link'
 import { PageHeader } from '@/components/app/page-header'
 
 
@@ -177,6 +178,27 @@ export default function HelpPage() {
         })}
       </div>
 
+      {/* 기술스택 진입 카드 */}
+      <Link
+        href="/tech-stack"
+        className="block rounded-xl border border-border bg-card hover:shadow-md transition-shadow overflow-hidden"
+      >
+        <div className="h-1 bg-slate-500" />
+        <div className="px-6 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Package className="h-5 w-5 text-slate-400" />
+            <div>
+              <div className="font-semibold text-foreground font-[family-name:var(--font-sunflower)]">
+                기술스택 & 라이선스
+              </div>
+              <div className="text-sm text-foreground/70">
+                이 앱을 구성하는 오픈소스와 외부 API
+              </div>
+            </div>
+          </div>
+          <span className="text-muted-foreground">→</span>
+        </div>
+      </Link>
     </div>
   )
 }
