@@ -121,8 +121,6 @@ const StockRow = ({
           className="absolute inset-0 opacity-20 pointer-events-none"
           style={{
             background: 'linear-gradient(90deg, #f43f5e, #f59e0b, #10b981, #3b82f6, #8b5cf6, #f43f5e)',
-            backgroundSize: '200% auto',
-            animation: 'shimmer-gold 4s linear infinite',
           }}
         />
       )}
