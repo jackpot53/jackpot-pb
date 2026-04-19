@@ -16,6 +16,7 @@ import {
   HelpCircle,
   History,
   Sun,
+  Crown,
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -26,8 +27,8 @@ const NAV_ITEMS = [
   { label: '머니 대시',    href: '/charts',         icon: LineChart,     color: 'text-violet-400',  activeColor: 'text-violet-300'  },
   { label: '업데이트 정보',href: '/updates',        icon: History,       color: 'text-teal-400',    activeColor: 'text-teal-300'    },
   { label: '도움말',       href: '/help',           icon: HelpCircle,    color: 'text-zinc-400',    activeColor: 'text-zinc-300'    },
-  { label: '모의투자',     href: '/paper-trading',  icon: TrendingUp,    color: 'text-cyan-400',    activeColor: 'text-cyan-300'    },
-  { label: '로보어드바이저', href: '/robo-advisor',   icon: Bot,           color: 'text-orange-400',  activeColor: 'text-orange-300'  },
+  { label: '모의투자',     href: '/paper-trading',  icon: TrendingUp,    color: 'text-cyan-400',    activeColor: 'text-cyan-300',   pro: true },
+  { label: '로보어드바이저', href: '/robo-advisor',   icon: Bot,           color: 'text-orange-400',  activeColor: 'text-orange-300', pro: true },
 ]
 
 const SYMBOLS = ['7', '₩', '★', '♦', '♠']
@@ -266,14 +267,35 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 px-2 space-y-1.5 pt-2">
+        <style>{`
+          @keyframes pro-shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+          }
+        `}</style>
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon
           const isActive =
             pathname === item.href ||
             (item.href !== '/' && pathname.startsWith(item.href))
           return (
+            <div key={item.href}>
+              {item.href === '/paper-trading' && (
+                <div className="flex items-center gap-2 px-1 py-2">
+                  <div className="flex-1 h-px rounded-full" style={{
+                    background: 'linear-gradient(90deg, transparent, #f59e0b, #fbbf24, #f59e0b, transparent)',
+                    backgroundSize: '200% auto',
+                    animation: 'pro-shimmer 2.5s linear infinite',
+                  }} />
+                  <Crown size={11} className="shrink-0 text-amber-500/70" />
+                  <div className="flex-1 h-px rounded-full" style={{
+                    background: 'linear-gradient(90deg, transparent, #f59e0b, #fbbf24, #f59e0b, transparent)',
+                    backgroundSize: '200% auto',
+                    animation: 'pro-shimmer 2.5s linear infinite',
+                  }} />
+                </div>
+              )}
             <Link
-              key={item.href}
               href={item.href}
               onClick={closeMobile}
               title={collapsed ? item.label : undefined}
@@ -289,14 +311,22 @@ export function Sidebar() {
                 <Icon size={15} className={cn(isActive ? item.activeColor : item.color)} />
               </div>
               {!collapsed && (
-                <span className={cn(
-                  'whitespace-nowrap text-sm font-light transition-colors duration-200 font-[family-name:var(--font-sunflower)]',
-                  isActive ? 'text-sidebar-foreground font-medium' : 'text-sidebar-foreground/60 group-hover:text-sidebar-foreground'
-                )}>
-                  {item.label}
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className={cn(
+                    'whitespace-nowrap text-sm font-light transition-colors duration-200 font-[family-name:var(--font-sunflower)]',
+                    isActive ? 'text-sidebar-foreground font-medium' : 'text-sidebar-foreground/60 group-hover:text-sidebar-foreground'
+                  )}>
+                    {item.label}
+                  </span>
+                  {item.pro && (
+                    <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                      PRO
+                    </span>
+                  )}
                 </span>
               )}
             </Link>
+            </div>
           )
         })}
       </nav>
