@@ -315,9 +315,9 @@ function ValueBarChart({ performances }: { performances: AssetPerformance[] }) {
 export function PortfolioCharts({ performances }: { performances: AssetPerformance[] }) {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <Card className="border-l-4 border-l-blue-500 shadow-sm">
-        <CardHeader className="bg-gradient-to-r from-blue-50/60 to-transparent dark:from-blue-950/20 rounded-tl-[calc(var(--radius)-1px)]">
-          <CardTitle className="text-blue-700 dark:text-blue-400">자산 배분</CardTitle>
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3 border-b">
+          <CardTitle>자산 배분</CardTitle>
           <CardDescription>유형별 평가금액 비중</CardDescription>
         </CardHeader>
         <CardContent>
@@ -325,9 +325,9 @@ export function PortfolioCharts({ performances }: { performances: AssetPerforman
         </CardContent>
       </Card>
 
-      <Card className="border-l-4 border-l-emerald-500 shadow-sm">
-        <CardHeader className="bg-gradient-to-r from-emerald-50/60 to-transparent dark:from-emerald-950/20 rounded-tl-[calc(var(--radius)-1px)]">
-          <CardTitle className="text-emerald-700 dark:text-emerald-400">종목별 수익률</CardTitle>
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3 border-b">
+          <CardTitle>종목별 수익률</CardTitle>
           <CardDescription>평가 가능 자산의 수익률 비교 (%)</CardDescription>
         </CardHeader>
         <CardContent>
@@ -335,9 +335,9 @@ export function PortfolioCharts({ performances }: { performances: AssetPerforman
         </CardContent>
       </Card>
 
-      <Card className="lg:col-span-2 border-l-4 border-l-violet-500 shadow-sm">
-        <CardHeader className="bg-gradient-to-r from-violet-50/60 to-transparent dark:from-violet-950/20 rounded-tl-[calc(var(--radius)-1px)]">
-          <CardTitle className="text-violet-700 dark:text-violet-400">종목별 투자 vs 평가금액</CardTitle>
+      <Card className="lg:col-span-2 shadow-sm">
+        <CardHeader className="pb-3 border-b">
+          <CardTitle>종목별 투자 vs 평가금액</CardTitle>
           <CardDescription>투자금액(회색) · 평가금액(유형색)</CardDescription>
         </CardHeader>
         <CardContent>
