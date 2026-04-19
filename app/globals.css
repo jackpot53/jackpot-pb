@@ -211,52 +211,6 @@
   .logo-float-5 { animation: logo-float-5  6s ease-in-out infinite; }
   .logo-float-6 { animation: logo-float-6 11s ease-in-out infinite; }
 
-  /* 거래내역: 매수↑ 매도↓ 플로팅 화살표 */
-  @keyframes tx-rise {
-    0%   { transform: translateY(50px);  opacity: 0; }
-    25%  { opacity: 0.28; }
-    75%  { opacity: 0.14; }
-    100% { transform: translateY(-70px); opacity: 0; }
-  }
-  @keyframes tx-fall {
-    0%   { transform: translateY(-50px); opacity: 0; }
-    25%  { opacity: 0.28; }
-    75%  { opacity: 0.14; }
-    100% { transform: translateY(70px);  opacity: 0; }
-  }
-  .tx-rise-1 { animation: tx-rise 3.4s ease-in-out infinite 0s; }
-  .tx-rise-2 { animation: tx-rise 3.4s ease-in-out infinite 1.1s; }
-  .tx-rise-3 { animation: tx-rise 3.4s ease-in-out infinite 2.3s; }
-  .tx-rise-4 { animation: tx-rise 3.4s ease-in-out infinite 0.6s; }
-  .tx-fall-1 { animation: tx-fall 3.4s ease-in-out infinite 0.8s; }
-  .tx-fall-2 { animation: tx-fall 3.4s ease-in-out infinite 1.9s; }
-  .tx-fall-3 { animation: tx-fall 3.4s ease-in-out infinite 3.0s; }
-  .tx-fall-4 { animation: tx-fall 3.4s ease-in-out infinite 1.5s; }
-
-  /* 차트: 스캔라인 + 데이터 점 펄스 */
-  @keyframes chart-scan {
-    0%   { transform: translateX(-120%); }
-    100% { transform: translateX(350%); }
-  }
-  .chart-scan { animation: chart-scan 3.6s linear infinite; }
-
-  /* 목표: 레이더 링 */
-  @keyframes goal-radar {
-    0%   { transform: scale(0.15); opacity: 0.7; }
-    100% { transform: scale(2.6);  opacity: 0; }
-  }
-  .goal-radar-1 { animation: goal-radar 2.8s ease-out infinite 0s; }
-  .goal-radar-2 { animation: goal-radar 2.8s ease-out infinite 0.93s; }
-  .goal-radar-3 { animation: goal-radar 2.8s ease-out infinite 1.86s; }
-
-  /* 목표: 달성 체크 팝 */
-  @keyframes goal-check {
-    0%, 100% { transform: scale(1)    rotate(0deg);   opacity: 0.12; }
-    50%       { transform: scale(1.25) rotate(10deg);  opacity: 0.22; }
-  }
-  .goal-check-1 { animation: goal-check 4s ease-in-out infinite 0s; }
-  .goal-check-2 { animation: goal-check 4s ease-in-out infinite 1.4s; }
-  .goal-check-3 { animation: goal-check 4s ease-in-out infinite 2.7s; }
 
   @keyframes shimmer-underline {
     0%   { background-position: 0% 0%; }
@@ -268,36 +222,6 @@
     cursor: pointer;
   }
 
-  /* 히어로 배너 바 차트 애니메이션 */
-  @keyframes bar-1 { 0%,100%{height:28%} 30%{height:72%} 65%{height:45%} }
-  @keyframes bar-2 { 0%,100%{height:55%} 20%{height:30%} 55%{height:80%} }
-  @keyframes bar-3 { 0%,100%{height:40%} 40%{height:65%} 70%{height:20%} }
-  @keyframes bar-4 { 0%,100%{height:70%} 25%{height:40%} 60%{height:85%} }
-  @keyframes bar-5 { 0%,100%{height:35%} 45%{height:60%} 75%{height:25%} }
-  @keyframes bar-6 { 0%,100%{height:60%} 30%{height:90%} 65%{height:40%} }
-  @keyframes bar-7 { 0%,100%{height:45%} 20%{height:25%} 55%{height:70%} }
-  @keyframes bar-8 { 0%,100%{height:80%} 35%{height:50%} 68%{height:95%} }
-  @keyframes bar-9 { 0%,100%{height:30%} 50%{height:55%} 78%{height:15%} }
-
-  .hero-bar-1 { animation: bar-1 3.2s ease-in-out infinite; }
-  .hero-bar-2 { animation: bar-2 2.8s ease-in-out infinite 0.4s; }
-  .hero-bar-3 { animation: bar-3 3.6s ease-in-out infinite 0.8s; }
-  .hero-bar-4 { animation: bar-4 2.5s ease-in-out infinite 0.2s; }
-  .hero-bar-5 { animation: bar-5 3.9s ease-in-out infinite 1.1s; }
-  .hero-bar-6 { animation: bar-6 2.7s ease-in-out infinite 0.6s; }
-  .hero-bar-7 { animation: bar-7 3.3s ease-in-out infinite 1.4s; }
-  .hero-bar-8 { animation: bar-8 2.9s ease-in-out infinite 0.9s; }
-  .hero-bar-9 { animation: bar-9 3.7s ease-in-out infinite 0.3s; }
-
-  /* 히어로 배너 펄스 링 */
-  @keyframes hero-ring {
-    0%   { transform: scale(0.8); opacity: 0.3; }
-    50%  { transform: scale(1.3); opacity: 0.08; }
-    100% { transform: scale(0.8); opacity: 0.3; }
-  }
-  .hero-ring-1 { animation: hero-ring 3s ease-in-out infinite; }
-  .hero-ring-2 { animation: hero-ring 3s ease-in-out infinite 1s; }
-  .hero-ring-3 { animation: hero-ring 3s ease-in-out infinite 2s; }
 
   .brand-shimmer {
     color: oklch(0.65 0.15 55);
