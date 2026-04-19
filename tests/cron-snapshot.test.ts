@@ -17,19 +17,27 @@ vi.mock('@/db', () => ({
     })),
   },
 }))
-vi.mock('@/db/schema/assets', () => ({
-  assets: {},
-}))
-vi.mock('drizzle-orm', () => ({
-  and: vi.fn(),
-  eq: vi.fn(),
-  isNotNull: vi.fn(),
-}))
+vi.mock('@/db/schema/assets', async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+  }
+})
+vi.mock('drizzle-orm', async (importOriginal) => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    and: vi.fn(),
+    eq: vi.fn(),
+    isNotNull: vi.fn(),
+  }
+})
 vi.mock('@/db/queries/assets-with-holdings', () => ({
   getAssetsWithHoldings: vi.fn().mockResolvedValue([]),
 }))
 vi.mock('@/db/queries/price-cache', () => ({
   getPriceCacheByTickers: vi.fn().mockResolvedValue(new Map()),
+  getInvalidPriceCacheTickers: vi.fn().mockResolvedValue([]),
 }))
 
 describe('GET /api/cron/snapshot', () => {

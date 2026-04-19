@@ -2,6 +2,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 
+// Set environment variables before mocking
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
+
 // Mock @supabase/ssr createServerClient
 vi.mock('@supabase/ssr', () => ({
   createServerClient: vi.fn(),
@@ -22,9 +26,10 @@ describe('Middleware — unauthenticated redirect (AUTH-01, AUTH-02)', () => {
   })
 
   it('redirects unauthenticated user from / to /login', async () => {
-    // Mock: getUser returns no user
+    // Mock: getClaims returns error (no auth token), getUser returns no user
     vi.mocked(createServerClient).mockReturnValue({
       auth: {
+        getClaims: vi.fn().mockResolvedValue({ data: null, error: new Error('No session') }),
         getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
       },
       cookies: {},
@@ -42,6 +47,7 @@ describe('Middleware — unauthenticated redirect (AUTH-01, AUTH-02)', () => {
   it('preserves ?redirect= query param pointing to original path', async () => {
     vi.mocked(createServerClient).mockReturnValue({
       auth: {
+        getClaims: vi.fn().mockResolvedValue({ data: null, error: new Error('No session') }),
         getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
       },
       cookies: {},
@@ -58,6 +64,7 @@ describe('Middleware — unauthenticated redirect (AUTH-01, AUTH-02)', () => {
   it('allows authenticated user through without redirect', async () => {
     vi.mocked(createServerClient).mockReturnValue({
       auth: {
+        getClaims: vi.fn().mockResolvedValue({ data: { claims: { sub: 'user-123' } }, error: null }),
         getUser: vi.fn().mockResolvedValue({
           data: { user: { id: 'user-123', email: 'test@example.com' } },
         }),
@@ -75,6 +82,7 @@ describe('Middleware — unauthenticated redirect (AUTH-01, AUTH-02)', () => {
   it('allows unauthenticated user to access /login without redirect', async () => {
     vi.mocked(createServerClient).mockReturnValue({
       auth: {
+        getClaims: vi.fn().mockResolvedValue({ data: null, error: new Error('No session') }),
         getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
       },
       cookies: {},

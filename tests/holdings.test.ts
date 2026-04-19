@@ -14,22 +14,22 @@ function voided(tx: ReturnType<typeof buy> | ReturnType<typeof sell>) {
 
 describe('computeHoldings', () => {
   it('returns zeros for empty array', () => {
-    expect(computeHoldings([])).toEqual({ totalQuantity: 0, avgCostPerUnit: 0, totalCostKrw: 0 })
+    expect(computeHoldings([])).toEqual({ totalQuantity: 0, avgCostPerUnit: 0, totalCostKrw: 0, avgCostPerUnitOriginal: null, avgExchangeRateAtTime: null })
   })
 
   it('single buy no fee', () => {
     const result = computeHoldings([buy(1_00000000, 50000)])
-    expect(result).toEqual({ totalQuantity: 1_00000000, avgCostPerUnit: 50000, totalCostKrw: 50000 })
+    expect(result).toEqual({ totalQuantity: 1_00000000, avgCostPerUnit: 50000, totalCostKrw: 50000, avgCostPerUnitOriginal: null, avgExchangeRateAtTime: null })
   })
 
   it('single buy with fee adds fee to totalCostKrw', () => {
     const result = computeHoldings([buy(1_00000000, 50000, 500)])
-    expect(result).toEqual({ totalQuantity: 1_00000000, avgCostPerUnit: 50000, totalCostKrw: 50500 })
+    expect(result).toEqual({ totalQuantity: 1_00000000, avgCostPerUnit: 50000, totalCostKrw: 50500, avgCostPerUnitOriginal: null, avgExchangeRateAtTime: null })
   })
 
   it('two buys: WAVG recalculates', () => {
     const result = computeHoldings([buy(1_00000000, 50000), buy(1_00000000, 60000)])
-    expect(result).toEqual({ totalQuantity: 2_00000000, avgCostPerUnit: 55000, totalCostKrw: 110000 })
+    expect(result).toEqual({ totalQuantity: 2_00000000, avgCostPerUnit: 55000, totalCostKrw: 110000, avgCostPerUnitOriginal: null, avgExchangeRateAtTime: null })
   })
 
   it('partial sell: avgCostPerUnit unchanged, quantity and cost decrease', () => {
@@ -55,12 +55,12 @@ describe('computeHoldings', () => {
 
   it('all voided returns zeros', () => {
     const txns = [voided(buy(1_00000000, 50000)), voided(buy(1_00000000, 60000))]
-    expect(computeHoldings(txns)).toEqual({ totalQuantity: 0, avgCostPerUnit: 0, totalCostKrw: 0 })
+    expect(computeHoldings(txns)).toEqual({ totalQuantity: 0, avgCostPerUnit: 0, totalCostKrw: 0, avgCostPerUnitOriginal: null, avgExchangeRateAtTime: null })
   })
 
   it('mixed void: voided txns excluded', () => {
     const txns = [voided(buy(1_00000000, 50000)), buy(1_00000000, 60000)]
     const result = computeHoldings(txns)
-    expect(result).toEqual({ totalQuantity: 1_00000000, avgCostPerUnit: 60000, totalCostKrw: 60000 })
+    expect(result).toEqual({ totalQuantity: 1_00000000, avgCostPerUnit: 60000, totalCostKrw: 60000, avgCostPerUnitOriginal: null, avgExchangeRateAtTime: null })
   })
 })
