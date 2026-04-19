@@ -119,8 +119,8 @@ type ApiItem = {
 - 한국투자증권 Open API · 국내/해외 주식·ETF 실시간 시세 · 공식 API · https://apiportal.koreainvestment.com
 - Finnhub · 암호화폐 시세 · 공식 API · https://finnhub.io
 - BOK ECOS · 한국은행 공식 환율 · 공식 API · https://ecos.bok.or.kr
-- Naver Finance · 국내 시장동향(외국인/기관/거래량) · 웹 스크래핑 · https://finance.naver.com
-- Yahoo Finance · 환율 폴백, 미국 트렌딩 · 비공식 API · https://finance.yahoo.com
+- Naver Finance · 종목 검색 자동완성 · 비공식 API · https://finance.naver.com
+- Yahoo Finance · 주식/환율/종목 검색 폴백 · 비공식 API · https://finance.yahoo.com
 - FunETF · 펀드 기준가(NAV) · 웹 스크래핑 · https://www.funetf.co.kr
 
 ## 스타일 디테일

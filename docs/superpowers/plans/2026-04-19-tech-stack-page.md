@@ -125,8 +125,8 @@ const API_ITEMS: ApiItem[] = [
   { name: '한국투자증권 Open API', purpose: '국내/해외 주식·ETF 실시간 시세', access: 'official',   url: 'https://apiportal.koreainvestment.com' },
   { name: 'Finnhub',              purpose: '암호화폐 시세',                   access: 'official',   url: 'https://finnhub.io' },
   { name: 'BOK ECOS',             purpose: '한국은행 공식 환율',              access: 'official',   url: 'https://ecos.bok.or.kr' },
-  { name: 'Naver Finance',        purpose: '국내 시장동향(외국인/기관/거래량)', access: 'scraping',   url: 'https://finance.naver.com' },
-  { name: 'Yahoo Finance',        purpose: '환율 폴백, 미국 트렌딩',          access: 'unofficial', url: 'https://finance.yahoo.com' },
+  { name: 'Naver Finance',        purpose: '종목 검색 자동완성',              access: 'unofficial', url: 'https://finance.naver.com' },
+  { name: 'Yahoo Finance',        purpose: '주식/환율/종목 검색 폴백',        access: 'unofficial', url: 'https://finance.yahoo.com' },
   { name: 'FunETF',               purpose: '펀드 기준가(NAV)',                access: 'scraping',   url: 'https://www.funetf.co.kr' },
 ]
 
