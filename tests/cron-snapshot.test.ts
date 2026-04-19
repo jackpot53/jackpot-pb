@@ -8,14 +8,30 @@ vi.mock('@/lib/price/cache', () => ({
   refreshPriceIfStale: vi.fn().mockResolvedValue(undefined),
   refreshFxIfStale: vi.fn().mockResolvedValue(undefined),
 }))
+
+// refreshAllPricesInternal이 복잡한 DB·외부 API 호출 체인을 사용하므로
+// 테스트에서는 통째로 목 처리. 인증 경로만 검증.
+vi.mock('@/app/actions/prices', () => ({
+  refreshAllPricesInternal: vi.fn().mockResolvedValue(undefined),
+}))
+
+// db chain: select / selectDistinct / from / where 모두 빈 배열을 resolve.
+function makeChain() {
+  const chain: Record<string, unknown> = {}
+  chain.from = vi.fn(() => chain)
+  chain.where = vi.fn(() => Promise.resolve([]))
+  // from().where() 없이 await 되는 경우 대비해 thenable로도 동작
+  chain.then = (onFulfilled: (v: unknown) => unknown) => onFulfilled([])
+  return chain
+}
 vi.mock('@/db', () => ({
   db: {
-    select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn().mockResolvedValue([]),
-      })),
-    })),
+    select: vi.fn(() => makeChain()),
+    selectDistinct: vi.fn(() => makeChain()),
   },
+}))
+vi.mock('@/db/queries/fund-nav-history', () => ({
+  upsertFundNavHistory: vi.fn().mockResolvedValue(undefined),
 }))
 vi.mock('@/db/schema/assets', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/db/schema/assets')>()
