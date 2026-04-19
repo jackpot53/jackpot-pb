@@ -1,9 +1,19 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
-import { scaleBand, scaleLinear } from 'd3-scale'
-import { select, pointer } from 'd3-selection'
-import { axisBottom, axisLeft } from 'd3-axis'
-import { min, max, range } from 'd3-array'
+
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  createChart,
+  CandlestickSeries,
+  CrosshairMode,
+  LineStyle,
+  type IChartApi,
+  type ISeriesApi,
+  type CandlestickData,
+  type UTCTimestamp,
+  type Time,
+  type MouseEventParams,
+} from 'lightweight-charts'
+import { CHART_UP, CHART_DOWN, resolvePalette } from '@/lib/chart/theme'
 
 export interface CandlestickPoint {
   date: string
@@ -12,8 +22,8 @@ export interface CandlestickPoint {
   high: number
   low: number
   close: number
-  returnPct?: number  // 누적 수익률 %
-  delta?: number      // close − open (전기 대비 변화)
+  returnPct?: number
+  delta?: number
 }
 
 interface CandlestickChartProps {
@@ -45,161 +55,138 @@ interface TooltipState {
 
 export function CandlestickChart({ data, formatPrice = defaultFormatPrice }: CandlestickChartProps) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const svgRef = useRef<SVGSVGElement>(null)
-  const [dims, setDims] = useState({ width: 0, height: 0 })
+  const chartRef = useRef<IChartApi | null>(null)
+  const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
 
+  // `date` 필드는 YYYY-MM-DD, YYYY-MM, 'YYYY', 'd0'/'d1' 등 다양한 형태로 들어온다.
+  // lightweight-charts는 엄격한 시간값을 요구하므로 인덱스를 하루 간격 UTCTimestamp 로
+  // 매핑해 시리즈에 넘기고, 원본 포인트는 별도 Map 으로 보관해 툴팁·축 라벨에 사용한다.
+  const pointByTime = useMemo(() => {
+    const m = new Map<number, CandlestickPoint>()
+    data.forEach((p, i) => m.set(indexToTime(i), p))
+    return m
+  }, [data])
+
+  // 도메인이 양/음을 걸치면 0 기준선 포함 필요
+  const spansZero = useMemo(() => {
+    if (data.length === 0) return false
+    let lo = Infinity
+    let hi = -Infinity
+    for (const p of data) {
+      if (p.low < lo) lo = p.low
+      if (p.high > hi) hi = p.high
+    }
+    return lo < 0 && hi > 0
+  }, [data])
+
   useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const obs = new ResizeObserver(([entry]) => {
-      if (entry) {
-        setDims({
-          width: Math.floor(entry.contentRect.width),
-          height: Math.floor(entry.contentRect.height),
-        })
-      }
+    const container = containerRef.current
+    if (!container) return
+
+    const palette = resolvePalette(container)
+
+    const chart = createChart(container, {
+      autoSize: true,
+      layout: {
+        background: { color: 'transparent' },
+        textColor: palette.mutedText,
+        attributionLogo: false,
+        fontSize: 10,
+      },
+      grid: {
+        vertLines: { visible: false },
+        horzLines: { color: palette.grid, style: 2 },
+      },
+      rightPriceScale: {
+        borderVisible: false,
+        scaleMargins: { top: 0.08, bottom: 0.08 },
+      },
+      timeScale: {
+        borderVisible: false,
+        tickMarkFormatter: (time: Time) => {
+          const key = typeof time === 'number' ? time : 0
+          const p = pointByTime.get(key)
+          if (p?.label) return p.label
+          if (p?.date) return p.date.slice(5).replace('-', '/')
+          return ''
+        },
+      },
+      crosshair: {
+        mode: CrosshairMode.Magnet,
+        vertLine: { color: palette.mutedText, width: 1, style: 3 },
+        horzLine: { color: palette.mutedText, width: 1, style: 3 },
+      },
+      localization: {
+        priceFormatter: axisFormatPrice,
+      },
+      handleScroll: false,
+      handleScale: false,
     })
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
+
+    const series = chart.addSeries(CandlestickSeries, {
+      upColor: CHART_UP,
+      downColor: CHART_DOWN,
+      borderUpColor: CHART_UP,
+      borderDownColor: CHART_DOWN,
+      wickUpColor: CHART_UP,
+      wickDownColor: CHART_DOWN,
+    })
+
+    chartRef.current = chart
+    seriesRef.current = series
+
+    const onMove = (param: MouseEventParams<Time>) => {
+      if (!param.time || !param.point) {
+        setTooltip(null)
+        return
+      }
+      const key = typeof param.time === 'number' ? param.time : 0
+      const p = pointByTime.get(key)
+      if (!p) {
+        setTooltip(null)
+        return
+      }
+      setTooltip({ x: param.point.x, y: param.point.y, point: p })
+    }
+    chart.subscribeCrosshairMove(onMove)
+
+    return () => {
+      chart.unsubscribeCrosshairMove(onMove)
+      chart.remove()
+      chartRef.current = null
+      seriesRef.current = null
+    }
+  }, [pointByTime])
 
   useEffect(() => {
-    if (!svgRef.current || dims.width === 0 || dims.height === 0 || data.length === 0) return
+    const series = seriesRef.current
+    const chart = chartRef.current
+    if (!series || !chart || data.length === 0) return
 
-    const { width, height } = dims
-    const margin = { top: 10, right: 8, bottom: 24, left: 60 }
-    const W = width - margin.left - margin.right
-    const H = height - margin.top - margin.bottom
+    const seriesData: CandlestickData<Time>[] = data.map((d, i) => ({
+      time: indexToTime(i) as UTCTimestamp,
+      open: d.open,
+      high: d.high,
+      low: d.low,
+      close: d.close,
+    }))
+    series.setData(seriesData)
 
-    const svg = select(svgRef.current)
-    svg.selectAll('*').remove()
-    svg.attr('width', width).attr('height', height)
-
-    const xScale = scaleBand<number>()
-      .domain(range(data.length))
-      .range([0, W])
-      .padding(0.2)
-
-    const rawMin = min(data, d => d.low) ?? 0
-    const rawMax = max(data, d => d.high) ?? 1
-    const yPad = (rawMax - rawMin) * 0.05 || Math.abs(rawMin) * 0.02 || 1
-    // Always include 0 in the domain (수익/손실 기준선)
-    const yMin = Math.min(rawMin - yPad, 0)
-    const yMax = Math.max(rawMax + yPad, 0)
-
-    const yScale = scaleLinear()
-      .domain([yMin, yMax])
-      .range([H, 0])
-      .nice()
-
-    const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`)
-
-    // Grid lines
-    const ticks = yScale.ticks(4)
-    g.append('g')
-      .selectAll('line.grid')
-      .data(ticks)
-      .join('line')
-      .attr('class', 'grid')
-      .attr('x1', 0).attr('x2', W)
-      .attr('y1', d => yScale(d)).attr('y2', d => yScale(d))
-      .attr('stroke', '#f0f0f0')
-      .attr('stroke-dasharray', '3 3')
-
-    // 0 기준선 (수익/손실 구분)
-    if (yMin < 0 && yMax > 0) {
-      g.append('line')
-        .attr('x1', 0).attr('x2', W)
-        .attr('y1', yScale(0)).attr('y2', yScale(0))
-        .attr('stroke', '#d1d5db')
-        .attr('stroke-width', 1)
+    // 0 기준선 (손익 분기 시각화)
+    if (spansZero) {
+      series.createPriceLine({
+        price: 0,
+        color: 'rgba(156,163,175,0.6)',
+        lineWidth: 1,
+        lineStyle: LineStyle.Solid,
+        axisLabelVisible: false,
+        title: '',
+      })
     }
 
-    // Y axis
-    g.append('g')
-      .call(
-        axisLeft(yScale)
-          .tickValues(ticks)
-          .tickFormat(v => axisFormatPrice(v as number))
-      )
-      .call(sel => sel.select('.domain').remove())
-      .call(sel => sel.selectAll('.tick line').remove())
-      .call(sel => sel.selectAll('text').attr('fill', '#9ca3af').attr('font-size', '10'))
-
-    // X axis
-    const every = Math.max(1, Math.ceil(data.length / 6))
-    const xTickIndices = range(0, data.length, every)
-    const lastIdx = data.length - 1
-    if (!xTickIndices.includes(lastIdx)) xTickIndices.push(lastIdx)
-
-    g.append('g')
-      .attr('transform', `translate(0,${H})`)
-      .call(
-        axisBottom(xScale)
-          .tickValues(xTickIndices)
-          .tickFormat(i => {
-            const d = data[i as number]
-            if (!d) return ''
-            return d.label ?? d.date.slice(5).replace('-', '/')
-          })
-      )
-      .call(sel => sel.select('.domain').remove())
-      .call(sel => sel.selectAll('.tick line').remove())
-      .call(sel => sel.selectAll('text').attr('fill', '#9ca3af').attr('font-size', '10'))
-
-    // Candles
-    const bw = xScale.bandwidth()
-
-    data.forEach((d, i) => {
-      const cx = xScale(i)! + bw / 2
-      const isUp = d.close >= d.open
-      const color = isUp ? '#ef4444' : '#3b82f6'
-      const bodyTop = yScale(Math.max(d.open, d.close))
-      const bodyH = Math.max(1, Math.abs(yScale(d.open) - yScale(d.close)))
-
-      // Wick
-      g.append('line')
-        .attr('x1', cx).attr('x2', cx)
-        .attr('y1', yScale(d.high)).attr('y2', yScale(d.low))
-        .attr('stroke', color)
-        .attr('stroke-width', 1)
-
-      // Body
-      g.append('rect')
-        .attr('x', xScale(i)!)
-        .attr('y', bodyTop)
-        .attr('width', bw)
-        .attr('height', bodyH)
-        .attr('fill', color)
-        .attr('rx', 0.5)
-    })
-
-    // Hover overlay
-    const overlay = g.append('rect')
-      .attr('width', W)
-      .attr('height', H)
-      .attr('fill', 'transparent')
-      .style('cursor', 'crosshair')
-
-    overlay.on('mousemove', (event: MouseEvent) => {
-      const [mx] = pointer(event)
-      const step = W / data.length
-      const idx = Math.min(data.length - 1, Math.max(0, Math.floor(mx / step)))
-      const d = data[idx]
-      if (!d) return
-      const svgEl = svgRef.current
-      if (!svgEl) return
-      const rect = svgEl.getBoundingClientRect()
-      setTooltip({
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top,
-        point: d,
-      })
-    })
-
-    overlay.on('mouseleave', () => setTooltip(null))
-  }, [data, dims])
+    chart.timeScale().fitContent()
+  }, [data, spansZero])
 
   if (data.length === 0) return null
 
@@ -207,16 +194,15 @@ export function CandlestickChart({ data, formatPrice = defaultFormatPrice }: Can
 
   return (
     <div ref={containerRef} className="relative w-full h-full">
-      <svg ref={svgRef} />
       {tooltip && (
         <div
-          className="pointer-events-none absolute z-10 rounded-lg border border-gray-100 bg-white px-3 py-2 shadow text-xs min-w-[120px]"
+          className="pointer-events-none absolute z-10 rounded-lg border border-border bg-popover text-popover-foreground px-3 py-2 shadow text-xs min-w-[120px]"
           style={{
             left: tooltip.x + 12,
             top: Math.max(0, tooltip.y - 80),
           }}
         >
-          <p className="text-gray-400 mb-1.5 font-medium">{tooltip.point.label ?? tooltip.point.date}</p>
+          <p className="text-muted-foreground mb-1.5 font-medium">{tooltip.point.label ?? tooltip.point.date}</p>
           <div className={`font-semibold ${isTooltipUp ? 'text-red-500' : 'text-blue-500'}`}>
             <div className="text-sm">{formatPrice(tooltip.point.close)}</div>
           </div>
@@ -226,7 +212,7 @@ export function CandlestickChart({ data, formatPrice = defaultFormatPrice }: Can
             </div>
           )}
           {tooltip.point.delta !== undefined && (
-            <div className="text-gray-400 mt-0.5">
+            <div className="text-muted-foreground mt-0.5">
               전기 대비 {formatPrice(tooltip.point.delta)}
             </div>
           )}
@@ -234,4 +220,9 @@ export function CandlestickChart({ data, formatPrice = defaultFormatPrice }: Can
       )}
     </div>
   )
+}
+
+// 1970-01-02 부터 하루 간격. 0 은 timeScale 내부에서 특수 처리되는 경우가 있어 피한다.
+function indexToTime(i: number): number {
+  return (i + 1) * 86_400
 }

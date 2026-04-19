@@ -1,6 +1,14 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
+import {
+  createChart,
+  CandlestickSeries,
+  CrosshairMode,
+  type IChartApi,
+} from 'lightweight-charts'
 import type { OhlcPoint } from '@/lib/price/sparkline'
+import { CHART_UP, CHART_DOWN } from '@/lib/chart/theme'
 
 interface MiniCandleChartProps {
   data: OhlcPoint[]
@@ -13,62 +21,70 @@ export function MiniCandleChart({
   width = 80,
   height = 36,
 }: MiniCandleChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const chartRef = useRef<IChartApi | null>(null)
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container || data.length < 2) return
+
+    const chart = createChart(container, {
+      width,
+      height,
+      autoSize: false,
+      layout: {
+        background: { color: 'transparent' },
+        textColor: 'transparent',
+        attributionLogo: false,
+      },
+      grid: {
+        vertLines: { visible: false },
+        horzLines: { visible: false },
+      },
+      rightPriceScale: { visible: false },
+      leftPriceScale: { visible: false },
+      timeScale: { visible: false },
+      crosshair: { mode: CrosshairMode.Hidden },
+      handleScroll: false,
+      handleScale: false,
+    })
+
+    const series = chart.addSeries(CandlestickSeries, {
+      upColor: CHART_UP,
+      downColor: CHART_DOWN,
+      borderUpColor: CHART_UP,
+      borderDownColor: CHART_DOWN,
+      wickUpColor: CHART_UP,
+      wickDownColor: CHART_DOWN,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    })
+
+    series.setData(
+      data.map((d) => ({
+        time: d.date,
+        open: d.open,
+        high: d.high,
+        low: d.low,
+        close: d.close,
+      })),
+    )
+
+    chart.timeScale().fitContent()
+    chartRef.current = chart
+
+    return () => {
+      chart.remove()
+      chartRef.current = null
+    }
+  }, [data, width, height])
+
   if (data.length < 2) return null
 
-  const pad = 2
-  const innerW = width - pad * 2
-  const innerH = height - pad * 2
-
-  const allLows = data.map(d => d.low)
-  const allHighs = data.map(d => d.high)
-  const minVal = Math.min(...allLows)
-  const maxVal = Math.max(...allHighs)
-  const range = maxVal - minVal || 1
-
-  const toY = (v: number) => pad + innerH - ((v - minVal) / range) * innerH
-
-  const slotW = innerW / data.length
-  const bodyW = Math.max(1, slotW * 0.7)
-  const gap = (slotW - bodyW) / 2
-
   return (
-    <svg
-      width={width}
-      height={height}
-      viewBox={`0 0 ${width} ${height}`}
-      className="overflow-visible"
-    >
-      {data.map((d, i) => {
-        const isUp = d.close >= d.open
-        const color = isUp ? '#ef4444' : '#3b82f6'
-        const cx = pad + i * slotW + slotW / 2
-        const x = pad + i * slotW + gap
-
-        const wickY1 = toY(d.high)
-        const wickY2 = toY(d.low)
-
-        const bodyY1 = toY(Math.max(d.open, d.close))
-        const bodyY2 = toY(Math.min(d.open, d.close))
-        const bodyH = Math.max(1, bodyY2 - bodyY1)
-
-        return (
-          <g key={i}>
-            <line
-              x1={cx} y1={wickY1}
-              x2={cx} y2={wickY2}
-              stroke={color}
-              strokeWidth={1}
-            />
-            <rect
-              x={x}
-              y={bodyY1}
-              width={bodyW}
-              height={bodyH}
-              fill={color}
-            />
-          </g>
-        )
-      })}
-    </svg>
+    <div
+      ref={containerRef}
+      style={{ width, height }}
+    />
   )
 }
