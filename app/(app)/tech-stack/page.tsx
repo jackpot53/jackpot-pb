@@ -161,6 +161,59 @@ function OssSectionCard({ section }: { section: OssSection }) {
   )
 }
 
+const ACCESS_BADGE: Record<AccessKind, { label: string; className: string }> = {
+  official:   { label: '공식 API',    className: 'bg-green-500/20 text-green-300' },
+  unofficial: { label: '비공식 API',  className: 'bg-blue-500/20 text-blue-300' },
+  scraping:   { label: '웹 스크래핑', className: 'bg-amber-500/20 text-amber-300' },
+}
+
+function AccessBadge({ access }: { access: AccessKind }) {
+  const { label, className } = ACCESS_BADGE[access]
+  return (
+    <span className={`inline-flex items-center rounded-md px-2 py-0.5 font-mono text-xs font-semibold ${className}`}>
+      {label}
+    </span>
+  )
+}
+
+function ApiSectionCard() {
+  return (
+    <div className="rounded-xl border border-border bg-card overflow-hidden">
+      <div className="h-1 bg-amber-500" />
+      <div className="px-6 py-4">
+        <h2 className="font-semibold text-foreground font-[family-name:var(--font-sunflower)] mb-2">
+          외부 API & 데이터 소스
+        </h2>
+        <p className="text-xs text-muted-foreground mb-3">
+          ⚠️ 외부 서비스는 오픈소스가 아니며 각 제공처의 이용약관에 따릅니다.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left py-2 px-2 font-semibold text-foreground">서비스</th>
+                <th className="text-left py-2 px-2 font-semibold text-foreground">용도</th>
+                <th className="text-left py-2 px-2 font-semibold text-foreground">접근 방식</th>
+                <th className="text-left py-2 px-2 font-semibold text-foreground w-12">링크</th>
+              </tr>
+            </thead>
+            <tbody>
+              {API_ITEMS.map((item) => (
+                <tr key={item.name} className="border-b border-border last:border-b-0">
+                  <td className="py-2 px-2 font-semibold text-foreground whitespace-nowrap">{item.name}</td>
+                  <td className="py-2 px-2 text-foreground/70">{item.purpose}</td>
+                  <td className="py-2 px-2"><AccessBadge access={item.access} /></td>
+                  <td className="py-2 px-2"><ExternalLinkIcon href={item.url} label={item.name} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function TechStackPage() {
   return (
     <div className="space-y-6">
@@ -172,6 +225,7 @@ export default function TechStackPage() {
       {OSS_SECTIONS.map((section) => (
         <OssSectionCard key={section.title} section={section} />
       ))}
+      <ApiSectionCard />
     </div>
   )
 }
