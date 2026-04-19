@@ -59,7 +59,7 @@ export function AllocationPieChart({ data }: AllocationPieChartProps) {
   }))
 
   return (
-    <ResponsiveContainer data-component="AllocationPieChart" width="100%" height={300}>
+    <ResponsiveContainer data-component="AllocationPieChart" width="100%" height={300} minWidth={0}>
       <PieChart>
         <Pie
           data={chartData}

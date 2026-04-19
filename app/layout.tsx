@@ -21,6 +21,9 @@ const storyScript = Story_Script({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-story-script',
+  // Story Script는 Next.js 폰트 오버라이드 메트릭이 없어 자동 fallback 생성 경고가 뜸.
+  // 폰트 자체는 정상 로드되므로 경고만 꺼둔다.
+  adjustFontFallback: false,
 })
 const sunflower = Sunflower({
   weight: ['300', '500', '700'],
