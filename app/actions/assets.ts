@@ -8,6 +8,8 @@ import { holdings } from '@/db/schema/holdings'
 import { manualValuations } from '@/db/schema/manual-valuations'
 import { savingsDetails } from '@/db/schema/savings-details'
 import { insuranceDetails } from '@/db/schema/insurance-details'
+import { contributionDetails } from '@/db/schema/contribution-details'
+import { contributionDividendRates } from '@/db/schema/contribution-dividend-rates'
 import { eq, sql, and } from 'drizzle-orm'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
@@ -20,7 +22,7 @@ const assetSchema = z.object({
   assetType: z.enum(['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal', 'cma', 'contribution', 'bond']),
   priceType: z.enum(['live', 'manual']),
   currency: z.enum(['KRW', 'USD']),
-  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire', 'ins_im_life']).optional().nullable(),
+  accountType: z.enum(['isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance', 'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx', 'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston', 'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul', 'coop_shincom', 'coop_saemaul', 'coop_suhyup', 'coop_nh', 'coop_nfcf', 'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire', 'ins_im_life']).optional().nullable(),
   brokerageId: z.string().max(50).optional().nullable(),
   withdrawalBankId: z.string().max(50).optional().nullable(),
   owner: z.string().max(20).optional().nullable(),
@@ -91,6 +93,46 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
   }).returning({ id: assets.id })
 
   const txDate = initialTransactionDate || new Date().toISOString().split('T')[0]
+
+  // Contribution: 출자금액 → buy tx (qty=1e8), 배당률 → contribution_details
+  if (rest.assetType === 'contribution') {
+    const normalizedDepositDate = depositStartDate || null
+    if (initialPricePerUnit && !isNaN(parseFloat(initialPricePerUnit)) && parseFloat(initialPricePerUnit) > 0) {
+      const depositKrw = Math.round(parseFloat(initialPricePerUnit))
+      await db.insert(transactions).values({
+        assetId: newAsset.id,
+        userId: user.id,
+        type: 'buy',
+        quantity: 1e8,
+        pricePerUnit: depositKrw,
+        fee: 0,
+        currency: 'KRW',
+        exchangeRateAtTime: null,
+        transactionDate: normalizedDepositDate ?? txDate,
+        isVoided: false,
+        notes: '출자',
+      })
+      await upsertHoldings(newAsset.id, user.id)
+    }
+    await db.insert(contributionDetails).values({
+      assetId: newAsset.id,
+      userId: user.id,
+      depositDate: normalizedDepositDate,
+    })
+    if (interestRatePct && !isNaN(parseFloat(interestRatePct))) {
+      const rateBp = Math.round(parseFloat(interestRatePct) * 10000)
+      const currentYear = new Date().getFullYear()
+      await db.insert(contributionDividendRates).values({
+        assetId: newAsset.id,
+        userId: user.id,
+        year: currentYear,
+        rateBp,
+      })
+    }
+    revalidatePath('/assets')
+    revalidatePath('/transactions')
+    redirect('/assets')
+  }
 
   // Savings: 초기 원금/납입액 → buy tx (qty=1e8), 예적금 메타 → savings_details
   if (rest.assetType === 'savings') {
@@ -424,6 +466,22 @@ export async function updateAsset(
         sumInsuredKrw: sumKrw,
         expectedReturnRateBp: rateBp,
         compoundType: compoundType ?? 'simple',
+        updatedAt: new Date(),
+      },
+    })
+  }
+
+  // contribution_details upsert (deposit_date 갱신)
+  if (rest.assetType === 'contribution') {
+    const normalizedDepositDate = depositStartDate || null
+    await db.insert(contributionDetails).values({
+      assetId: id,
+      userId: user.id,
+      depositDate: normalizedDepositDate,
+    }).onConflictDoUpdate({
+      target: contributionDetails.assetId,
+      set: {
+        depositDate: normalizedDepositDate,
         updatedAt: new Date(),
       },
     })
