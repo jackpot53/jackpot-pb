@@ -367,6 +367,20 @@ const STEPS = [
   { label: '초기 매수' },
 ]
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function getDividendYears(depositDateStr: string | null | undefined): number[] {
+  if (!depositDateStr) return []
+  const depositYear = new Date(depositDateStr).getFullYear()
+  if (isNaN(depositYear)) return []
+  const currentYear = new Date().getFullYear()
+  const years: number[] = []
+  for (let y = depositYear + 1; y <= currentYear; y++) {
+    years.push(y)
+  }
+  return years
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 export function NewAssetForm({ onSubmit }: {
@@ -387,6 +401,9 @@ export function NewAssetForm({ onSubmit }: {
   // FX rate auto-fetch state
   const [isFetchingFx, setIsFetchingFx] = useState(false)
   const [fxFetchedDate, setFxFetchedDate] = useState<string | null>(null)
+
+  // 출자금 연도별 배당률 state: { [year]: ratePct }
+  const [dividendRateMap, setDividendRateMap] = useState<Record<number, string>>({})
 
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(assetSchema),
@@ -566,7 +583,13 @@ export function NewAssetForm({ onSubmit }: {
 
   function handleSubmit(data: AssetFormValues) {
     startTransition(async () => {
-      const result = await onSubmit(data)
+      const submitValues = { ...data } as AssetFormValues
+      if (data.assetType === 'contribution') {
+        submitValues.contributionDividendRates = Object.entries(dividendRateMap)
+          .map(([year, ratePct]) => ({ year: parseInt(year, 10), ratePct }))
+          .filter(r => r.ratePct.trim() !== '')
+      }
+      const result = await onSubmit(submitValues)
       if (result?.error) form.setError('root', { message: result.error })
     })
   }
@@ -1237,6 +1260,140 @@ export function NewAssetForm({ onSubmit }: {
               )}
             />
 
+            {/* 보험 도움말 */}
+            {assetType === 'insurance' && (
+              <div className="rounded-xl border border-border overflow-hidden text-xs text-foreground/80">
+                <div className="px-4 py-3 border-b border-border bg-muted/40 flex items-center gap-2">
+                  <Info className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  <span className="font-semibold text-sm">보험 유형별 비교</span>
+                </div>
+
+                {/* 연금보험 */}
+                <div className="px-4 py-3 border-b border-border">
+                  <p className="font-semibold mb-1 text-foreground/80">연금보험</p>
+                  <p className="text-muted-foreground mb-2 leading-relaxed">노후를 대비해 일정 기간 보험료를 납입한 후, 일정 나이가 되면 매달 연금 형태로 받는 보험입니다.</p>
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-1.5 pr-4 font-medium text-muted-foreground w-28">항목</th>
+                        <th className="text-left py-1.5 font-medium text-muted-foreground">내용</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                      {([
+                        ['목적', '노후 생활비 마련'],
+                        ['납입 방식', '매월 일정 보험료 납입'],
+                        ['수령 방식', '연금 개시 후 매달 수령'],
+                        ['원금 보장', '△ (공시이율 기준, 원금 보장형 상품 있음)'],
+                        ['세금 혜택', '10년 이상 유지 시 이자 비과세'],
+                        ['중도 해지', '손실 발생 (납입 보험료보다 적게 돌려받음)'],
+                        ['단점', '장기 유지 필수, 중도 해지 시 손해 큼'],
+                      ] as [string, string][]).map(([item, content]) => (
+                        <tr key={item}>
+                          <td className="py-1.5 pr-4 text-muted-foreground">{item}</td>
+                          <td className="py-1.5">{content}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* 변액보험 */}
+                <div className="px-4 py-3 border-b border-border">
+                  <p className="font-semibold mb-1 text-foreground/80">변액보험</p>
+                  <p className="text-muted-foreground mb-2 leading-relaxed">납입 보험료를 펀드에 투자하여 운용 실적에 따라 수익이 달라지는 보험입니다.</p>
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-1.5 pr-4 font-medium text-muted-foreground w-28">항목</th>
+                        <th className="text-left py-1.5 font-medium text-muted-foreground">내용</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                      {([
+                        ['목적', '보장 + 투자 수익'],
+                        ['납입 방식', '매월 보험료 납입'],
+                        ['수령 방식', '만기 수령 또는 연금 전환'],
+                        ['원금 보장', '❌ 투자 실적에 따라 원금 손실 가능'],
+                        ['세금 혜택', '10년 이상 유지 시 이자 비과세'],
+                        ['중도 해지', '손실 발생 (초기 해지 시 손실 매우 큼)'],
+                        ['단점', '펀드 운용 수수료 발생, 원금 손실 위험'],
+                      ] as [string, string][]).map(([item, content]) => (
+                        <tr key={item}>
+                          <td className="py-1.5 pr-4 text-muted-foreground">{item}</td>
+                          <td className="py-1.5">{content}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* 저축보험 */}
+                <div className="px-4 py-3 border-b border-border">
+                  <p className="font-semibold mb-1 text-foreground/80">저축보험</p>
+                  <p className="text-muted-foreground mb-2 leading-relaxed">은행 적금처럼 일정 기간 납입 후 만기에 목돈을 받는 보험입니다.</p>
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-1.5 pr-4 font-medium text-muted-foreground w-28">항목</th>
+                        <th className="text-left py-1.5 font-medium text-muted-foreground">내용</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                      {([
+                        ['목적', '목돈 마련'],
+                        ['납입 방식', '매월 일정 보험료 납입'],
+                        ['수령 방식', '만기 일시 수령'],
+                        ['원금 보장', '△ (공시이율 기준, 장기 유지 시 원금 보장)'],
+                        ['세금 혜택', '10년 이상 유지 시 이자 비과세'],
+                        ['중도 해지', '손실 발생 (특히 초기 1~3년 내 해지 시 손실 큼)'],
+                        ['단점', '은행 적금보다 수익률 낮을 수 있음, 사업비 발생'],
+                      ] as [string, string][]).map(([item, content]) => (
+                        <tr key={item}>
+                          <td className="py-1.5 pr-4 text-muted-foreground">{item}</td>
+                          <td className="py-1.5">{content}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* 세 가지 비교 */}
+                <div className="px-4 py-3 border-b border-border">
+                  <p className="font-semibold mb-2 text-foreground/70 tracking-wide uppercase text-[10px]">세 가지 비교</p>
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-border">
+                        {['구분', '연금보험', '변액보험', '저축보험'].map((h) => (
+                          <th key={h} className="text-left py-1.5 pr-3 last:pr-0 font-medium text-muted-foreground whitespace-nowrap">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                      {([
+                        ['목적', '노후 연금', '투자 + 보장', '목돈 마련'],
+                        ['원금 보장', '△', '❌', '△'],
+                        ['수익률', '낮음~중간', '낮음~높음', '낮음~중간'],
+                        ['리스크', '낮음', '높음', '낮음'],
+                        ['비과세', '10년 이상', '10년 이상', '10년 이상'],
+                        ['적합한 사람', '노후 준비', '장기 투자 선호', '목돈 필요'],
+                      ] as string[][]).map((r) => (
+                        <tr key={r[0]}>
+                          {r.map((c, i) => (
+                            <td key={i} className="py-1.5 pr-3 last:pr-0 text-muted-foreground first:font-medium first:text-foreground/70">{c}</td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="px-4 py-3 text-muted-foreground leading-relaxed">
+                  ⚠️ 세 상품 모두 <strong className="text-foreground">초기 해지 시 납입 보험료보다 적게 돌려받는 구조</strong>입니다. 가입 전 최소 유지 기간과 해지환급금 시뮬레이션을 반드시 확인하세요.
+                </div>
+              </div>
+            )}
+
             {/* 출자금 도움말 */}
             {assetType === 'contribution' && (
               <div className="rounded-xl border border-border overflow-hidden text-xs text-foreground/80">
@@ -1504,33 +1661,70 @@ export function NewAssetForm({ onSubmit }: {
                       </FormItem>
                     )}
                   />
-                  <FormField control={form.control} name="interestRatePct"
+                  <FormField control={form.control} name="depositStartDate"
                     render={({ field }) => (
                       <FormItem className="rounded-xl border border-border bg-muted/50 p-4 flex flex-col gap-2">
                         <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-                          <TrendingUp className="h-3.5 w-3.5 shrink-0" />배당률 (%)
+                          <Calendar className="h-3.5 w-3.5 shrink-0" />출자일자
                         </FormLabel>
                         <FormControl>
-                          <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 3.5" />
+                          <Input type="date" {...field} value={field.value ?? ''}
+                            onChange={e => {
+                              field.onChange(e)
+                              // 날짜 변경 시 연도 목록 재계산, 없어진 연도의 값은 제거
+                              const newYears = new Set(getDividendYears(e.target.value))
+                              setDividendRateMap(prev => {
+                                const next: Record<number, string> = {}
+                                newYears.forEach(y => { if (prev[y] !== undefined) next[y] = prev[y] })
+                                return next
+                              })
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-                <FormField control={form.control} name="depositStartDate"
-                  render={({ field }) => (
-                    <FormItem className="rounded-xl border border-border bg-muted/50 p-4 flex flex-col gap-2">
-                      <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-                        <Calendar className="h-3.5 w-3.5 shrink-0" />출자일자
-                      </FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} value={field.value ?? ''} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+
+                {/* 연도별 배당률 */}
+                <div className="rounded-xl border border-border bg-muted/50 p-4 flex flex-col gap-3">
+                  <p className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                    <TrendingUp className="h-3.5 w-3.5 shrink-0" />연도별 배당률
+                    <span className="ml-auto text-xs font-normal text-muted-foreground">선택</span>
+                  </p>
+                  {(() => {
+                    const depositDate = form.watch('depositStartDate')
+                    const years = getDividendYears(depositDate)
+                    if (years.length === 0) {
+                      return (
+                        <p className="text-xs text-muted-foreground text-center py-2">
+                          출자일자를 입력하면 연도 행이 자동 생성됩니다
+                        </p>
+                      )
+                    }
+                    return (
+                      <div className="flex flex-col gap-2">
+                        {years.map(year => (
+                          <div key={year} className="flex items-center gap-3">
+                            <span className="text-sm font-medium w-14 shrink-0">{year}년</span>
+                            <div className="flex-1 relative">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={dividendRateMap[year] ?? ''}
+                                onChange={e => setDividendRateMap(prev => ({ ...prev, [year]: e.target.value }))}
+                                placeholder="예: 3.5"
+                                className="pr-8"
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })()}
+                </div>
               </div>
             ) : assetType === 'insurance' ? (
               <div className="flex flex-col gap-3">
