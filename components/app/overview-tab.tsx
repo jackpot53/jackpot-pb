@@ -70,6 +70,7 @@ function SavingsInfoSection({
   const [isPending, startTransition] = useTransition()
   const [recordError, setRecordError] = useState<string | null>(null)
   const [recorded, setRecorded] = useState(false)
+  const [nowMs] = useState(() => Date.now())
 
   const rateBp = details.interestRateBp
   const hasRate = rateBp != null && rateBp > 0
@@ -109,7 +110,7 @@ function SavingsInfoSection({
   // 경과일수 (첫 납입일 → 오늘)
   const firstBuy = buys.length > 0 ? buys.reduce((a, b) => a.transactionDate < b.transactionDate ? a : b) : null
   const elapsedDays = firstBuy
-    ? Math.floor((Date.now() - new Date(firstBuy.transactionDate).getTime()) / 86400000)
+    ? Math.floor((nowMs - new Date(firstBuy.transactionDate).getTime()) / 86400000)
     : null
   const annualized = returnPct != null && elapsedDays != null && elapsedDays > 0
     ? annualizedReturnPct(returnPct, elapsedDays)
@@ -227,6 +228,7 @@ function InsuranceInfoSection({
   const [isPending, startTransition] = useTransition()
   const [recordError, setRecordError] = useState<string | null>(null)
   const [recorded, setRecorded] = useState(false)
+  const [nowMs] = useState(() => Date.now())
 
   const surrenderValueKrw = latestManualKrw
   const totalCostKrw = holding?.totalCostKrw ?? 0
@@ -244,20 +246,19 @@ function InsuranceInfoSection({
     if (!details.paymentStartDate || !details.paymentEndDate || !details.premiumPerCycleKrw) return null
     const start = new Date(details.paymentStartDate).getTime()
     const end = new Date(details.paymentEndDate).getTime()
-    const now = Date.now()
     if (end <= start) return null
-    const pct = Math.min(100, Math.max(0, ((now - start) / (end - start)) * 100))
+    const pct = Math.min(100, Math.max(0, ((nowMs - start) / (end - start)) * 100))
     return Math.round(pct)
   })()
 
   // 만기까지 남은 날수 (coverageEndDate 기준)
   const coverageDaysLeft = details.coverageEndDate
-    ? Math.ceil((new Date(details.coverageEndDate).getTime() - Date.now()) / 86400000)
+    ? Math.ceil((new Date(details.coverageEndDate).getTime() - nowMs) / 86400000)
     : null
 
   // 납입 만료까지 남은 날수
   const paymentDaysLeft = details.paymentEndDate
-    ? Math.ceil((new Date(details.paymentEndDate).getTime() - Date.now()) / 86400000)
+    ? Math.ceil((new Date(details.paymentEndDate).getTime() - nowMs) / 86400000)
     : null
 
   const CATEGORY_LABELS: Record<string, string> = { protection: '보장성', savings: '저축성' }

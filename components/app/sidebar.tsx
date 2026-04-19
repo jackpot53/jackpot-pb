@@ -34,15 +34,17 @@ const NAV_ITEMS = [
 const SYMBOLS = ['7', '₩', '★', '♦', '♠']
 
 function Reel({ symbol, isSpinning }: { symbol: string; isSpinning: boolean }) {
-  const [display, setDisplay] = useState(symbol)
+  const [spinSymbol, setSpinSymbol] = useState(symbol)
 
   useEffect(() => {
-    if (!isSpinning) { setDisplay(symbol); return }
+    if (!isSpinning) return
     const id = setInterval(() => {
-      setDisplay(SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)])
+      setSpinSymbol(SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)])
     }, 100)
     return () => clearInterval(id)
-  }, [isSpinning, symbol])
+  }, [isSpinning])
+
+  const display = isSpinning ? spinSymbol : symbol
 
   return (
     <div className={cn(

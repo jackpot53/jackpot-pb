@@ -14,14 +14,14 @@ import { formatKrwCompact } from '@/lib/snapshot/formatters'
 import { loadPerformances } from '@/lib/server/load-performances'
 import { computePortfolio } from '@/lib/portfolio'
 import { refreshAllPricesInternal } from '@/app/actions/prices'
-import { timed } from '@/lib/perf'
+import { timed, perfMark, perfLog } from '@/lib/perf'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { SummaryCards } from '@/components/app/assets-page-client'
 
 export default async function GoalsPage() {
-  const pageStart = performance.now()
+  const pageStart = perfMark()
   const user = await getAuthUser()
   if (!user) redirect('/login')
 
@@ -147,9 +147,7 @@ async function GoalsContent({ userId, pageStart }: { userId: string; pageStart: 
     getAllSnapshots(userId),
     loadPerformances(userId),
   ]))
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`[perf] GoalsPage total                      ${(performance.now() - pageStart).toFixed(0).padStart(5)}ms`)
-  }
+  perfLog('GoalsPage total', pageStart)
 
   const fxCache = priceMap.get('USD_KRW')
   const fxRateInt: number | null = fxCache?.priceKrw ?? null

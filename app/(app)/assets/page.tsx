@@ -7,7 +7,7 @@ import { loadPerformances } from '@/lib/server/load-performances'
 import { getAllSnapshotsWithBreakdowns } from '@/db/queries/portfolio-snapshots'
 import { toMonthlyData, toAnnualData, toDailyData, snapshotsForType } from '@/lib/snapshot/aggregation'
 import { AssetsPageClient, SummaryCards } from '@/components/app/assets-page-client'
-import { timed } from '@/lib/perf'
+import { timed, perfMark, perfLog } from '@/lib/perf'
 import { AssetsHero } from '@/components/app/assets-hero'
 
 export default async function AssetsPage() {
@@ -28,7 +28,7 @@ export default async function AssetsPage() {
 }
 
 async function AssetsContent({ userId }: { userId: string }) {
-  const pageStart = performance.now()
+  const pageStart = perfMark()
   // Fire-and-forget: refresh prices in the background after response is sent
   after(() => { void refreshAllPricesInternal().catch(() => {}) })
 
@@ -36,9 +36,7 @@ async function AssetsContent({ userId }: { userId: string }) {
     loadPerformances(userId),
     getAllSnapshotsWithBreakdowns(userId),
   ]))
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`[perf] AssetsPage total                     ${(performance.now() - pageStart).toFixed(0).padStart(5)}ms`)
-  }
+  perfLog('AssetsPage total', pageStart)
 
   const monthlyData = toMonthlyData(snapshots)
   const annualData = toAnnualData(snapshots)

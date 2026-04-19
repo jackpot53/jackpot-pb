@@ -1,4 +1,5 @@
 import { after } from 'next/server'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getAuthUser } from '@/utils/supabase/server'
 import { refreshAllPricesInternal } from '@/app/actions/prices'
@@ -16,10 +17,10 @@ import { AllocationPieChart, type AllocationSlice } from '@/components/app/alloc
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { DashboardGoalsSection } from '@/components/app/dashboard-goals-section'
 import { TodayReport } from '@/components/app/today-report'
-import { timed } from '@/lib/perf'
+import { timed, perfMark, perfLog } from '@/lib/perf'
 
 export default async function DashboardPage() {
-  const pageStart = performance.now()
+  const pageStart = perfMark()
   const user = await getAuthUser()
   if (!user) redirect('/login')
 
@@ -33,9 +34,7 @@ export default async function DashboardPage() {
     loadPerformances(user.id),
     listGoals(user.id),
   ]))
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`[perf] DashboardPage total                  ${(performance.now() - pageStart).toFixed(0).padStart(5)}ms`)
-  }
+  perfLog('DashboardPage total', pageStart)
 
   // Step 3: Extract FX rate from price map
   const fxCache = priceMap.get('USD_KRW')
@@ -81,7 +80,7 @@ export default async function DashboardPage() {
               {byType.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-8 text-center">
                   아직 자산이 없습니다.{' '}
-                  <a href="/assets" className="underline text-foreground">첫 자산을 추가해보세요 →</a>
+                  <Link href="/assets" className="underline text-foreground">첫 자산을 추가해보세요 →</Link>
                 </p>
               ) : (
                 <div className="space-y-0">

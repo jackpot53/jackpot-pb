@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -141,6 +141,13 @@ export function TransactionsPageClient({ transactions, assetOptions }: Props) {
   const [page, setPage] = useState(1)
   const PAGE_SIZE = 10
 
+  // 필터 변경 시 페이지를 1로 리셋 — React 권장: useEffect 대신 렌더 중 파생
+  const [prevFilters, setPrevFilters] = useState({ assetFilter, typeFilter })
+  if (prevFilters.assetFilter !== assetFilter || prevFilters.typeFilter !== typeFilter) {
+    setPrevFilters({ assetFilter, typeFilter })
+    setPage(1)
+  }
+
   const filtered = useMemo(() => {
     return transactions.filter((tx) => {
       if (tx.isVoided) return false
@@ -150,10 +157,6 @@ export function TransactionsPageClient({ transactions, assetOptions }: Props) {
       return true
     })
   }, [transactions, deletedIds, assetFilter, typeFilter])
-
-  useEffect(() => {
-    setPage(1)
-  }, [assetFilter, typeFilter])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)

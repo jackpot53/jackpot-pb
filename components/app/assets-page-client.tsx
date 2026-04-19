@@ -169,7 +169,7 @@ function useCountUp(target: number, duration = 1200): number {
   const rafRef = useRef<number>(0)
 
   useEffect(() => {
-    if (target === 0) { setValue(0); return }
+    if (target === 0) return
     const start = performance.now()
     const from = 0
 
@@ -186,7 +186,8 @@ function useCountUp(target: number, duration = 1200): number {
     return () => cancelAnimationFrame(rafRef.current)
   }, [target, duration])
 
-  return value
+  // target이 0이면 애니메이션 없이 즉시 0 반환 (이전 value 잔상 방지)
+  return target === 0 ? 0 : value
 }
 
 function ThunderOverlay({ active }: { active: boolean }) {
