@@ -7,12 +7,13 @@ import { computeCurrentSavingsValueKrw, generateVirtualRecurringBuys, type Compo
 import { computeCurrentInsuranceValueKrw, type InsuranceBuy } from '@/lib/insurance'
 import { buildInsuranceCurvePoints } from '@/lib/insurance-curve'
 import type { InsuranceDetailsRow } from '@/db/schema/insurance-details'
+import type { ContributionDividendRateRow } from '@/db/schema/contribution-dividend-rates'
 
 export interface AssetHoldingInput {
   assetId: string
   name: string
   ticker: string | null
-  assetType: 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'fund' | 'savings' | 'real_estate' | 'insurance' | 'precious_metal' | 'cma'
+  assetType: 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'fund' | 'savings' | 'real_estate' | 'insurance' | 'precious_metal' | 'cma' | 'contribution' | 'bond'
   priceType: 'live' | 'manual'
   currency: 'KRW' | 'USD'
   accountType: 'isa' | 'irp' | 'pension' | 'dc' | 'brokerage' | null
@@ -57,6 +58,8 @@ export interface AssetPerformance extends AssetHoldingInput {
   compoundType: CompoundType | null
   /** savings/insurance 차트 데이터 (오늘 기준 실/미래 분리), 없으면 undefined */
   chartData?: Array<{ date: string; value: number; projected: boolean }>
+  /** 출자금 전용: 연도별 배당률 이력 */
+  contributionDividendRates: ContributionDividendRateRow[] | null
 }
 
 export interface PortfolioSummary {
@@ -95,8 +98,45 @@ export function computeAssetPerformance(params: {
   // 보험 전용: 계약 메타데이터 + 납입 내역
   insuranceDetails?: InsuranceDetailsRow | null
   insuranceBuys?: InsuranceBuy[]
+  // 출자금 전용: 연도별 배당률 이력
+  contributionDividendRates?: ContributionDividendRateRow[] | null
 }): AssetPerformance {
-  const { holding, currentPriceKrw, currentPriceUsd = null, currentFxRate = null, isStale, cachedAt, latestManualValuationKrw, dailyChangeBps = null, savingsDetails = null, savingsBuys = [], insuranceDetails = null, insuranceBuys = [] } = params
+  const { holding, currentPriceKrw, currentPriceUsd = null, currentFxRate = null, isStale, cachedAt, latestManualValuationKrw, dailyChangeBps = null, savingsDetails = null, savingsBuys = [], insuranceDetails = null, insuranceBuys = [], contributionDividendRates = null } = params
+
+  // 출자금: 원금 고정, 현재가 = 원금 + Σ(원금 × 연도별 배당률)
+  if (holding.assetType === 'contribution') {
+    const currentYear = new Date().getFullYear()
+    const principal = holding.totalCostKrw
+    const rates = contributionDividendRates ?? []
+    const cumulativeDividends = rates
+      .filter(r => r.year <= currentYear)
+      .reduce((sum, r) => sum + Math.round(principal * r.rateBp / 1_000_000), 0)
+    const currentValueKrw = principal + cumulativeDividends
+    const returnPct = principal > 0
+      ? ((currentValueKrw - principal) / principal) * 100
+      : 0
+    return {
+      ...holding,
+      currentValueKrw,
+      currentPriceKrw: 0,
+      currentPriceUsd: null,
+      currentFxRate: null,
+      isStale: false,
+      cachedAt: null,
+      returnPct,
+      stockReturnPct: null,
+      fxReturnPct: null,
+      dailyChangeBps: null,
+      missingValuation: false,
+      initialTransactionDate: null,
+      maturityDate: null,
+      interestRateBp: null,
+      monthlyContributionKrw: null,
+      insuranceDetails: null,
+      compoundType: null,
+      contributionDividendRates: rates,
+    }
+  }
 
   // 정기적금(recurring): 가입일 기준 월납입 × 경과월수로 항상 가상 납입 내역 생성
   // 실제 거래 내역 여부와 무관하게 계약 금액 기준으로 평가액 산출
@@ -205,6 +245,7 @@ export function computeAssetPerformance(params: {
       insuranceDetails,
       compoundType: insuranceDetails.compoundType as CompoundType,
       chartData: insuranceChartData,
+      contributionDividendRates: null,
     }
   }
 
@@ -255,6 +296,7 @@ export function computeAssetPerformance(params: {
       monthlyContributionKrw: savingsDetails?.monthlyContributionKrw ?? null,
       insuranceDetails: null,
       compoundType: savingsDetails?.compoundType ?? null,
+      contributionDividendRates: null,
     }
   }
 
@@ -364,6 +406,7 @@ export function computeAssetPerformance(params: {
     insuranceDetails: insuranceDetails ?? null,
     compoundType: savingsDetails?.compoundType ?? null,
     chartData: insuranceChartData,
+    contributionDividendRates: null,
   }
 }
 
