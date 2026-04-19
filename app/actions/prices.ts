@@ -6,16 +6,21 @@ import { assets } from '@/db/schema/assets'
 import { priceCache } from '@/db/schema/price-cache'
 import { and, eq, isNotNull, or, sql } from 'drizzle-orm'
 import { getPriceCacheByTickers, upsertPriceCache } from '@/db/queries/price-cache'
-import { fetchYahooQuote } from '@/lib/price/yahoo'
 import { refreshFxIfStale } from '@/lib/price/cache'
 import { fetchFunetfNav } from '@/lib/price/funetf'
+import { fetchKisQuote } from '@/lib/price/kis'
+import { runKisBatched } from '@/lib/price/kis-bulk'
+import { fetchYahooQuote } from '@/lib/price/yahoo'
 import { timed } from '@/lib/perf'
 
 const PRICE_TTL_MS = 5 * 60 * 1000
 const KR_ASSET_TYPES = ['stock_kr', 'etf_kr']
+const US_ASSET_TYPES = ['stock_us', 'etf_us']
 // Dedup window: skip refresh if any price was cached within the last 150 s.
 // Uses DB MAX(cached_at) so all serverless instances share the same guard.
 const DEDUP_MS = 150_000
+// KIS personal account allows ~20 req/sec; cap concurrent fetches at 8 for headroom.
+const KIS_BULK_CONCURRENCY = 8
 
 async function requireUser() {
   const supabase = await createClient()
@@ -70,9 +75,10 @@ export async function refreshAllPricesInternal(): Promise<void> {
   const fxCache = cacheMap.get('USD_KRW')
   const fxRate = fxCache ? fxCache.priceKrw / 10000 : null
 
-  // Step 5: Parallel API calls for stale tickers only
-  await timed(`  fetch ${staleAssets.length} stale tickers`, () => Promise.allSettled(
-    staleAssets.map(async ({ ticker, assetType }) => {
+  // Step 5: KIS-bounded parallel calls for stale tickers (KR/US stocks via KIS, funds via FunETF)
+  await timed(`  fetch ${staleAssets.length} stale tickers`, () => runKisBatched(
+    staleAssets,
+    async ({ ticker, assetType }) => {
       try {
         if (assetType === 'fund') {
           const result = await fetchFunetfNav(ticker)
@@ -80,12 +86,21 @@ export async function refreshAllPricesInternal(): Promise<void> {
           const changeBps = result.changePercent !== null ? Math.round(result.changePercent * 100) : null
           await upsertPriceCache({ ticker, priceKrw: result.price, priceOriginal: result.price, currency: 'KRW', changeBps })
         } else if (KR_ASSET_TYPES.includes(assetType)) {
-          const result = await fetchYahooQuote(ticker)
+          const result = await fetchKisQuote(ticker, assetType)
           if (!result || result.price <= 0) return
           const priceKrw = Math.round(result.price)
           const changeBps = result.changePercent !== null ? Math.round(result.changePercent * 100) : null
           await upsertPriceCache({ ticker, priceKrw, priceOriginal: priceKrw, currency: 'KRW', changeBps })
+        } else if (US_ASSET_TYPES.includes(assetType)) {
+          const result = await fetchKisQuote(ticker, assetType)
+          if (!result || result.price <= 0) return
+          if (!fxRate) return
+          const priceUsdCents = Math.round(result.price * 100)
+          const priceKrw = Math.round(result.price * fxRate)
+          const changeBps = result.changePercent !== null ? Math.round(result.changePercent * 100) : null
+          await upsertPriceCache({ ticker, priceKrw, priceOriginal: priceUsdCents, currency: 'USD', changeBps })
         } else {
+          // Crypto and any non-KIS-supported types — Yahoo (KIS doesn't cover crypto)
           const result = await fetchYahooQuote(ticker)
           if (!result || result.price <= 0) return
           if (!fxRate) return
@@ -97,7 +112,8 @@ export async function refreshAllPricesInternal(): Promise<void> {
       } catch {
         // stale fallback: skip on error, existing cache preserved
       }
-    })
+    },
+    { concurrency: KIS_BULK_CONCURRENCY },
   ))
   })
 }
