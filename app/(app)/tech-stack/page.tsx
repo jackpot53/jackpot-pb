@@ -1,4 +1,4 @@
-import { Package, ExternalLink } from 'lucide-react'
+import { Package, ExternalLink, Code2, Palette, Database, BarChart2, Bot, Globe, type LucideIcon } from 'lucide-react'
 import { PageHeader } from '@/components/app/page-header'
 
 type LicenseKey = 'MIT' | 'Apache-2.0' | 'ISC' | 'Unlicense'
@@ -21,12 +21,16 @@ type ApiItem = {
 type OssSection = {
   title: string
   stripe: string
+  icon: LucideIcon
+  iconColor: string
   items: OssItem[]
 }
 
 const FRAMEWORK_SECTION: OssSection = {
   title: '프레임워크 & 언어',
   stripe: 'bg-indigo-500',
+  icon: Code2,
+  iconColor: 'text-indigo-500',
   items: [
     { name: 'Next.js 16',   purpose: 'App Router 기반 풀스택 프레임워크', license: 'MIT',        url: 'https://nextjs.org' },
     { name: 'React 19',     purpose: 'UI 라이브러리',                     license: 'MIT',        url: 'https://react.dev' },
@@ -37,6 +41,8 @@ const FRAMEWORK_SECTION: OssSection = {
 const UI_SECTION: OssSection = {
   title: 'UI & 스타일링',
   stripe: 'bg-purple-500',
+  icon: Palette,
+  iconColor: 'text-purple-500',
   items: [
     { name: 'Tailwind CSS 4',  purpose: '유틸리티 퍼스트 CSS 프레임워크', license: 'MIT', url: 'https://tailwindcss.com' },
     { name: 'shadcn/ui',       purpose: '복사해서 쓰는 React 컴포넌트',   license: 'MIT', url: 'https://ui.shadcn.com' },
@@ -51,6 +57,8 @@ const UI_SECTION: OssSection = {
 const DATA_SECTION: OssSection = {
   title: '데이터 & 상태',
   stripe: 'bg-emerald-500',
+  icon: Database,
+  iconColor: 'text-emerald-500',
   items: [
     { name: 'Supabase',         purpose: 'Postgres + Auth 백엔드', license: 'Apache-2.0', url: 'https://supabase.com' },
     { name: 'Drizzle ORM',      purpose: 'TypeScript ORM',         license: 'Apache-2.0', url: 'https://orm.drizzle.team' },
@@ -63,6 +71,8 @@ const DATA_SECTION: OssSection = {
 const CHART_SECTION: OssSection = {
   title: '차트 & 시각화',
   stripe: 'bg-violet-500',
+  icon: BarChart2,
+  iconColor: 'text-violet-500',
   items: [
     { name: 'Recharts',           purpose: '선언적 차트 라이브러리', license: 'MIT',        url: 'https://recharts.org' },
     { name: 'D3',                 purpose: '데이터 기반 DOM 조작',   license: 'ISC',        url: 'https://d3js.org' },
@@ -74,6 +84,8 @@ const CHART_SECTION: OssSection = {
 const AI_SECTION: OssSection = {
   title: 'AI & 마크다운',
   stripe: 'bg-orange-500',
+  icon: Bot,
+  iconColor: 'text-orange-500',
   items: [
     { name: 'Anthropic SDK',  purpose: 'Claude API 클라이언트', license: 'MIT', url: 'https://github.com/anthropics/anthropic-sdk-typescript' },
     { name: 'react-markdown', purpose: 'Markdown 렌더링',       license: 'MIT', url: 'https://github.com/remarkjs/react-markdown' },
@@ -98,10 +110,10 @@ const API_ITEMS: ApiItem[] = [
 ]
 
 const LICENSE_BADGE: Record<LicenseKey, string> = {
-  'MIT':        'bg-green-500/20 text-green-300',
-  'Apache-2.0': 'bg-blue-500/20 text-blue-300',
-  'ISC':        'bg-purple-500/20 text-purple-300',
-  'Unlicense':  'bg-zinc-500/20 text-zinc-300',
+  'MIT':        'bg-green-100 text-green-700',
+  'Apache-2.0': 'bg-blue-100 text-blue-700',
+  'ISC':        'bg-purple-100 text-purple-700',
+  'Unlicense':  'bg-zinc-100 text-zinc-600',
 }
 
 function LicenseBadge({ license }: { license: LicenseKey }) {
@@ -127,30 +139,32 @@ function ExternalLinkIcon({ href, label }: { href: string; label: string }) {
 }
 
 function OssSectionCard({ section }: { section: OssSection }) {
+  const Icon = section.icon
   return (
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       <div className={`h-1 ${section.stripe}`} />
       <div className="px-6 py-4">
-        <h2 className="font-semibold text-foreground font-[family-name:var(--font-sunflower)] mb-3">
+        <h2 className="flex items-center gap-2 font-semibold text-foreground font-[family-name:var(--font-sunflower)] pb-3 mb-3 border-b border-border">
+          <Icon size={16} className={section.iconColor} />
           {section.title}
         </h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b border-border">
-                <th className="text-left py-2 px-2 font-semibold text-foreground">이름</th>
-                <th className="text-left py-2 px-2 font-semibold text-foreground">용도</th>
-                <th className="text-left py-2 px-2 font-semibold text-foreground">라이선스</th>
-                <th className="text-left py-2 px-2 font-semibold text-foreground w-12">링크</th>
+              <tr>
+                <th className="text-left py-2 px-2 font-semibold text-foreground border-b border-r border-border">이름</th>
+                <th className="text-left py-2 px-2 font-semibold text-foreground border-b border-border">용도</th>
+                <th className="text-left py-2 px-2 font-semibold text-foreground border-b border-border">라이선스</th>
+                <th className="text-left py-2 px-2 font-semibold text-foreground border-b border-border w-12">링크</th>
               </tr>
             </thead>
             <tbody>
               {section.items.map((item) => (
-                <tr key={item.name} className="border-b border-border last:border-b-0">
-                  <td className="py-2 px-2 font-semibold text-foreground whitespace-nowrap">{item.name}</td>
-                  <td className="py-2 px-2 text-foreground/70">{item.purpose}</td>
-                  <td className="py-2 px-2"><LicenseBadge license={item.license} /></td>
-                  <td className="py-2 px-2"><ExternalLinkIcon href={item.url} label={item.name} /></td>
+                <tr key={item.name} className="last:[&>td]:border-b-0">
+                  <td className="py-2 px-2 font-semibold text-foreground whitespace-nowrap border-b border-r border-border">{item.name}</td>
+                  <td className="py-2 px-2 text-foreground/70 border-b border-border">{item.purpose}</td>
+                  <td className="py-2 px-2 border-b border-border"><LicenseBadge license={item.license} /></td>
+                  <td className="py-2 px-2 border-b border-border"><ExternalLinkIcon href={item.url} label={item.name} /></td>
                 </tr>
               ))}
             </tbody>
@@ -162,9 +176,9 @@ function OssSectionCard({ section }: { section: OssSection }) {
 }
 
 const ACCESS_BADGE: Record<AccessKind, { label: string; className: string }> = {
-  official:   { label: '공식 API',    className: 'bg-green-500/20 text-green-300' },
-  unofficial: { label: '비공식 API',  className: 'bg-blue-500/20 text-blue-300' },
-  scraping:   { label: '웹 스크래핑', className: 'bg-amber-500/20 text-amber-300' },
+  official:   { label: '공식 API',    className: 'bg-green-100 text-green-700' },
+  unofficial: { label: '비공식 API',  className: 'bg-blue-100 text-blue-700' },
+  scraping:   { label: '웹 스크래핑', className: 'bg-amber-100 text-amber-700' },
 }
 
 function AccessBadge({ access }: { access: AccessKind }) {
@@ -181,7 +195,8 @@ function ApiSectionCard() {
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="h-1 bg-amber-500" />
       <div className="px-6 py-4">
-        <h2 className="font-semibold text-foreground font-[family-name:var(--font-sunflower)] mb-2">
+        <h2 className="flex items-center gap-2 font-semibold text-foreground font-[family-name:var(--font-sunflower)] pb-3 mb-3 border-b border-border">
+          <Globe size={16} className="text-amber-500" />
           외부 API & 데이터 소스
         </h2>
         <p className="text-xs text-muted-foreground mb-3">
@@ -190,20 +205,20 @@ function ApiSectionCard() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b border-border">
-                <th className="text-left py-2 px-2 font-semibold text-foreground">서비스</th>
-                <th className="text-left py-2 px-2 font-semibold text-foreground">용도</th>
-                <th className="text-left py-2 px-2 font-semibold text-foreground">접근 방식</th>
-                <th className="text-left py-2 px-2 font-semibold text-foreground w-12">링크</th>
+              <tr>
+                <th className="text-left py-2 px-2 font-semibold text-foreground border-b border-r border-border">서비스</th>
+                <th className="text-left py-2 px-2 font-semibold text-foreground border-b border-border">용도</th>
+                <th className="text-left py-2 px-2 font-semibold text-foreground border-b border-border">접근 방식</th>
+                <th className="text-left py-2 px-2 font-semibold text-foreground border-b border-border w-12">링크</th>
               </tr>
             </thead>
             <tbody>
               {API_ITEMS.map((item) => (
-                <tr key={item.name} className="border-b border-border last:border-b-0">
-                  <td className="py-2 px-2 font-semibold text-foreground whitespace-nowrap">{item.name}</td>
-                  <td className="py-2 px-2 text-foreground/70">{item.purpose}</td>
-                  <td className="py-2 px-2"><AccessBadge access={item.access} /></td>
-                  <td className="py-2 px-2"><ExternalLinkIcon href={item.url} label={item.name} /></td>
+                <tr key={item.name} className="last:[&>td]:border-b-0">
+                  <td className="py-2 px-2 font-semibold text-foreground whitespace-nowrap border-b border-r border-border">{item.name}</td>
+                  <td className="py-2 px-2 text-foreground/70 border-b border-border">{item.purpose}</td>
+                  <td className="py-2 px-2 border-b border-border"><AccessBadge access={item.access} /></td>
+                  <td className="py-2 px-2 border-b border-border"><ExternalLinkIcon href={item.url} label={item.name} /></td>
                 </tr>
               ))}
             </tbody>
@@ -216,7 +231,7 @@ function ApiSectionCard() {
 
 export default function TechStackPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 [font-family:var(--font-sunflower)]">
       <PageHeader
         icon={Package}
         title="기술스택 & 라이선스"

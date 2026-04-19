@@ -22,14 +22,14 @@ import {
 const NAV_ITEMS = [
   { label: '목표',         href: '/goals',         icon: Target,        color: 'text-amber-400',   activeColor: 'text-amber-300'   },
   { label: '포트폴리오',   href: '/assets',         icon: Wallet,        color: 'text-emerald-400', activeColor: 'text-emerald-300' },
-  { label: '오늘',         href: '/today',          icon: Sun,           color: 'text-yellow-400',  activeColor: 'text-yellow-300'  },
+  { label: '오늘의 인사이트', href: '/today',        icon: Sun,           color: 'text-yellow-400',  activeColor: 'text-yellow-300'  },
   { label: '거래내역',     href: '/transactions',   icon: ArrowLeftRight,color: 'text-sky-400',     activeColor: 'text-sky-300'     },
+  { label: '업데이트 내역',href: '/updates',        icon: History,       color: 'text-teal-400',    activeColor: 'text-teal-300'    },
+  { label: '도움말',       href: '/help',           icon: HelpCircle,    color: 'text-zinc-400',    activeColor: 'text-zinc-300'    },
   { label: '차트',         href: '/charts',         icon: LineChart,     color: 'text-violet-400',  activeColor: 'text-violet-300'  },
   { label: '인사이트',     href: '/insights',       icon: Sparkles,      color: 'text-pink-400',    activeColor: 'text-pink-300'    },
   { label: '모의투자',     href: '/paper-trading',  icon: TrendingUp,    color: 'text-cyan-400',    activeColor: 'text-cyan-300'    },
   { label: '로보어드바이저', href: '/robo-advisor',   icon: Bot,           color: 'text-orange-400',  activeColor: 'text-orange-300'  },
-  { label: '도움말',       href: '/help',           icon: HelpCircle,    color: 'text-zinc-400',    activeColor: 'text-zinc-300'    },
-  { label: '업데이트 내역',href: '/updates',        icon: History,       color: 'text-teal-400',    activeColor: 'text-teal-300'    },
 ]
 
 const SYMBOLS = ['7', '₩', '★', '♦', '♠']
@@ -105,7 +105,7 @@ function MiniSlotMachine() {
         className={cn(
           'flex items-center gap-1.5 px-2 py-1.5 rounded-xl border transition-colors duration-300 cursor-pointer',
           isJackpot
-            ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/30'
+            ? 'border-amber-400 bg-amber-50'
             : 'border-border bg-background hover:border-border/70 hover:bg-muted'
         )}
         style={isJackpot ? { animation: 'jp-glow 1s ease-in-out infinite' } : {}}
@@ -152,6 +152,7 @@ export function Sidebar() {
         onClick={closeMobile}
       />
       <aside
+        data-component="Sidebar"
         className={cn(
           'fixed lg:static inset-y-0 left-0 z-50 h-screen border-r border-sidebar-border bg-sidebar flex flex-col shrink-0 overflow-hidden',
           'transition-[transform,width] duration-300',
