@@ -91,13 +91,13 @@ export default async function AppLayout({
               </div>
 
               {/* 한 줄 태그라인 */}
-              <p className="text-xs tracking-widest text-white font-medium">
+              <p className="text-xs tracking-widest text-gray-400 font-medium">
                 부의 미래를 설계하다
               </p>
             </div>
 
             {/* 하단 메타 */}
-            <div className="flex items-center justify-center text-xs text-white tracking-wide">
+            <div className="flex items-center justify-center text-xs text-gray-400 tracking-wide">
               <span className="flex items-center gap-1.5">
                 <span
                   className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400/40"
