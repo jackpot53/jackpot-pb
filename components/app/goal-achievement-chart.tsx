@@ -238,7 +238,7 @@ export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartP
 
   return (
     <Card className="shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between pb-4">
+      <CardHeader className="flex flex-row items-center justify-between pb-1">
         <div>
           <CardTitle className="flex items-center gap-2">
             <CandlestickChart className="h-4 w-4" />날짜별 달성률
@@ -264,7 +264,7 @@ export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartP
         </div>
       </CardHeader>
       <Separator />
-      <CardContent>
+      <CardContent className="flex flex-col justify-center">
         {insufficient ? (
           <div className="space-y-3 py-2">
             {/* 범례 스켈레톤 */}

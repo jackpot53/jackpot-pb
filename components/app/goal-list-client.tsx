@@ -36,14 +36,14 @@ export function GoalListClient({ goals }: GoalListClientProps) {
   return (
     <>
       <Card className="h-full shadow-sm">
-        <CardHeader className="pb-4 rounded-tl-[calc(var(--radius)-1px)]">
+        <CardHeader className="pb-1 rounded-tl-[calc(var(--radius)-1px)]">
           <CardTitle className="flex items-center gap-2 text-blue-400">
             <Target className="h-4 w-4" />나의 목표
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-0.5">달성하고 싶은 자산 목표를 관리합니다</p>
         </CardHeader>
         <Separator />
-        <CardContent>
+        <CardContent className="flex flex-col justify-center">
           {goals.length === 0 ? (
             <div className="space-y-1">
               {[...Array(3)].map((_, i) => (

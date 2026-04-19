@@ -172,30 +172,6 @@ async function GoalsContent({ userId, pageStart }: { userId: string; pageStart: 
       {/* 포트폴리오 스탯 */}
       <SummaryCards grouped={grouped} performances={performances} showTypeStrip={false} />
 
-      {/* 목표 통계 배지 */}
-      {goals.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-1">
-          <div>
-            <div className="text-2xl font-bold tabular-nums">{goals.length}개</div>
-            <div className="text-xs text-muted-foreground mt-0.5">진행 중인 목표</div>
-          </div>
-          <div className="w-px h-10 bg-border hidden sm:block" />
-          <div>
-            <div className="text-2xl font-bold tabular-nums">{formatKrwCompact(totalTarget)}</div>
-            <div className="text-xs text-muted-foreground mt-0.5">총 목표 금액</div>
-          </div>
-          {nearestDeadline && (
-            <>
-              <div className="w-px h-10 bg-border hidden sm:block" />
-              <div>
-                <div className="text-base font-semibold tabular-nums">{nearestDeadline}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">가장 가까운 마감</div>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
       {/* 상단: 나의 목표 + 진행 현황 나란히 */}
       <div className="flex flex-col lg:flex-row gap-6 items-stretch">
         <div className="flex-1 min-w-0 flex flex-col">
@@ -210,7 +186,6 @@ async function GoalsContent({ userId, pageStart }: { userId: string; pageStart: 
 
       {/* 하단: 날짜별 달성률 */}
       <GoalAchievementChart goals={goals} snapshots={snapshots} />
-      <Separator className="bg-border" />
     </>
   )
 }

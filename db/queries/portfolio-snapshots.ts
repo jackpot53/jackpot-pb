@@ -39,7 +39,12 @@ export const getAllSnapshots = cache(async (userId: string): Promise<SnapshotRow
  * Used by the assets page for per-type monthly/annual charts.
  */
 export const getAllSnapshotsWithBreakdowns = cache(async (userId: string): Promise<SnapshotWithBreakdowns[]> => {
-  const snapshotRows = await getAllSnapshots(userId)
+  let snapshotRows: SnapshotRow[] = []
+  try {
+    snapshotRows = await getAllSnapshots(userId)
+  } catch {
+    return []
+  }
 
   // Gracefully handle missing table (migration not yet applied)
   let breakdownRows: Array<{ snapshotDate: string; assetType: string; totalValueKrw: number; totalCostKrw: number }> = []

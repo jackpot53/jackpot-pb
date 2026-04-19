@@ -27,7 +27,7 @@ const NAV_ITEMS = [
   { label: '차트',         href: '/charts',         icon: LineChart,     color: 'text-violet-400',  activeColor: 'text-violet-300'  },
   { label: '인사이트',     href: '/insights',       icon: Sparkles,      color: 'text-pink-400',    activeColor: 'text-pink-300'    },
   { label: '모의투자',     href: '/paper-trading',  icon: TrendingUp,    color: 'text-cyan-400',    activeColor: 'text-cyan-300'    },
-  { label: 'Signals',      href: '/robo-advisor',   icon: Bot,           color: 'text-orange-400',  activeColor: 'text-orange-300'  },
+  { label: '로보어드바이저', href: '/robo-advisor',   icon: Bot,           color: 'text-orange-400',  activeColor: 'text-orange-300'  },
   { label: '도움말',       href: '/help',           icon: HelpCircle,    color: 'text-zinc-400',    activeColor: 'text-zinc-300'    },
   { label: '업데이트 내역',href: '/updates',        icon: History,       color: 'text-teal-400',    activeColor: 'text-teal-300'    },
 ]

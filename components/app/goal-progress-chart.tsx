@@ -13,7 +13,7 @@ interface GoalProgressChartProps {
 export function GoalProgressChart({ goals, currentValueKrw }: GoalProgressChartProps) {
   return (
     <Card className="h-full flex flex-col shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between pb-4">
+      <CardHeader className="flex flex-row items-center justify-between pb-1">
         <div>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />목표 진행 현황
