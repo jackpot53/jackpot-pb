@@ -35,7 +35,7 @@ export function GoalListClient({ goals }: GoalListClientProps) {
 
   return (
     <>
-      <Card className="h-full border-l-4 border-l-blue-500 shadow-sm">
+      <Card className="h-full shadow-sm">
         <CardHeader className="pb-4 rounded-tl-[calc(var(--radius)-1px)]">
           <CardTitle className="flex items-center gap-2 text-blue-400">
             <Target className="h-4 w-4" />나의 목표

@@ -21,7 +21,7 @@ export function DashboardGoalsSection({ goals, totalValueKrw }: DashboardGoalsSe
   return (
     <section className="space-y-3">
       <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">목표</h2>
-      <Card className="border-l-4 border-l-blue-500 shadow-sm">
+      <Card className="shadow-sm">
         <CardContent className="pt-4 pb-2">
           {goals.map((goal) => {
             // Achievement % formula (D-03): computed at read time
