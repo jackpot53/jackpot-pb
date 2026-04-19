@@ -475,6 +475,9 @@ export function NewAssetForm({ onSubmit }: {
     if (['stock_kr', 'etf_kr', 'fund'].includes(assetType)) {
       form.setValue('currency', 'KRW')
     }
+    if (assetType !== 'contribution') {
+      setDividendRateMap({})
+    }
   }, [assetType])
 
   // ── FX rate auto-fetch (US 자산 매수일 기준, 원화/달러 무관) ───────────
