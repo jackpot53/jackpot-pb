@@ -12,10 +12,10 @@ interface GoalProgressChartProps {
 
 export function GoalProgressChart({ goals, currentValueKrw }: GoalProgressChartProps) {
   return (
-    <Card className="h-full flex flex-col border-l-4 border-l-emerald-500 shadow-sm">
+    <Card className="h-full flex flex-col shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-4">
         <div>
-          <CardTitle className="flex items-center gap-2 text-emerald-400">
+          <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />목표 진행 현황
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-0.5">현재 자산이 각 목표에 얼마나 근접했는지 보여줍니다</p>

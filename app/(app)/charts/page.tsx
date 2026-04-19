@@ -29,7 +29,7 @@ import { timed } from '@/lib/perf'
 
 function ChartSkeleton() {
   return (
-    <Card className="border-l-4 border-l-slate-300 dark:border-l-slate-600">
+    <Card>
       <CardHeader>
         <Skeleton className="h-4 w-16" />
         <Skeleton className="h-8 w-32 mt-1" />
@@ -57,7 +57,7 @@ const GHOST_BARS = [
 
 function NoDataCard({ title }: { title: string }) {
   return (
-    <Card className="border-l-4 border-l-slate-300 dark:border-l-slate-600">
+    <Card>
       <CardHeader className="pb-3 border-b">
         <p className="text-sm font-semibold text-foreground">{title}</p>
         <p className="text-xs text-muted-foreground mt-0.5">스냅샷 없음</p>
@@ -231,8 +231,8 @@ async function ChartsPageContent({ userId }: { userId: string }) {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {dailyCandles.length > 0 ? (
-            <Card className="border-l-4 border-l-blue-500 shadow-sm">
-              <CardHeader className="pb-3 border-b bg-gradient-to-r from-blue-500/10 to-transparent rounded-tl-[calc(var(--radius)-1px)]">
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3 border-b">
                 <CandlestickSummary data={dailyCandles} title="일간" subtitle={`최근 ${dailyCandles.length}일`} />
               </CardHeader>
               <CardContent className="pt-4">
@@ -245,8 +245,8 @@ async function ChartsPageContent({ userId }: { userId: string }) {
             <NoDataCard title="일간" />
           )}
           {monthlyCandles.length > 0 ? (
-            <Card className="border-l-4 border-l-violet-500 shadow-sm">
-              <CardHeader className="pb-3 border-b bg-gradient-to-r from-violet-500/10 to-transparent rounded-tl-[calc(var(--radius)-1px)]">
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3 border-b">
                 <CandlestickSummary data={monthlyCandles} title="월간" subtitle={`${monthlyCandles.length}개월`} />
               </CardHeader>
               <CardContent className="pt-4">
@@ -259,8 +259,8 @@ async function ChartsPageContent({ userId }: { userId: string }) {
             <NoDataCard title="월간" />
           )}
           {annualCandles.length > 0 ? (
-            <Card className="border-l-4 border-l-indigo-500 shadow-sm">
-              <CardHeader className="pb-3 border-b bg-gradient-to-r from-indigo-500/10 to-transparent rounded-tl-[calc(var(--radius)-1px)]">
+            <Card className="shadow-sm">
+              <CardHeader className="pb-3 border-b">
                 <CandlestickSummary data={annualCandles} title="년간" subtitle={`${annualCandles.length}년`} />
               </CardHeader>
               <CardContent className="pt-4">
@@ -285,8 +285,8 @@ async function ChartsPageContent({ userId }: { userId: string }) {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {typeCandles.map(({ type, candles }) => (
-              <Card key={type} className="border-l-4 border-l-violet-400 shadow-sm">
-                <CardHeader className="pb-3 border-b bg-gradient-to-r from-violet-500/10 to-transparent rounded-tl-[calc(var(--radius)-1px)]">
+              <Card key={type} className="shadow-sm">
+                <CardHeader className="pb-3 border-b">
                   <AssetTypeCandlestickSummary data={candles} assetType={type} />
                 </CardHeader>
                 <CardContent className="pt-4">
@@ -306,7 +306,7 @@ async function ChartsPageContent({ userId }: { userId: string }) {
           <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             <PieChart className="h-4 w-4 text-emerald-500" />자산 배분
           </h2>
-          <Card className="border-l-4 border-l-emerald-500 shadow-sm">
+          <Card className="shadow-sm">
             <CardContent className="pt-6">
               <PortfolioRadialChart allocations={allocations} totalValueKrw={totalValue} />
             </CardContent>

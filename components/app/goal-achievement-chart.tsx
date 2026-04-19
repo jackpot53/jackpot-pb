@@ -237,10 +237,10 @@ export function GoalAchievementChart({ snapshots, goals }: GoalAchievementChartP
   const insufficient = snapshots.length < 2 || goals.length === 0
 
   return (
-    <Card className="border-l-4 border-l-amber-500 shadow-sm">
+    <Card className="shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between pb-4">
         <div>
-          <CardTitle className="flex items-center gap-2 text-amber-400">
+          <CardTitle className="flex items-center gap-2">
             <CandlestickChart className="h-4 w-4" />날짜별 달성률
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-0.5">자산 추이와 목표 달성선을 캔들 차트로 비교합니다</p>
