@@ -32,20 +32,19 @@ const SIGNAL_LABELS: Record<string, string> = {
 const HOLDING_DAYS = [5, 10, 20, 60]
 
 function ConfidenceBar({ value }: { value: number }) {
-  // value는 0~1 범위 기대
   const pct = Math.min(100, Math.max(0, value * 100))
   const color =
-    pct >= 70 ? 'bg-green-400' : pct >= 40 ? 'bg-yellow-400' : 'bg-orange-400'
+    pct >= 70 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-orange-400'
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 h-1.5 rounded-full bg-white/10">
+      <div className="flex-1 h-1.5 rounded-full bg-muted">
         <div
           className={cn('h-full rounded-full transition-all duration-500', color)}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-[10px] tabular-nums text-white/50 w-8 text-right">
+      <span className="text-[10px] tabular-nums text-muted-foreground w-8 text-right">
         {pct.toFixed(0)}%
       </span>
     </div>
@@ -76,10 +75,10 @@ export function RoboAdvisorDetailDialog({ stock, statsMap, onClose }: Props) {
 
   const changeColor =
     stock.changePercent === null || stock.changePercent === 0
-      ? 'text-white/50'
+      ? 'text-muted-foreground'
       : stock.changePercent > 0
-        ? 'text-red-400'
-        : 'text-blue-400'
+        ? 'text-red-500'
+        : 'text-blue-500'
 
   const changeText =
     stock.changePercent === null
@@ -93,67 +92,64 @@ export function RoboAdvisorDetailDialog({ stock, statsMap, onClose }: Props) {
 
   return (
     <Dialog open={!!stock} onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent className="bg-zinc-950 border-white/[0.12] text-white max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xl font-bold">{stock.name}</span>
-                <Badge variant="outline" className="text-[10px] border-white/20 text-white/50">
+                <span className="text-xl font-bold text-foreground">{stock.name}</span>
+                <Badge variant="outline" className="text-[10px]">
                   {stock.code}
                 </Badge>
                 {stock.market && (
-                  <Badge variant="outline" className="text-[10px] border-white/20 text-white/40">
+                  <Badge variant="outline" className="text-[10px]">
                     {stock.market}
                   </Badge>
                 )}
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-2xl font-bold tabular-nums">{priceText}</span>
+                <span className="text-2xl font-bold tabular-nums text-foreground">{priceText}</span>
                 <span className={cn('text-sm font-semibold tabular-nums', changeColor)}>
                   {changeText}
                 </span>
               </div>
               {stock.sector && (
-                <p className="text-xs text-white/40">{stock.sector}</p>
+                <p className="text-xs text-muted-foreground">{stock.sector}</p>
               )}
             </div>
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5 mt-2">
-          {/* 발동 시그널 없음 */}
           {triggeredSignals.length === 0 ? (
-            <div className="rounded-lg bg-white/[0.04] border border-white/[0.08] p-4 text-center">
-              <p className="text-sm text-white/40">현재 발동된 시그널이 없습니다</p>
+            <div className="rounded-lg bg-muted border border-border p-4 text-center">
+              <p className="text-sm text-muted-foreground">현재 발동된 시그널이 없습니다</p>
             </div>
           ) : (
             <>
-              {/* 복합 시그널 confidence */}
               {compositeSignal && compositeSignal.triggered && compositeSignal.confidence !== null && (
-                <div className="rounded-lg bg-yellow-400/5 border border-yellow-400/20 p-3 space-y-1.5">
-                  <p className="text-xs font-semibold text-yellow-300">복합 시그널 강도</p>
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 space-y-1.5">
+                  <p className="text-xs font-semibold text-amber-800">복합 시그널 강도</p>
                   <ConfidenceBar value={Number(compositeSignal.confidence)} />
                 </div>
               )}
 
-              {/* 발동 시그널 목록 */}
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   발동 시그널 ({triggeredSignals.length}개)
                 </p>
                 <div className="space-y-2">
                   {triggeredSignals.map((sig) => (
                     <div
                       key={sig.signalType}
-                      className="rounded-lg bg-white/[0.04] border border-white/[0.07] p-3 space-y-1.5"
+                      className="rounded-lg bg-muted/50 border border-border p-3 space-y-1.5"
                     >
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-white">
+                        <p className="text-sm font-medium text-foreground">
                           {SIGNAL_LABELS[sig.signalType] ?? sig.signalType}
                         </p>
                         {sig.confidence !== null && (
-                          <span className="text-[10px] text-white/40 tabular-nums">
+                          <span className="text-[10px] text-muted-foreground tabular-nums">
                             신뢰도 {(Number(sig.confidence) * 100).toFixed(0)}%
                           </span>
                         )}
@@ -166,9 +162,8 @@ export function RoboAdvisorDetailDialog({ stock, statsMap, onClose }: Props) {
                 </div>
               </div>
 
-              {/* 백테스트 통계 테이블 */}
               <div className="space-y-2">
-                <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   백테스트 통계 (시그널별 보유 기간)
                 </p>
                 {triggeredSignals
@@ -177,18 +172,18 @@ export function RoboAdvisorDetailDialog({ stock, statsMap, onClose }: Props) {
                     const sigStats = statsMap.get(sig.signalType)!
                     return (
                       <div key={sig.signalType} className="space-y-1.5">
-                        <p className="text-[11px] font-medium text-white/60">
+                        <p className="text-[11px] font-medium text-foreground/80">
                           {SIGNAL_LABELS[sig.signalType] ?? sig.signalType}
                         </p>
-                        <div className="overflow-x-auto rounded-lg border border-white/[0.07]">
+                        <div className="overflow-x-auto rounded-lg border border-border">
                           <table className="w-full text-xs tabular-nums">
                             <thead>
-                              <tr className="border-b border-white/[0.07] bg-white/[0.03]">
-                                <th className="text-left px-3 py-2 text-white/40 font-medium">보유일</th>
-                                <th className="text-right px-3 py-2 text-white/40 font-medium">샘플</th>
-                                <th className="text-right px-3 py-2 text-white/40 font-medium">승률</th>
-                                <th className="text-right px-3 py-2 text-white/40 font-medium">평균수익</th>
-                                <th className="text-right px-3 py-2 text-white/40 font-medium">중앙값</th>
+                              <tr className="border-b border-border bg-muted/50">
+                                <th className="text-left px-3 py-2 text-muted-foreground font-medium">보유일</th>
+                                <th className="text-right px-3 py-2 text-muted-foreground font-medium">샘플</th>
+                                <th className="text-right px-3 py-2 text-muted-foreground font-medium">승률</th>
+                                <th className="text-right px-3 py-2 text-muted-foreground font-medium">평균수익</th>
+                                <th className="text-right px-3 py-2 text-muted-foreground font-medium">중앙값</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -197,19 +192,19 @@ export function RoboAdvisorDetailDialog({ stock, statsMap, onClose }: Props) {
                                 return (
                                   <tr
                                     key={days}
-                                    className="border-b border-white/[0.05] last:border-0 hover:bg-white/[0.03] transition-colors"
+                                    className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
                                   >
-                                    <td className="px-3 py-2 text-white/70 font-medium">{days}일</td>
-                                    <td className="px-3 py-2 text-right text-white/50">
+                                    <td className="px-3 py-2 text-foreground font-medium">{days}일</td>
+                                    <td className="px-3 py-2 text-right text-muted-foreground">
                                       {row ? Number(row.sampleCount).toLocaleString() : '-'}
                                     </td>
-                                    <td className={cn('px-3 py-2 text-right font-semibold', row && Number(row.winRate) >= 50 ? 'text-green-400' : 'text-white/50')}>
+                                    <td className={cn('px-3 py-2 text-right font-semibold', row && Number(row.winRate) >= 50 ? 'text-emerald-600' : 'text-muted-foreground')}>
                                       {row ? fmtWinRate(Number(row.winRate)) : '-'}
                                     </td>
-                                    <td className={cn('px-3 py-2 text-right font-semibold', row && Number(row.avgReturn) >= 0 ? 'text-red-400' : 'text-blue-400')}>
+                                    <td className={cn('px-3 py-2 text-right font-semibold', row && Number(row.avgReturn) >= 0 ? 'text-red-500' : 'text-blue-500')}>
                                       {row ? fmtPct(Number(row.avgReturn)) : '-'}
                                     </td>
-                                    <td className={cn('px-3 py-2 text-right', row && Number(row.medianReturn) >= 0 ? 'text-red-300/80' : 'text-blue-300/80')}>
+                                    <td className={cn('px-3 py-2 text-right', row && Number(row.medianReturn) >= 0 ? 'text-red-400' : 'text-blue-400')}>
                                       {row ? fmtPct(Number(row.medianReturn)) : '-'}
                                     </td>
                                   </tr>
@@ -223,7 +218,7 @@ export function RoboAdvisorDetailDialog({ stock, statsMap, onClose }: Props) {
                   })}
 
                 {triggeredSignals.every((s) => !statsMap.has(s.signalType)) && (
-                  <p className="text-xs text-white/30 py-2">
+                  <p className="text-xs text-muted-foreground py-2">
                     백테스트 통계 데이터가 아직 없습니다
                   </p>
                 )}
@@ -231,22 +226,13 @@ export function RoboAdvisorDetailDialog({ stock, statsMap, onClose }: Props) {
             </>
           )}
 
-          {/* TODO: AssetCandleChart — 해당 종목이 user asset에 있으면 재사용,
-               없으면 /api/sparklines?tickers=<ticker>로 직접 fetch 후 표시.
-               현재는 미구현. */}
-
-          {/* 면책 문구 */}
-          <div className="rounded-lg bg-white/[0.02] border border-white/[0.06] px-3 py-2">
-            <p className="text-[10px] text-white/30 leading-relaxed">
+          <div className="rounded-lg bg-muted/50 border border-border px-3 py-2">
+            <p className="text-[10px] text-muted-foreground leading-relaxed">
               ⚠️ 과거 데이터 기반 통계이며 투자 조언이 아닙니다. 모든 투자 결정은 본인의 판단과 책임 하에 이루어져야 합니다.
             </p>
           </div>
 
-          {/* 모의투자 버튼 */}
-          <Button
-            onClick={handlePaperTrading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium"
-          >
+          <Button onClick={handlePaperTrading} className="w-full">
             모의투자로 시뮬레이션
           </Button>
         </div>

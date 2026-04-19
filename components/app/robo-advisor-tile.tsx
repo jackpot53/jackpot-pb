@@ -54,10 +54,10 @@ export function RoboAdvisorTile({ stock, onClick }: Props) {
   const changePercent = stock.changePercent
   const changeColor =
     changePercent === null || changePercent === 0
-      ? 'text-white/40'
+      ? 'text-muted-foreground'
       : changePercent > 0
-        ? 'text-red-400'
-        : 'text-blue-400'
+        ? 'text-red-500'
+        : 'text-blue-500'
 
   const changeText =
     changePercent === null
@@ -66,45 +66,37 @@ export function RoboAdvisorTile({ stock, onClick }: Props) {
         ? '0.00%'
         : `${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%`
 
-  // 스파크라인용 closes (타일에서는 latestClose만 있으므로 간이 표현)
   const sparkCloses: number[] = []
-  // latestClose만 있으면 단순히 한 점이라 표시 의미 없음; 실제 히스토리 데이터가 없으니 빈 배열 전달
-  // (RoboAdvisorPageClient에서 priceHistory를 내려주면 활용 가능 — 현재는 TODO)
 
   return (
     <button
       onClick={onClick}
       className={cn(
         'group relative flex flex-col gap-0.5 w-full rounded-lg p-2 text-left transition-all duration-200',
-        'bg-zinc-900/60 border hover:bg-zinc-800/70',
+        'bg-card border hover:shadow-md',
         hasSignal
-          ? 'border-yellow-400/70 shadow-[0_0_8px_rgba(250,204,21,0.25)] hover:shadow-[0_0_14px_rgba(250,204,21,0.45)]'
-          : 'border-white/[0.08] hover:border-white/20',
+          ? 'border-amber-400 shadow-[0_0_0_1px_rgba(251,191,36,0.25),0_4px_10px_-4px_rgba(251,191,36,0.35)]'
+          : 'border-border hover:border-foreground/20',
       )}
     >
-      {/* 시그널 배지 */}
       {hasSignal && (
-        <div className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-4 h-4 rounded-full bg-yellow-400 text-black text-[9px] font-black z-10">
+        <div className="absolute -top-1.5 -right-1.5 flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-black z-10">
           {triggeredCount}
         </div>
       )}
 
-      {/* 종목명 */}
-      <p className="text-[10px] text-white/70 truncate w-full leading-tight font-medium">
+      <p className="text-[10px] text-muted-foreground truncate w-full leading-tight font-medium">
         {stock.name}
       </p>
 
-      {/* 현재가 */}
-      <p className="text-xs font-bold text-white leading-tight tabular-nums">
+      <p className="text-xs font-bold text-foreground leading-tight tabular-nums">
         {stock.latestClose !== null ? formatPrice(stock.latestClose) : '-'}
       </p>
 
-      {/* 등락률 */}
       <p className={cn('text-[9px] font-semibold leading-tight tabular-nums', changeColor)}>
         {changeText}
       </p>
 
-      {/* 스파크라인 영역 (데이터 있을 때만) */}
       {sparkCloses.length >= 2 && (
         <div className="mt-0.5">
           <MiniSparkline closes={sparkCloses} />

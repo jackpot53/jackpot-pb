@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import Markdown from 'react-markdown'
+import { Sparkles, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 type BacktestStats = {
   winRate: number
@@ -88,38 +90,33 @@ export function RoboAdvisorAiReport({
 
   return (
     <div className='w-full space-y-4'>
-      <button
-        onClick={handleAnalyze}
-        disabled={isLoading}
-        className='px-4 py-2 bg-blue-600 text-white rounded font-medium hover:bg-blue-700 disabled:bg-gray-400 transition'
-      >
+      <Button onClick={handleAnalyze} disabled={isLoading} className='gap-2'>
+        {isLoading ? <Loader2 className='w-4 h-4 animate-spin' /> : <Sparkles className='w-4 h-4' />}
         {isLoading ? 'AI 분석 중...' : 'AI 분석 시작'}
-      </button>
+      </Button>
 
       {report && (
-        <div className='prose prose-sm max-w-none p-4 bg-gray-50 rounded border border-gray-200'>
+        <div className='max-w-none p-4 bg-muted/40 rounded-lg border border-border'>
           <Markdown
             components={{
-              h3: ({ node, ...props }) => (
-                <h3 className='text-lg font-bold mt-4 mb-2' {...props} />
+              h3: (props) => (
+                <h3 className='text-base font-semibold text-foreground mt-4 mb-2 first:mt-0' {...props} />
               ),
-              h4: ({ node, ...props }) => (
-                <h4 className='text-base font-bold mt-3 mb-1' {...props} />
+              h4: (props) => (
+                <h4 className='text-sm font-semibold text-foreground mt-3 mb-1' {...props} />
               ),
-              p: ({ node, ...props }) => (
-                <p className='text-sm text-gray-700 mb-2' {...props} />
+              p: (props) => (
+                <p className='text-sm text-foreground/80 leading-relaxed mb-2 last:mb-0' {...props} />
               ),
-              ul: ({ node, ...props }) => (
-                <ul className='text-sm text-gray-700 ml-4 space-y-1' {...props} />
+              ul: (props) => (
+                <ul className='text-sm text-foreground/80 ml-5 space-y-1 mb-2 list-disc' {...props} />
               ),
-              li: ({ node, ...props }) => (
-                <li className='list-disc' {...props} />
+              li: (props) => <li {...props} />,
+              strong: (props) => (
+                <strong className='font-semibold text-foreground' {...props} />
               ),
-              strong: ({ node, ...props }) => (
-                <strong className='font-bold text-gray-900' {...props} />
-              ),
-              em: ({ node, ...props }) => (
-                <em className='italic text-gray-600' {...props} />
+              em: (props) => (
+                <em className='italic text-muted-foreground' {...props} />
               ),
             }}
           >

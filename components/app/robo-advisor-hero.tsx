@@ -237,13 +237,13 @@ export function RoboAdvisorHero() {
 
   return (
     <div
-      className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#1a0010] via-[#1f0018] to-[#0f0014] p-8 text-white shadow-xl"
+      className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-amber-500 via-orange-600 to-rose-700 p-6 sm:p-8 text-white shadow-xl"
     >
       <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
         {/* 배경 글로우 */}
-        <div className="absolute -top-16 -right-16 w-72 h-72 rounded-full bg-rose-500/10 blur-3xl" />
-        <div className="absolute bottom-0 left-1/4 w-96 h-48 rounded-full bg-pink-500/8 blur-3xl" />
-        <div className="absolute top-0 left-0 w-64 h-64 rounded-full bg-fuchsia-500/5 blur-3xl" />
+        <div className="absolute -top-16 -right-16 w-72 h-72 rounded-full bg-amber-200/20 blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-48 rounded-full bg-orange-300/15 blur-3xl" />
+        <div className="absolute top-0 left-0 w-64 h-64 rounded-full bg-rose-300/10 blur-3xl" />
 
         {/* 도트 패턴 */}
         <div
@@ -292,22 +292,22 @@ export function RoboAdvisorHero() {
 
         {/* 스캔 라인 */}
         <div
-          className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-rose-400/40 to-transparent"
+          className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent"
           style={{ animation: 'ra-scan 3s ease-in-out infinite' }}
         />
 
         {/* 펄스 링 장식 */}
         <div className="absolute top-1/2 right-20 -translate-y-1/2 hidden sm:block">
           <div
-            className="w-28 h-28 rounded-full border border-rose-400/30"
+            className="w-28 h-28 rounded-full border border-white/40"
             style={{ animation: 'ra-pulse-ring 2s ease-in-out infinite' }}
           />
           <div
-            className="absolute inset-3 rounded-full border border-pink-400/20"
+            className="absolute inset-3 rounded-full border border-white/25"
             style={{ animation: 'ra-pulse-ring 2s ease-in-out 0.4s infinite' }}
           />
           <div
-            className="absolute inset-6 rounded-full border border-fuchsia-400/15"
+            className="absolute inset-6 rounded-full border border-white/15"
             style={{ animation: 'ra-pulse-ring 2s ease-in-out 0.8s infinite' }}
           />
           {/* 중앙 봇 아이콘 */}
@@ -315,12 +315,12 @@ export function RoboAdvisorHero() {
             className="absolute inset-0 flex items-center justify-center"
             style={{ animation: 'ra-float 4s ease-in-out infinite' }}
           >
-            <Bot size={32} className="text-rose-300/60" />
+            <Bot size={32} className="text-white/75" />
           </div>
         </div>
 
         {/* 우측 하단 매트릭스 숫자 장식 */}
-        <div className="absolute right-6 bottom-2 flex gap-3 opacity-10 font-mono text-[9px] text-rose-300">
+        <div className="absolute right-6 bottom-2 flex gap-3 opacity-20 font-mono text-[9px] text-white">
           {['01001101', '10110010', '01110101'].map((b, i) => (
             <div
               key={i}
@@ -337,17 +337,17 @@ export function RoboAdvisorHero() {
         {/* 헤더: 제목 + 알고리즘 보기 버튼 */}
         <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
           <div className="space-y-2 max-w-lg flex-1">
-            <div className="flex items-center gap-1.5 text-rose-400/70 text-xs font-semibold tracking-widest uppercase">
+            <div className="flex items-center gap-1.5 text-white/80 text-xs font-semibold tracking-widest uppercase">
               <Bot className="h-3.5 w-3.5" />
               로보어드바이저
             </div>
             <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "'Sunflower', sans-serif" }}>알고리즘 시그널</h1>
-            <p className="text-white/60 text-sm leading-relaxed">
+            <p className="text-white/80 text-sm leading-relaxed">
               알고리즘이 시장을 스캔하는 중 —{' '}
-              <span className="text-rose-300 font-medium">매수 시그널이 발생한 종목</span>을
+              <span className="text-white font-semibold">매수 시그널이 발생한 종목</span>을
               실시간으로 감지합니다
             </p>
-            <p className="text-white/30 text-xs">
+            <p className="text-white/55 text-xs">
               과거 데이터 기반 통계이며 투자 조언이 아닙니다
             </p>
           </div>
@@ -355,7 +355,7 @@ export function RoboAdvisorHero() {
           {/* 알고리즘 보기 버튼 */}
           <button
             onClick={() => setOpen(!open)}
-            className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-500/20 border border-rose-400/40 text-rose-300 hover:bg-rose-500/30 transition-colors group text-sm font-medium whitespace-nowrap"
+            className="shrink-0 flex items-center gap-2 px-4 py-2 rounded-lg bg-white/15 border border-white/30 text-white hover:bg-white/25 backdrop-blur-sm transition-colors text-sm font-medium whitespace-nowrap"
           >
             <BookOpen className="w-4 h-4" />
             {open ? '접기' : '알고리즘 보기'}
@@ -371,7 +371,7 @@ export function RoboAdvisorHero() {
             opacity: open ? 1 : 0,
           }}
         >
-          <div className="pt-4 border-t border-white/10 space-y-3">
+          <div className="pt-4 border-t border-white/20 space-y-3">
             {/* 탭 버튼 */}
             <div className="flex gap-1.5 flex-wrap">
               {tabs.map((tab) => (
@@ -381,8 +381,8 @@ export function RoboAdvisorHero() {
                   className={cn(
                     'px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
                     activeTab === tab.key
-                      ? 'bg-rose-500/30 border border-rose-400/50 text-rose-200'
-                      : 'bg-white/[0.05] border border-white/[0.12] text-white/60 hover:text-white/80 hover:bg-white/[0.08]',
+                      ? 'bg-white text-orange-700 shadow-sm'
+                      : 'bg-white/10 border border-white/25 text-white/80 hover:bg-white/20',
                   )}
                 >
                   {tab.label}
@@ -392,7 +392,7 @@ export function RoboAdvisorHero() {
 
             {/* 카테고리 설명 + 신호 목록 */}
             <div className="space-y-2">
-              <p className="text-white/60 text-xs">{currentCategory.description}</p>
+              <p className="text-white/75 text-xs">{currentCategory.description}</p>
               <div className={cn(
                 'grid gap-2 transition-opacity duration-300',
                 currentCategory.signals.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'
@@ -414,10 +414,10 @@ export function RoboAdvisorHero() {
                     <div
                       key={idx}
                       className={cn(
-                        'p-3 rounded-lg border transition-colors group',
+                        'p-3 rounded-lg border transition-colors group backdrop-blur-sm',
                         signal.status === 'coming-soon'
-                          ? 'bg-white/[0.02] border-white/[0.06] opacity-60'
-                          : 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.05]'
+                          ? 'bg-white/5 border-white/15 opacity-70'
+                          : 'bg-white/10 border-white/25 hover:bg-white/15'
                       )}
                     >
                       <div className={cn('flex items-start gap-2.5', hasChart && 'justify-between')}>
@@ -427,12 +427,12 @@ export function RoboAdvisorHero() {
                             <div className="flex items-center gap-2">
                               <p className="text-sm font-semibold text-white">{signal.name}</p>
                               {signal.status === 'coming-soon' && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 font-medium">
+                                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 border border-white/30 text-white font-medium">
                                   업데이트중
                                 </span>
                               )}
                             </div>
-                            <p className="text-xs text-white/50 leading-relaxed">{signal.description}</p>
+                            <p className="text-xs text-white/70 leading-relaxed">{signal.description}</p>
                           </div>
                         </div>
                         {hasChart && getTechnicalChart(signal.name)}
