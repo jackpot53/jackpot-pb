@@ -3,6 +3,7 @@ import { getAssetsWithHoldings } from '@/db/queries/assets-with-holdings'
 import { getPriceCacheByTickers } from '@/db/queries/price-cache'
 import { getSavingsDetails, getSavingsBuys } from '@/db/queries/savings'
 import { getInsuranceDetails, getInsuranceBuys } from '@/db/queries/insurance'
+import { getContributionDividendRates } from '@/db/queries/contribution'
 import { computeAssetPerformance, type AssetPerformance } from '@/lib/portfolio'
 import { timed, timedSync } from '@/lib/perf'
 
@@ -47,13 +48,21 @@ export const loadPerformances = cache(async (userId: string): Promise<{
     ])
   )
 
+  // contribution 전용: 배당률 메타데이터
+  const contributionIds = assetsWithHoldings
+    .filter((a) => a.assetType === 'contribution')
+    .map((a) => a.assetId)
+  const contributionDividendRatesMap = await timed('  contribution dividend rates', () =>
+    getContributionDividendRates(contributionIds)
+  )
+
   const fxCacheRow = priceMap.get('USD_KRW')
   const currentFxRate = fxCacheRow ? fxCacheRow.priceKrw / 10000 : null
 
   const performances = timedSync('  computeAssetPerformance (loop)', () => {
     const out: AssetPerformance[] = []
     for (const asset of assetsWithHoldings.filter(
-      (a) => Number(a.totalQuantity ?? 0) > 0 || Number(a.totalCostKrw ?? 0) > 0 || a.latestManualValuationKrw !== null || a.assetType === 'savings'
+      (a) => Number(a.totalQuantity ?? 0) > 0 || Number(a.totalCostKrw ?? 0) > 0 || a.latestManualValuationKrw !== null || a.assetType === 'savings' || a.assetType === 'contribution'
     )) {
       let currentPriceKrw = 0
       let cachedAt: Date | null = null
@@ -97,6 +106,7 @@ export const loadPerformances = cache(async (userId: string): Promise<{
           savingsBuys: savingsBuysMap.get(asset.assetId) ?? [],
           insuranceDetails: insuranceDetailsMap.get(asset.assetId) ?? null,
           insuranceBuys: insuranceBuysMap.get(asset.assetId) ?? [],
+          contributionDividendRates: contributionDividendRatesMap.get(asset.assetId) ?? null,
         })
       )
     }
