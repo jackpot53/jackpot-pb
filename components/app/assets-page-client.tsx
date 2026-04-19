@@ -93,17 +93,17 @@ const ASSET_TYPE_ICONS: Record<string, React.ElementType> = {
 }
 
 const ASSET_TYPE_ACCENT: Record<string, string> = {
-  stock_kr:       'border-l-blue-600',
-  stock_us:       'border-l-cyan-500',
-  etf_kr:         'border-l-indigo-600',
-  etf_us:         'border-l-violet-600',
-  crypto:         'border-l-orange-600',
-  fund:           'border-l-teal-600',
-  savings:        'border-l-emerald-600',
-  real_estate:    'border-l-amber-700',
-  insurance:      'border-l-slate-500',
-  precious_metal: 'border-l-yellow-500',
-  cma:            'border-l-rose-500',
+  stock_kr:       'bg-blue-500/[0.04]',
+  stock_us:       'bg-sky-500/[0.04]',
+  etf_kr:         'bg-indigo-500/[0.04]',
+  etf_us:         'bg-violet-500/[0.04]',
+  crypto:         'bg-amber-500/[0.04]',
+  fund:           'bg-teal-500/[0.04]',
+  savings:        'bg-emerald-500/[0.04]',
+  real_estate:    'bg-amber-700/[0.04]',
+  insurance:      'bg-slate-500/[0.04]',
+  precious_metal: 'bg-yellow-500/[0.04]',
+  cma:            'bg-rose-500/[0.04]',
 }
 
 // 탭 버튼용 — dot 색상 / 활성 배경+텍스트
@@ -546,7 +546,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
   )
 
   return (
-    <div className={cn("relative rounded-xl border border-border border-l-4 hover:shadow-md transition-all bg-card", ASSET_TYPE_ACCENT[asset.assetType] ?? 'border-l-border')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div className={cn("relative rounded-xl border border-border hover:shadow-md transition-all", ASSET_TYPE_ACCENT[asset.assetType] ?? 'bg-card')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* 차트 토글 — 우상단 */}
       {((showSparkline && sparklineData) || lineData !== undefined) && (
         <button
@@ -617,7 +617,7 @@ function AssetGridCard({ asset, sparklineData, lineData }: {
     : asset.accountType && ACCOUNT_TYPE_LABELS[asset.accountType] ? ACCOUNT_TYPE_LABELS[asset.accountType] : null
 
   return (
-    <div className={cn("rounded-xl border border-border p-4 flex flex-col gap-2.5 hover:shadow-md transition-all border-l-4 bg-card", ASSET_TYPE_ACCENT[asset.assetType] ?? 'border-l-border')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div className={cn("rounded-xl border border-border p-4 flex flex-col gap-2.5 hover:shadow-md transition-all", ASSET_TYPE_ACCENT[asset.assetType] ?? 'bg-card')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* 헤더: 로고 */}
       <div className="flex items-start">
         <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={38} />
@@ -677,7 +677,7 @@ function AssetGridCard({ asset, sparklineData, lineData }: {
 
 function AssetGridCardSkeleton({ assetType }: { assetType?: string } = {}) {
   return (
-    <div className={cn("rounded-xl bg-card border border-border p-3.5 flex flex-col gap-2 border-l-4", assetType ? (ASSET_TYPE_ACCENT[assetType] ?? 'border-l-border') : 'border-l-border')}>
+    <div className={cn("rounded-xl border border-border p-3.5 flex flex-col gap-2", assetType ? (ASSET_TYPE_ACCENT[assetType] ?? 'bg-card') : 'bg-card')}>
       <div className="w-9 h-9 rounded-full bg-muted animate-pulse" />
       <div className="h-3.5 w-3/4 bg-muted animate-pulse rounded" />
       <div className="h-3 w-1/2 bg-muted animate-pulse rounded" />
@@ -1017,7 +1017,7 @@ export function SummaryCards({ grouped, performances, valueCandles, showTypeStri
           const hasValue = totalValue > 0
 
           return (
-            <div key={type} className={cn("rounded-xl border border-border px-4 py-3 flex flex-col gap-1.5 border-l-4 bg-card shadow-sm", ASSET_TYPE_ACCENT[type] ?? 'border-l-border')}>
+            <div key={type} className={cn("rounded-xl border border-border px-4 py-3 flex flex-col gap-1.5 shadow-sm", ASSET_TYPE_ACCENT[type] ?? 'bg-card')}>
               <div className="flex items-center justify-between mb-0.5">
                 <AssetTypeBadge assetType={type as AssetPerformance['assetType']} light />
                 <span className="text-xs text-muted-foreground">{assets.length}종목</span>
