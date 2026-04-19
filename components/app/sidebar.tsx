@@ -41,7 +41,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: '머니 대시',    href: '/charts',         icon: LineChart,     color: 'text-violet-400',  activeColor: 'text-violet-300'  },
   { label: '업데이트 정보',href: '/updates',        icon: History,       color: 'text-teal-400',    activeColor: 'text-teal-300'    },
   { label: '도움말',       href: '/help',           icon: HelpCircle,    color: 'text-zinc-400',    activeColor: 'text-zinc-300'    },
-  { label: '모의투자',     href: '/paper-trading',  icon: TrendingUp,    color: 'text-cyan-400',    activeColor: 'text-cyan-300',   pro: true },
   {
     label: '로보어드바이저',
     href: '/robo-advisor',
@@ -55,6 +54,7 @@ const NAV_ITEMS: NavItem[] = [
       { label: '종목시그널', href: '/robo-advisor/stock',  icon: BarChart3,  color: 'text-orange-400',activeColor: 'text-orange-300'},
     ],
   },
+  { label: '모의투자',     href: '/paper-trading',  icon: TrendingUp,    color: 'text-cyan-400',    activeColor: 'text-cyan-300',   pro: true },
 ]
 
 const SYMBOLS = ['7', '₩', '★', '♦', '♠']
@@ -308,7 +308,7 @@ export function Sidebar() {
             (item.href !== '/' && pathname.startsWith(item.href))
           return (
             <div key={item.href}>
-              {item.href === '/paper-trading' && (
+              {item.href === '/robo-advisor' && (
                 <div className="flex items-center gap-2 px-1 py-2">
                   <div className="flex-1 h-px rounded-full" style={{
                     background: 'linear-gradient(90deg, transparent, #f59e0b, #fbbf24, #f59e0b, transparent)',
