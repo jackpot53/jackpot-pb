@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { Loader2, Mail, Lock } from 'lucide-react'
+import { Loader2, Mail, Lock, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -145,22 +145,22 @@ function AuthForm() {
         {(['login', 'signup'] as const).map((m) => (
           <button key={m} type="button"
             onClick={() => { setMode(m); setServerError(null) }}
-            className="flex-1 py-2.5 text-xs font-bold tracking-widest rounded-xl transition-all"
+            className="flex-1 py-2.5 text-xs font-bold tracking-widest rounded-xl transition-all login-label"
             style={mode === m ? {
               background: 'linear-gradient(135deg, rgba(245,200,66,0.22), rgba(249,115,22,0.18))',
               color: '#f5c842',
               boxShadow: '0 0 16px rgba(245,200,66,0.18)',
-            } : { color: 'rgba(255,255,255,0.25)' }}>
+            } : { color: 'rgba(255,255,255,0.3)' }}>
             {m === 'login' ? '로그인' : '계정 만들기'}
           </button>
         ))}
       </div>
 
       {signUpSuccess && (
-        <div className="text-sm rounded-xl p-4 flex flex-col gap-1 mb-4"
+        <div className="text-sm rounded-xl p-4 flex flex-col gap-1 mb-5"
           style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.2)' }}>
           <p className="font-semibold" style={{ color: '#34d399' }}>이메일을 확인해주세요</p>
-          <p className="leading-relaxed" style={{ color: 'rgba(52,211,153,0.65)' }}>
+          <p className="leading-relaxed text-xs mt-0.5" style={{ color: 'rgba(52,211,153,0.65)' }}>
             가입 확인 링크를 이메일로 보냈습니다.<br />
             받은 메일함에서 <strong>&quot;Confirm your signup&quot;</strong> 링크를 클릭해주세요.
           </p>
@@ -168,71 +168,84 @@ function AuthForm() {
       )}
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-3">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          {/* Email */}
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem className="flex flex-row items-center gap-3 space-y-0 rounded-xl px-4 py-3.5 transition-all"
-                style={{ background: 'rgba(245,200,66,0.04)', border: '1px solid rgba(245,200,66,0.14)' }}>
-                <FormLabel className="shrink-0" style={{ color: 'rgba(245,200,66,0.55)' }}>
-                  <Mail className="w-4 h-4" />
-                </FormLabel>
-                <div className="flex-1 min-w-0">
+              <FormItem className="space-y-0">
+                <div className="field-wrapper flex flex-row items-center gap-3 rounded-xl px-4 py-3.5"
+                  style={{ background: 'rgba(245,200,66,0.05)', border: '1px solid rgba(245,200,66,0.2)' }}>
+                  <FormLabel className="login-label shrink-0 text-xs font-bold tracking-[0.16em] uppercase w-16"
+                    style={{ color: 'rgba(245,200,66,0.65)' }}>
+                    이메일
+                  </FormLabel>
+                  <div className="w-px self-stretch" style={{ background: 'rgba(245,200,66,0.15)' }} />
+                  <Mail className="w-4 h-4 shrink-0" style={{ color: 'rgba(245,200,66,0.45)' }} />
                   <FormControl>
                     <Input
                       type="email"
                       placeholder="name@example.com"
                       autoComplete="email"
                       disabled={isSubmitting}
-                      className="h-8 border-none bg-transparent p-0 shadow-none focus-visible:ring-0 text-sm text-white placeholder:text-slate-600"
+                      className="login-mono h-auto border-none bg-transparent p-0 shadow-none focus-visible:ring-0 text-[15px] text-white placeholder:text-slate-500 leading-none"
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage />
                 </div>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center gap-3 space-y-0 rounded-xl px-4 py-3.5 transition-all"
-                style={{ background: 'rgba(245,200,66,0.04)', border: '1px solid rgba(245,200,66,0.14)' }}>
-                <FormLabel className="shrink-0" style={{ color: 'rgba(245,200,66,0.55)' }}>
-                  <Lock className="w-4 h-4" />
-                </FormLabel>
-                <div className="flex-1 min-w-0">
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="패스워드 입력"
-                      autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                      disabled={isSubmitting}
-                      className="h-8 border-none bg-transparent p-0 shadow-none focus-visible:ring-0 text-sm text-white placeholder:text-slate-600"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                  {serverError && (
-                    <p className="text-xs mt-1" style={{ color: '#f87171' }} role="alert">{serverError}</p>
-                  )}
-                </div>
+                <FormMessage className="text-xs pt-1.5 pl-1" style={{ color: '#f87171' }} />
               </FormItem>
             )}
           />
 
+          {/* Password */}
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem className="space-y-0">
+                <div className="field-wrapper flex flex-row items-center gap-3 rounded-xl px-4 py-3.5"
+                  style={{ background: 'rgba(245,200,66,0.05)', border: '1px solid rgba(245,200,66,0.2)' }}>
+                  <FormLabel className="login-label shrink-0 text-xs font-bold tracking-[0.16em] uppercase w-16"
+                    style={{ color: 'rgba(245,200,66,0.65)' }}>
+                    비밀번호
+                  </FormLabel>
+                  <div className="w-px self-stretch" style={{ background: 'rgba(245,200,66,0.15)' }} />
+                  <Lock className="w-4 h-4 shrink-0" style={{ color: 'rgba(245,200,66,0.45)' }} />
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder={mode === 'login' ? '비밀번호 입력' : '6자 이상의 비밀번호'}
+                      autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                      disabled={isSubmitting}
+                      className="h-auto border-none bg-transparent p-0 shadow-none focus-visible:ring-0 text-[15px] text-white placeholder:text-slate-500 leading-none"
+                      {...field}
+                    />
+                  </FormControl>
+                </div>
+                <FormMessage className="text-xs pt-1.5 pl-1" style={{ color: '#f87171' }} />
+              </FormItem>
+            )}
+          />
+
+          {/* Server error banner */}
+          {serverError && (
+            <div className="flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm"
+              style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.22)' }}
+              role="alert">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#f87171' }} />
+              <span style={{ color: '#fca5a5' }}>{serverError}</span>
+            </div>
+          )}
+
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="w-full h-12 mt-1 font-black rounded-xl border-0 text-sm tracking-[0.12em] uppercase"
+            className="w-full h-11 mt-1 font-semibold rounded-xl border-0 text-sm tracking-wide login-label transition-opacity hover:opacity-90"
             style={{
-              background: 'linear-gradient(135deg, #f5c842 0%, #f97316 50%, #e11d48 100%)',
-              backgroundSize: '200% 100%',
-              boxShadow: '0 4px 28px rgba(245,200,66,0.35), 0 0 60px rgba(249,115,22,0.12)',
+              backgroundColor: '#f5c842',
               color: '#1a0800',
-              animation: 'btnShimmer 3s ease infinite',
             }}
           >
             {isSubmitting
@@ -249,7 +262,7 @@ function AuthForm() {
         <div className="flex-1 h-px" style={{ background: 'linear-gradient(to left, transparent, rgba(245,200,66,0.15))' }} />
       </div>
 
-      <p className="text-center text-xs mt-4" style={{ color: 'rgba(255,255,255,0.2)' }}>
+      <p className="text-center text-xs mt-4" style={{ color: 'rgba(255,255,255,0.25)' }}>
         {mode === 'login' ? (
           <>
             처음이신가요?{' '}
@@ -280,6 +293,8 @@ export default function LoginPage() {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
         @keyframes floatBadge {
           0%, 100% { transform: translateY(0); }
           50%       { transform: translateY(-7px); }
@@ -342,10 +357,38 @@ export default function LoginPage() {
         .ticker-scroll { animation: tickerScroll 22s linear infinite; }
         .glow-blob     { animation: glowBlob var(--dur) ease-in-out var(--delay) infinite; }
         .scanline      { animation: scanline 6s linear infinite; }
-        input::placeholder { color: rgba(255,255,255,0.2) !important; }
+
+        /* Typography */
+        .login-page, .login-page * {
+          font-family: 'Syne', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        }
+        .login-page .login-mono,
+        .login-page .font-mono,
+        .login-page input[type="email"] {
+          font-family: 'JetBrains Mono', monospace !important;
+        }
+        .login-heading {
+          font-family: 'Syne', sans-serif !important;
+        }
+        .login-label {
+          font-family: 'Syne', sans-serif !important;
+        }
+
+        /* Input reset */
         .login-page input { background: transparent !important; }
-        .login-page, .login-page * { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important; }
-        .login-page input, .login-page button { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important; }
+        input::placeholder { color: rgba(255,255,255,0.28) !important; }
+
+        /* Focus-within glow for field wrappers */
+        .field-wrapper {
+          transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .field-wrapper:focus-within {
+          border-color: rgba(245,200,66,0.5) !important;
+          box-shadow: 0 0 0 3px rgba(245,200,66,0.08), 0 0 20px rgba(245,200,66,0.1);
+        }
+        .field-wrapper:focus-within svg {
+          color: rgba(245,200,66,0.85) !important;
+        }
       `}</style>
 
       <main className="login-page min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
