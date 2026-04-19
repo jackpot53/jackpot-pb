@@ -79,19 +79,19 @@ describe('computePortfolio', () => {
   ]
 
   it('computes totalValueKrw as sum of all currentValueKrw', () => {
-    const summary = computePortfolio(assets as any, 13_500_000)
+    const summary = computePortfolio(assets as unknown as Parameters<typeof computePortfolio>[0], 13_500_000)
     expect(summary.totalValueKrw).toBe(290_000_000)
   })
 
   it('computes totalValueUsd using fxRateInt (D-17)', () => {
     // fxRateInt = 13_500_000 (1350.0 KRW/USD)
-    const summary = computePortfolio(assets as any, 13_500_000)
+    const summary = computePortfolio(assets as unknown as Parameters<typeof computePortfolio>[0], 13_500_000)
     const expectedUsd = 290_000_000 / (13_500_000 / 10000) // = 290_000_000 / 1350.0
     expect(summary.totalValueUsd).toBeCloseTo(expectedUsd, 0)
   })
 
   it('computes gainLossKrw and overall returnPct', () => {
-    const summary = computePortfolio(assets as any, 13_500_000)
+    const summary = computePortfolio(assets as unknown as Parameters<typeof computePortfolio>[0], 13_500_000)
     expect(summary.gainLossKrw).toBe(45_000_000)  // 290M - 245M
     expect(summary.returnPct).toBeCloseTo(18.37, 1)  // 45M/245M × 100
   })
@@ -104,7 +104,7 @@ describe('aggregateByType', () => {
       { assetType: 'stock_us' as const, currentValueKrw: 40_000_000 },
       { assetType: 'savings' as const, currentValueKrw: 60_000_000 },
     ]
-    const result = aggregateByType(assets as any)
+    const result = aggregateByType(assets as unknown as Parameters<typeof aggregateByType>[0])
     const stockEntry = result.find(r => r.assetType === 'stock_us')!
     const savingsEntry = result.find(r => r.assetType === 'savings')!
     expect(stockEntry.totalValueKrw).toBe(240_000_000)

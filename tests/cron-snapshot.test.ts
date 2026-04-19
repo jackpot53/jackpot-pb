@@ -18,13 +18,13 @@ vi.mock('@/db', () => ({
   },
 }))
 vi.mock('@/db/schema/assets', async (importOriginal) => {
-  const actual = await importOriginal()
+  const actual = await importOriginal<typeof import('@/db/schema/assets')>()
   return {
     ...actual,
   }
 })
 vi.mock('drizzle-orm', async (importOriginal) => {
-  const actual = await importOriginal()
+  const actual = await importOriginal<typeof import('drizzle-orm')>()
   return {
     ...actual,
     and: vi.fn(),
@@ -55,7 +55,7 @@ describe('GET /api/cron/snapshot', () => {
   it('returns 401 when Authorization header is missing', async () => {
     const { GET } = await import('@/app/api/cron/snapshot/route')
     const request = new Request('http://localhost/api/cron/snapshot')
-    const response = await GET(request as any)
+    const response = await GET(request as Parameters<typeof GET>[0])
     expect(response.status).toBe(401)
   })
 
@@ -64,7 +64,7 @@ describe('GET /api/cron/snapshot', () => {
     const request = new Request('http://localhost/api/cron/snapshot', {
       headers: { Authorization: 'Bearer wrongtoken' },
     })
-    const response = await GET(request as any)
+    const response = await GET(request as Parameters<typeof GET>[0])
     expect(response.status).toBe(401)
   })
 
@@ -73,7 +73,7 @@ describe('GET /api/cron/snapshot', () => {
     const request = new Request('http://localhost/api/cron/snapshot', {
       headers: { Authorization: 'Bearer testSecret' },
     })
-    const response = await GET(request as any)
+    const response = await GET(request as Parameters<typeof GET>[0])
     expect(response.status).toBe(200)
   })
 })

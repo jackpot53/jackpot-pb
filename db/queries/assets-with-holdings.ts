@@ -3,14 +3,15 @@ import { db } from '@/db'
 import { assets } from '@/db/schema/assets'
 import { holdings } from '@/db/schema/holdings'
 import { eq, sql } from 'drizzle-orm'
+import type { AssetType, Currency } from '@/lib/types/asset'
 
 export interface AssetWithHolding {
   assetId: string
   name: string
   ticker: string | null
-  assetType: 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'fund' | 'savings' | 'real_estate' | 'insurance' | 'precious_metal'
+  assetType: AssetType
   priceType: 'live' | 'manual'
-  currency: 'KRW' | 'USD'
+  currency: Currency
   accountType: 'isa' | 'irp' | 'pension' | 'dc' | 'brokerage' | null
   brokerageId: string | null
   owner: string | null

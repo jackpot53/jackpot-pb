@@ -8,6 +8,7 @@ import {
 import { cn } from '@/lib/utils'
 import type { AssetPerformance } from '@/lib/portfolio/portfolio'
 import { AssetLogo } from '@/components/app/asset-logo'
+import type { AssetType } from '@/lib/types/asset'
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -51,7 +52,7 @@ function SignIcon({ bps }: { bps: number }) {
 // ── computation ─────────────────────────────────────────────────────────────
 
 interface TypeStat {
-  assetType: string
+  assetType: AssetType
   weightedChangeBps: number
   dailyChangeKrw: number
   totalValueKrw: number
@@ -60,7 +61,7 @@ interface TypeStat {
 interface TopMover {
   name: string
   ticker: string | null
-  assetType: string
+  assetType: AssetType
   dailyChangeBps: number
   dailyChangeKrw: number
 }
@@ -80,7 +81,7 @@ function computeReport(performances: AssetPerformance[]) {
     : 0
 
   // Per-type stats
-  const typeMap = new Map<string, { sumWeighted: number; sumValue: number; sumChangeKrw: number }>()
+  const typeMap = new Map<AssetType, { sumWeighted: number; sumValue: number; sumChangeKrw: number }>()
   for (const a of live) {
     const prev = typeMap.get(a.assetType) ?? { sumWeighted: 0, sumValue: 0, sumChangeKrw: 0 }
     const changeKrw = a.currentValueKrw * (a.dailyChangeBps! / 10000)
@@ -372,7 +373,7 @@ export function TodayReport({ performances }: { performances: AssetPerformance[]
                       <AssetLogo
                         ticker={m.ticker}
                         name={m.name}
-                        assetType={m.assetType as any}
+                        assetType={m.assetType}
                         size={36}
                       />
                       <div className="flex-1 min-w-0">

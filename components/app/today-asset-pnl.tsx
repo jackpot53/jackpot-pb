@@ -47,7 +47,7 @@ export function TodayAssetPnl({ performances }: { performances: AssetPerformance
               <AssetLogo
                 ticker={a.ticker}
                 name={a.name}
-                assetType={a.assetType as any}
+                assetType={a.assetType}
                 size={36}
               />
               <div className="flex-1 min-w-0">

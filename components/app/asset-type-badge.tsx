@@ -1,6 +1,5 @@
 import { TrendingUp, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ShieldCheck, Gem, CreditCard, Users, ScrollText } from 'lucide-react'
-
-type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal' | 'cma' | 'contribution' | 'bond'
+import type { AssetType } from '@/lib/types/asset'
 
 const BADGE_MAP: Record<AssetType, { label: string; icon: React.ElementType; style: string }> = {
   stock_kr:      { label: '주식 (국내)', icon: TrendingUp,  style: 'bg-blue-600 text-white'    },

@@ -1,5 +1,5 @@
 'use client'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useTransition, useState, useEffect, useRef } from 'react'
@@ -23,9 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { TransactionFormValues, TransactionActionError } from '@/app/actions/transactions'
-
-type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal' | 'cma'
-type Currency = 'KRW' | 'USD'
+import type { AssetType, Currency } from '@/lib/types/asset'
 
 const STOCK_ETF_TYPES: AssetType[] = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us']
 
@@ -92,9 +90,8 @@ export function TransactionForm({
   const isUsAsset = assetType === 'stock_us' || assetType === 'etf_us'
 
   const schema = buildSchema(assetType)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const form = useForm<TransactionFormValues>({
-    resolver: zodResolver(schema) as any,
+    resolver: zodResolver(schema) as Resolver<TransactionFormValues>,
     defaultValues: {
       type: 'buy',
       transactionDate: new Date().toISOString().split('T')[0],

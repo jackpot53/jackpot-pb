@@ -14,9 +14,7 @@ import { AssetLogo } from '@/components/app/asset-logo'
 import { cn } from '@/lib/utils'
 import type { TransactionWithAsset } from '@/db/queries/transactions'
 import { AnimatedLogo } from '@/components/app/animated-logo'
-
-type AssetType = 'stock_kr' | 'stock_us' | 'etf_kr' | 'etf_us' | 'crypto' | 'savings' | 'real_estate' | 'fund' | 'insurance' | 'precious_metal' | 'cma'
-type Currency = 'KRW' | 'USD'
+import type { AssetType, Currency } from '@/lib/types/asset'
 
 interface AssetOption {
   id: string
