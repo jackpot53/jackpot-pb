@@ -435,6 +435,7 @@ export function NewAssetForm({ onSubmit }: {
   const savingsKind = form.watch('savingsKind')
   const insuranceType = form.watch('insuranceType')
   const insuranceCategory = form.watch('insuranceCategory')
+  const depositStartDate = form.watch('depositStartDate')
 
   // contribution: accountType 선택 시 종목명 자동 세팅
   useEffect(() => {
@@ -1270,8 +1271,7 @@ export function NewAssetForm({ onSubmit }: {
 
                 {/* 연금보험 */}
                 <div className="px-4 py-3 border-b border-border">
-                  <p className="font-semibold mb-1 text-foreground/80">연금보험</p>
-                  <p className="text-muted-foreground mb-2 leading-relaxed">노후를 대비해 일정 기간 보험료를 납입한 후, 일정 나이가 되면 매달 연금 형태로 받는 보험입니다.</p>
+                  <p className="mb-2 leading-relaxed flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5 shrink-0 text-emerald-400" /><span className="font-semibold text-foreground/80">연금보험</span><span className="text-muted-foreground"> — 노후를 대비해 일정 기간 보험료를 납입한 후, 일정 나이가 되면 매달 연금 형태로 받는 보험입니다.</span></p>
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="border-b border-border">
@@ -1300,8 +1300,7 @@ export function NewAssetForm({ onSubmit }: {
 
                 {/* 변액보험 */}
                 <div className="px-4 py-3 border-b border-border">
-                  <p className="font-semibold mb-1 text-foreground/80">변액보험</p>
-                  <p className="text-muted-foreground mb-2 leading-relaxed">납입 보험료를 펀드에 투자하여 운용 실적에 따라 수익이 달라지는 보험입니다.</p>
+                  <p className="mb-2 leading-relaxed flex items-center gap-1.5"><BarChart2 className="h-3.5 w-3.5 shrink-0 text-orange-400" /><span className="font-semibold text-foreground/80">변액보험</span><span className="text-muted-foreground"> — 납입 보험료를 펀드에 투자하여 운용 실적에 따라 수익이 달라지는 보험입니다.</span></p>
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="border-b border-border">
@@ -1330,8 +1329,7 @@ export function NewAssetForm({ onSubmit }: {
 
                 {/* 저축보험 */}
                 <div className="px-4 py-3 border-b border-border">
-                  <p className="font-semibold mb-1 text-foreground/80">저축보험</p>
-                  <p className="text-muted-foreground mb-2 leading-relaxed">은행 적금처럼 일정 기간 납입 후 만기에 목돈을 받는 보험입니다.</p>
+                  <p className="mb-2 leading-relaxed flex items-center gap-1.5"><Banknote className="h-3.5 w-3.5 shrink-0 text-cyan-400" /><span className="font-semibold text-foreground/80">저축보험</span><span className="text-muted-foreground"> — 은행 적금처럼 일정 기간 납입 후 만기에 목돈을 받는 보험입니다.</span></p>
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="border-b border-border">
@@ -1694,8 +1692,7 @@ export function NewAssetForm({ onSubmit }: {
                     <span className="ml-auto text-xs font-normal text-muted-foreground">선택</span>
                   </p>
                   {(() => {
-                    const depositDate = form.watch('depositStartDate')
-                    const years = getDividendYears(depositDate)
+                    const years = getDividendYears(depositStartDate)
                     if (years.length === 0) {
                       return (
                         <p className="text-xs text-muted-foreground text-center py-2">
