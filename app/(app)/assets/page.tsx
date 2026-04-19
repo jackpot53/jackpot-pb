@@ -26,12 +26,6 @@ export default async function AssetsPage() {
           <div className="absolute bottom-0 left-1/3 w-80 h-48 rounded-full bg-[#FEE500]/10 blur-3xl" />
           <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
 
-          {/* 펄스 링 */}
-          <div className="absolute top-1/2 right-16 -translate-y-1/2">
-            <div className="hero-ring-1 absolute inset-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/30" />
-            <div className="hero-ring-2 absolute inset-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/20" />
-            <div className="hero-ring-3 absolute inset-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/10" />
-          </div>
 
           {/* AnimatedLogo — 신나게 튀어오르는 애니메이션 */}
           <style>{`
@@ -47,18 +41,6 @@ export default async function AssetsPage() {
             <AnimatedLogo size={108} />
           </div>
 
-          {/* 실시간 바 차트 */}
-          <div className="absolute right-6 bottom-0 flex items-end gap-[3px] h-[72px] opacity-20">
-            <div className="hero-bar-1 w-2 bg-white rounded-t-sm" style={{ height: '28%' }} />
-            <div className="hero-bar-2 w-2 bg-white rounded-t-sm" style={{ height: '55%' }} />
-            <div className="hero-bar-3 w-2 bg-white rounded-t-sm" style={{ height: '40%' }} />
-            <div className="hero-bar-4 w-2 bg-white rounded-t-sm" style={{ height: '70%' }} />
-            <div className="hero-bar-5 w-2 bg-white rounded-t-sm" style={{ height: '35%' }} />
-            <div className="hero-bar-6 w-2 bg-white rounded-t-sm" style={{ height: '60%' }} />
-            <div className="hero-bar-7 w-2 bg-white rounded-t-sm" style={{ height: '45%' }} />
-            <div className="hero-bar-8 w-2 bg-white rounded-t-sm" style={{ height: '80%' }} />
-            <div className="hero-bar-9 w-2 bg-white rounded-t-sm" style={{ height: '30%' }} />
-          </div>
         </div>
         <div className="relative flex items-start justify-between gap-6">
           <div className="space-y-2">
