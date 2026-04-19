@@ -14,17 +14,17 @@ import type { NewsItem } from '@/app/api/market-news/route'
 // ── helpers ────────────────────────────────────────────────────────────────
 
 const ASSET_TYPE_META: Record<string, { label: string; icon: LucideIcon; color: string; bg: string }> = {
-  stock_kr:      { label: '국내주식', icon: TrendingUp,  color: 'text-blue-400',   bg: 'bg-blue-500/15' },
-  stock_us:      { label: '미국주식', icon: TrendingUp,  color: 'text-indigo-400', bg: 'bg-indigo-500/15' },
-  etf_kr:        { label: '국내ETF',  icon: BarChart2,   color: 'text-emerald-400',bg: 'bg-emerald-500/15' },
-  etf_us:        { label: '미국ETF',  icon: BarChart2,   color: 'text-teal-400',   bg: 'bg-teal-500/15' },
-  crypto:        { label: '코인',     icon: Bitcoin,     color: 'text-orange-400', bg: 'bg-orange-500/15' },
-  fund:          { label: '펀드',     icon: BookOpen,    color: 'text-violet-400', bg: 'bg-violet-500/15' },
-  savings:       { label: '예적금',   icon: PiggyBank,   color: 'text-yellow-400', bg: 'bg-yellow-500/15' },
-  real_estate:   { label: '부동산',   icon: Building2,   color: 'text-rose-400',   bg: 'bg-rose-500/15' },
-  insurance:     { label: '보험',     icon: ShieldCheck, color: 'text-cyan-400',   bg: 'bg-cyan-500/15' },
-  precious_metal:{ label: '금/은',    icon: Gem,         color: 'text-amber-400',  bg: 'bg-amber-500/15' },
-  cma:           { label: 'CMA',      icon: CreditCard,  color: 'text-cyan-300',   bg: 'bg-cyan-500/15' },
+  stock_kr:      { label: '국내주식', icon: TrendingUp,  color: 'text-blue-600',   bg: 'bg-blue-500/10' },
+  stock_us:      { label: '미국주식', icon: TrendingUp,  color: 'text-indigo-600', bg: 'bg-indigo-500/10' },
+  etf_kr:        { label: '국내ETF',  icon: BarChart2,   color: 'text-emerald-600',bg: 'bg-emerald-500/10' },
+  etf_us:        { label: '미국ETF',  icon: BarChart2,   color: 'text-teal-600',   bg: 'bg-teal-500/10' },
+  crypto:        { label: '코인',     icon: Bitcoin,     color: 'text-orange-600', bg: 'bg-orange-500/10' },
+  fund:          { label: '펀드',     icon: BookOpen,    color: 'text-violet-600', bg: 'bg-violet-500/10' },
+  savings:       { label: '예적금',   icon: PiggyBank,   color: 'text-yellow-700', bg: 'bg-yellow-500/10' },
+  real_estate:   { label: '부동산',   icon: Building2,   color: 'text-rose-600',   bg: 'bg-rose-500/10' },
+  insurance:     { label: '보험',     icon: ShieldCheck, color: 'text-cyan-700',   bg: 'bg-cyan-500/10' },
+  precious_metal:{ label: '금/은',    icon: Gem,         color: 'text-amber-600',  bg: 'bg-amber-500/10' },
+  cma:           { label: 'CMA',      icon: CreditCard,  color: 'text-cyan-700',   bg: 'bg-cyan-500/10' },
 }
 
 const ASSET_TYPE_LABEL: Record<string, string> = Object.fromEntries(
@@ -123,10 +123,10 @@ function computeReport(performances: AssetPerformance[]) {
 function Num({ children, up, dn }: { children: React.ReactNode; up?: boolean; dn?: boolean }) {
   return (
     <span className={cn(
-      'inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-bold border mx-0.5 align-middle',
-      up && 'bg-red-500/20 text-red-300 border-red-500/30',
-      dn && 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-      !up && !dn && 'bg-white/10 text-white border-white/20',
+      'inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-bold border mx-0.5 align-middle',
+      up && 'bg-rose-50 text-rose-600 border-rose-200',
+      dn && 'bg-blue-50 text-blue-600 border-blue-200',
+      !up && !dn && 'bg-muted text-foreground border-border',
     )}>
       {children}
     </span>
@@ -177,10 +177,10 @@ function generateNarrative(
     const md = m.dailyChangeBps < 0
     return (
       <span className={cn(
-        'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] font-bold border mx-0.5 align-middle',
-        mu && 'bg-red-500/15 text-red-300 border-red-500/25',
-        md && 'bg-blue-500/15 text-blue-300 border-blue-500/25',
-        !mu && !md && 'bg-white/10 text-white/70 border-white/15',
+        'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold border mx-0.5 align-middle',
+        mu && 'bg-rose-50 text-rose-600 border-rose-200',
+        md && 'bg-blue-50 text-blue-600 border-blue-200',
+        !mu && !md && 'bg-muted text-muted-foreground border-border',
       )}>
         {m.name}
         <span className="opacity-70">{fmtPct(m.dailyChangeBps)}</span>
@@ -202,10 +202,10 @@ function generateNarrative(
         )}
         {gainers.length === 1 && <>이(가)</>}
         {' '}
-        <span className="text-red-300/80 font-semibold">
+        <span className="text-rose-600 font-semibold">
           {up ? `+${fmtKrw(top.dailyChangeKrw)}` : fmtKrw(top.dailyChangeKrw)}
         </span>
-        {contrib >= 20 && <span className="text-white/40"> (전체 변동의 {contrib}%)</span>}
+        {contrib >= 20 && <span className="text-muted-foreground"> (전체 변동의 {contrib}%)</span>}
         {' '}상승을 이끌었습니다.
       </span>
     )
@@ -223,10 +223,10 @@ function generateNarrative(
         )}
         {losers.length === 1 && <>은(는)</>}
         {' '}
-        <span className="text-blue-300/80 font-semibold">
+        <span className="text-blue-600 font-semibold">
           {fmtKrw(top.dailyChangeKrw)}
         </span>
-        {contrib >= 20 && <span className="text-white/40"> (전체 변동의 {contrib}%)</span>}
+        {contrib >= 20 && <span className="text-muted-foreground"> (전체 변동의 {contrib}%)</span>}
         {' '}하락했습니다.
       </span>
     )
@@ -239,7 +239,7 @@ function generateNarrative(
     if (bestType && Math.abs(bestType.weightedChangeBps) > 30) {
       sentences.push(
         <span key="type">
-          전체적으로 <span className="text-white/70 font-semibold">{bestLabel}</span> 섹터가{' '}
+          전체적으로 <span className="text-foreground font-semibold">{bestLabel}</span> 섹터가{' '}
           <Num up={bestType.weightedChangeBps > 0} dn={bestType.weightedChangeBps < 0}>
             {fmtPct(bestType.weightedChangeBps)}
           </Num>
@@ -254,7 +254,7 @@ function generateNarrative(
   return (
     <div className="flex flex-col gap-1.5">
       {sentences.map((s, i) => (
-        <p key={i} className="text-xs text-white/55 leading-relaxed">{s}</p>
+        <p key={i} className="text-xs text-muted-foreground leading-relaxed">{s}</p>
       ))}
     </div>
   )
@@ -312,8 +312,8 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
         <div className="flex items-center gap-2 shrink-0">
           <div className={cn(
             'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold',
-            isUp && 'bg-red-500/15 text-red-400',
-            isDown && 'bg-blue-500/15 text-blue-400',
+            isUp && 'bg-rose-50 text-rose-600',
+            isDown && 'bg-blue-50 text-blue-600',
             !isUp && !isDown && 'bg-muted text-muted-foreground',
           )}>
             <SignIcon bps={portfolioChangeBps} />
@@ -331,7 +331,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
           <div className="border-t border-border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {/* 자산별 등락 */}
             <div className="px-4 sm:px-6 py-4 border-b sm:border-b-0 sm:border-r border-border">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-[11px] font-semibold text-muted-foreground mb-3">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-xs font-semibold text-muted-foreground mb-3">
                 <BarChart2 className="h-3 w-3" />
                 <span className="font-bold">자산별 등락</span>
               </div>
@@ -342,7 +342,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                   const meta = ASSET_TYPE_META[t.assetType]
                   const Icon = meta?.icon ?? TrendingUp
                   return (
-                    <div key={t.assetType} className="flex items-center gap-2 sm:gap-3 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/20">
+                    <div key={t.assetType} className="flex items-center gap-2 sm:gap-3 px-3 py-2 rounded-xl bg-muted/50 border border-border">
                       <span className={cn(
                         'inline-flex items-center justify-center w-6 h-6 rounded-full shrink-0',
                         meta?.bg ?? 'bg-muted',
@@ -356,7 +356,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                         <div
                           className={cn(
                             'h-full rounded-full transition-all',
-                            up ? 'bg-red-400' : dn ? 'bg-blue-400' : 'bg-muted-foreground/30',
+                            up ? 'bg-rose-500' : dn ? 'bg-blue-500' : 'bg-muted-foreground/30',
                           )}
                           style={{ width: `${Math.min(100, Math.abs(t.weightedChangeBps) / 3)}%` }}
                         />
@@ -364,13 +364,13 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                       <div className="text-right shrink-0">
                         <span className={cn(
                           'text-xs font-semibold',
-                          up && 'text-red-400',
-                          dn && 'text-blue-400',
+                          up && 'text-rose-600',
+                          dn && 'text-blue-600',
                           !up && !dn && 'text-muted-foreground',
                         )}>
                           {fmtPct(t.weightedChangeBps)}
                         </span>
-                        <span className="hidden sm:inline text-[10px] text-muted-foreground ml-1.5">
+                        <span className="hidden sm:inline text-xs text-muted-foreground ml-1.5">
                           {t.dailyChangeKrw >= 0 ? '+' : ''}{fmtKrw(t.dailyChangeKrw)}
                         </span>
                       </div>
@@ -382,7 +382,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
 
             {/* 주요 종목 */}
             <div className="px-4 sm:px-6 py-4 border-b lg:border-b-0 lg:border-r border-border">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-[11px] font-semibold text-muted-foreground mb-3">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-xs font-semibold text-muted-foreground mb-3">
                 <TrendingUp className="h-3 w-3" />
                 <span className="font-bold">주요 종목</span>
               </div>
@@ -391,7 +391,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                   const up = m.dailyChangeBps > 0
                   const dn = m.dailyChangeBps < 0
                   return (
-                    <div key={m.name} className="flex items-center gap-3 px-3 py-2 rounded-xl border border-white/20 bg-white/[0.04] hover:bg-white/[0.07] transition-colors">
+                    <div key={m.name} className="flex items-center gap-3 px-3 py-2 rounded-xl border border-border bg-muted/30 hover:bg-muted/60 transition-colors">
                       <AssetLogo
                         ticker={m.ticker}
                         name={m.name}
@@ -400,14 +400,14 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-xs truncate leading-tight font-bold">{m.name}</p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                        <p className="text-xs text-muted-foreground mt-0.5">
                           {m.dailyChangeKrw >= 0 ? '+' : ''}{fmtKrw(m.dailyChangeKrw)}
                         </p>
                       </div>
                       <span className={cn(
                         'text-sm font-bold shrink-0',
-                        up && 'text-red-400',
-                        dn && 'text-blue-400',
+                        up && 'text-rose-600',
+                        dn && 'text-blue-600',
                         !up && !dn && 'text-muted-foreground',
                       )}>
                         {fmtPct(m.dailyChangeBps)}
@@ -420,7 +420,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
 
             {/* 증시 뉴스 */}
             <div className="px-4 sm:px-6 py-4 sm:col-span-2 lg:col-span-1">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-[11px] font-semibold text-muted-foreground mb-3">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-xs font-semibold text-muted-foreground mb-3">
                 <Newspaper className="h-3 w-3" />
                 <span className="font-bold">증시 뉴스</span>
               </div>
@@ -431,7 +431,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                   ))}
                 </div>
               ) : news.length > 0 ? (
-                <div className="divide-y divide-white/20">
+                <div className="divide-y divide-border">
                   {news.map((item, i) => (
                     <a
                       key={i}
@@ -440,11 +440,11 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
                       rel="noopener noreferrer"
                       className="flex items-start gap-2 py-2 group"
                     >
-                      <span className="text-[11px] font-bold text-white/40 shrink-0 w-4 pt-px">{i + 1}</span>
-                      <span className="text-xs text-white/75 group-hover:text-white leading-relaxed flex-1 transition-colors">
+                      <span className="text-xs font-bold text-muted-foreground shrink-0 w-4 pt-px">{i + 1}</span>
+                      <span className="text-xs text-foreground/80 group-hover:text-foreground leading-relaxed flex-1 transition-colors">
                         {item.title}
                       </span>
-                      <ExternalLink className="h-3 w-3 shrink-0 text-white/30 group-hover:text-white/70 mt-px transition-colors" />
+                      <ExternalLink className="h-3 w-3 shrink-0 text-muted-foreground group-hover:text-foreground/70 mt-px transition-colors" />
                     </a>
                   ))}
                 </div>
@@ -455,7 +455,7 @@ export function TodayReport({ performances, news: serverNews }: { performances: 
           </div>
 
           {staleCount > 0 && (
-            <div className="px-4 sm:px-6 py-2 border-t border-border bg-amber-500/10 flex items-center gap-1.5 text-xs text-amber-400">
+            <div className="px-4 sm:px-6 py-2 border-t border-border bg-amber-50 flex items-center gap-1.5 text-xs text-amber-700">
               <TriangleAlert className="h-3.5 w-3.5 shrink-0" />
               {staleCount}개 종목 시세가 오래됐습니다. 수익률이 부정확할 수 있습니다.
             </div>

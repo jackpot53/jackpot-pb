@@ -27,6 +27,7 @@ const AssetGroupChart = dynamic(
   { ssr: false, loading: () => <div className="h-full w-full animate-pulse bg-muted rounded-xl" /> }
 )
 import { AssetLogo } from '@/components/app/asset-logo'
+import { LivePrice } from '@/components/app/live-price'
 import type { CandlestickPoint } from '@/components/app/candlestick-chart'
 const CandlestickChart = dynamic(
   () => import('@/components/app/candlestick-chart').then(m => ({ default: m.CandlestickChart })),
@@ -352,11 +353,11 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
     : null
 
   const accountBadge = mergedCount > 1 ? (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/10 text-foreground/60 ring-1 ring-white/20">
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground ring-1 ring-border">
       {mergedCount}계좌
     </span>
   ) : asset.accountType && ACCOUNT_TYPE_LABELS[asset.accountType] ? (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/10 text-foreground/60 ring-1 ring-white/20">
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground ring-1 ring-border">
       {ACCOUNT_TYPE_LABELS[asset.accountType]}
     </span>
   ) : null
@@ -380,7 +381,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
     const isDueSoon = days >= 0 && days <= 30
     const label = isExpired ? '만기 경과' : days === 0 ? 'D-Day' : `D-${days}`
     return (
-      <span className={`shrink-0 inline-flex items-center text-[11px] font-semibold px-1.5 py-0.5 rounded-full tabular-nums ${isExpired ? 'bg-white/10 text-foreground/50' : isDueSoon ? 'bg-orange-500/15 text-orange-400' : 'bg-emerald-500/15 text-emerald-400'}`}>
+      <span className={`shrink-0 inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded-full tabular-nums ${isExpired ? 'bg-muted text-muted-foreground' : isDueSoon ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-700'}`}>
         <span className="font-normal opacity-70">만기일 {asset.maturityDate.replace(/-/g, '.')}</span>
         <span className="opacity-40 mx-0.5">·</span>
         <span>{label}</span>
@@ -392,10 +393,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
     <div className="flex-1 min-w-0">
       {/* Row1: 이름 + 계좌 badge + 만기 배지 */}
       <div className="flex items-center gap-2 min-w-0 flex-wrap">
-        <span className="inline-block">
-          <span className="text-sm font-semibold text-foreground leading-snug">{asset.name}</span>
-          <span className="block h-[2px] w-full rounded-full" style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #f59e0b, #10b981)', backgroundSize: '200% 100%', animation: 'shimmer-underline 3s linear infinite' }} />
-        </span>
+        <span className="text-sm font-semibold text-foreground leading-snug">{asset.name}</span>
         {accountBadge}
         {maturityBadge}
       </div>
@@ -430,7 +428,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
               )
             })()}
           {isSavings && asset.interestRateBp != null && asset.interestRateBp > 0 && (
-            <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-emerald-400">연 {(asset.interestRateBp / 10000).toFixed(2)}%</span>
+            <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-emerald-600">연{(asset.interestRateBp / 10000).toFixed(2)}%</span>
             {asset.compoundType && (
               <span className="ml-1 text-xs px-1.5 py-0.5 rounded-md font-medium text-white" style={{
                 backgroundColor: asset.compoundType === 'simple' ? '#3b82f6' : '#10b981'
@@ -441,7 +439,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
             </>
           )}
           {isInsurance && asset.insuranceDetails?.expectedReturnRateBp != null && asset.insuranceDetails.expectedReturnRateBp > 0 && (
-            <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-emerald-400">연 {(asset.insuranceDetails.expectedReturnRateBp / 10000).toFixed(2)}%</span>
+            <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-emerald-600">연{(asset.insuranceDetails.expectedReturnRateBp / 10000).toFixed(2)}%</span>
             {asset.insuranceDetails.compoundType && (
               <span className="ml-1 text-xs px-1.5 py-0.5 rounded-md font-medium text-white" style={{
                 backgroundColor: asset.insuranceDetails.compoundType === 'simple' ? '#3b82f6' : '#10b981'
@@ -456,23 +454,26 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
           )}
         </div>
       )}
-      {/* Row3: 현재가 · 오늘 등락률 */}
+      {/* Row3: 현재가 · 오늘 등락률 (KIS WS live overlay when enabled) */}
       {!isSavings && (asset.currentPriceKrw > 0 || dailyChangePct !== null) && (
         <div className="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-border/30 text-xs flex-wrap">
-          {asset.currentPriceKrw > 0 && (
-            <span className="tabular-nums font-bold">
-              <span className="font-normal text-muted-foreground">현재가</span>{' '}
-              <span className="text-foreground">{asset.currentPriceUsd != null ? formatUsd(asset.currentPriceUsd) : formatKrw(asset.currentPriceKrw)}</span>
+          {asset.currentPriceKrw > 0 ? (
+            <span className="tabular-nums font-bold inline-flex items-center gap-2">
+              <span className="font-normal text-muted-foreground">현재가</span>
+              <LivePrice
+                ticker={asset.ticker}
+                assetType={asset.assetType}
+                fallbackPriceKrw={asset.currentPriceKrw}
+                fallbackPriceUsd={asset.currentPriceUsd}
+                fallbackChangePct={dailyChangePct}
+                changeClassName="ml-1"
+              />
             </span>
-          )}
-          {dailyChangePct !== null && (
-            <>
-              {asset.currentPriceKrw > 0 && <span className="text-border/60">|</span>}
-              <span className={`tabular-nums font-bold ${dailyChangePct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                <span className="font-normal text-muted-foreground">오늘</span>{' '}
-                {dailyChangePct >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
-              </span>
-            </>
+          ) : dailyChangePct !== null && (
+            <span className={`tabular-nums font-bold ${dailyChangePct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+              <span className="font-normal text-muted-foreground">오늘</span>{' '}
+              {dailyChangePct >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
+            </span>
           )}
         </div>
       )}
@@ -625,10 +626,7 @@ function AssetGridCard({ asset, sparklineData, lineData }: {
 
       {/* 종목명 + 티커 */}
       <div className="min-w-0 flex flex-col gap-1">
-        <span className="inline-block">
-          <span className="text-sm font-semibold text-foreground leading-snug">{asset.name}</span>
-          <span className="block h-[2px] w-full rounded-full" style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899, #f59e0b, #10b981)', backgroundSize: '200% 100%', animation: 'shimmer-underline 3s linear infinite' }} />
-        </span>
+        <span className="text-sm font-semibold text-foreground leading-snug">{asset.name}</span>
       </div>
 
       {/* 배지: 증권사 · 계좌 · 소유주 */}
@@ -715,7 +713,7 @@ function SummaryBar({ assets }: { assets: AssetPerformance[] }) {
       <div className="flex items-baseline gap-1">
         <span className="text-xs text-muted-foreground">손익</span>
         {hasAnyValue && totalCost > 0 ? (
-          <span className={`font-semibold ${totalProfit >= 0 ? 'text-red-400' : 'text-blue-400'}`}>
+          <span className={`font-semibold ${totalProfit >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>
             {totalProfit >= 0 ? '+' : ''}{formatKrw(totalProfit)}
             {totalReturnPct !== null && (
               <span className="text-xs ml-1 opacity-80">{formatReturn(totalReturnPct)}</span>
@@ -774,14 +772,14 @@ function AssetCardList({ assets, title, sparklines, lineDataMap }: {
               <span className="text-muted-foreground">수익금</span>
               {hasAnyValue && totalCost > 0 ? (
                 <>
-                  <span className={`font-semibold tabular-nums ${totalProfit >= 0 ? 'text-red-400' : 'text-blue-400'}`}>
+                  <span className={`font-semibold tabular-nums ${totalProfit >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>
                     {totalProfit >= 0 ? '+' : ''}{formatKrw(totalProfit)}
                   </span>
                   {totalReturnPct !== null && (
                     <>
                       <span className="text-muted-foreground/40">|</span>
                       <span className="text-muted-foreground">수익률</span>
-                      <span className={`font-semibold tabular-nums ${totalReturnPct >= 0 ? 'text-red-400' : 'text-blue-400'}`}>
+                      <span className={`font-semibold tabular-nums ${totalReturnPct >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>
                         {formatReturn(totalReturnPct)}
                       </span>
                     </>
@@ -846,7 +844,7 @@ function CollapsibleChart({ assets, sparklines, monthlyData, annualData, dailyDa
       >
         <div className="flex items-center gap-2">
           <span>차트</span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-medium text-white/70 border border-white/30">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-xs font-medium text-muted-foreground border border-border">
             <HelpCircle className="h-2.5 w-2.5 shrink-0" />
             일간 · 월간 · 연간 총 수익 현황
           </span>
@@ -955,34 +953,34 @@ export function SummaryCards({ grouped, performances, valueCandles, showTypeStri
         <FloatingLogos performances={performances} />
         <div className="relative flex items-stretch gap-10 flex-wrap">
           <div>
-            <p className="text-[11px] font-medium text-foreground/50 uppercase tracking-widest mb-2">총 투자</p>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2">총 투자</p>
             <p className="text-3xl font-bold tabular-nums">{grandTotalCost > 0 ? formatKrw(animatedCost) : '—'}</p>
-            <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-white/[0.07] text-foreground/50 text-xs">
+            <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs">
               <PiggyBank className="h-3 w-3" />투자한 원금 합계
             </span>
           </div>
           {grandHasValue && (
             <>
-              <div className="w-px bg-white/20 self-stretch" />
+              <div className="w-px bg-border self-stretch" />
               <div>
-                <p className="text-[11px] font-medium text-foreground/50 uppercase tracking-widest mb-2">평가금액</p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2">평가금액</p>
                 <p className="text-3xl font-bold tabular-nums">{formatKrw(animatedValue)}</p>
-                <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-white/[0.07] text-foreground/50 text-xs">
+                <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs">
                   <BarChart2 className="h-3 w-3" />현재 시세 기준 총 자산
                 </span>
               </div>
-              <div className="w-px bg-white/20 self-stretch" />
+              <div className="w-px bg-border self-stretch" />
               <div className="text-right">
-                <p className="text-[11px] font-medium text-foreground/50 uppercase tracking-widest mb-2">평가손익</p>
-                <p className={`text-3xl font-bold tabular-nums ${grandProfit >= 0 ? 'text-red-400' : 'text-blue-400'}`}>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2">평가손익</p>
+                <p className={`text-3xl font-bold tabular-nums ${grandProfit >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>
                   {grandProfit >= 0 ? '+' : '-'}{formatKrw(animatedProfit)}
                 </p>
                 {grandReturnPct !== null && (
                   <div className="flex items-center justify-end gap-2 mt-1">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.07] text-foreground/50 text-xs">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs">
                       <TrendingUp className="h-3 w-3" />원금 대비 수익금
                     </span>
-                    <p className={`text-sm font-semibold ${grandProfit >= 0 ? 'text-red-400' : 'text-blue-400'}`}>
+                    <p className={`text-sm font-semibold ${grandProfit >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>
                       {formatReturn(grandReturnPct)}
                     </p>
                   </div>
@@ -990,9 +988,9 @@ export function SummaryCards({ grouped, performances, valueCandles, showTypeStri
               </div>
               {valueCandles && valueCandles.length > 0 && (
                 <>
-                  <div className="w-px bg-white/20 self-stretch" />
+                  <div className="w-px bg-border self-stretch" />
                   <div className="ml-auto flex flex-col justify-between min-w-0">
-                    <p className="text-[11px] font-medium text-foreground/50 uppercase tracking-widest mb-1">총 자산 추이</p>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-1">총 자산 추이</p>
                     <div className="w-[220px] h-[100px]">
                       <CandlestickChart data={valueCandles} />
                     </div>
@@ -1023,17 +1021,17 @@ export function SummaryCards({ grouped, performances, valueCandles, showTypeStri
                 <span className="text-xs text-muted-foreground">{assets.length}종목</span>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-[10px] font-medium text-muted-foreground shrink-0">평가금</span>
+                <span className="text-xs font-medium text-muted-foreground shrink-0">평가금</span>
                 <span className="text-base font-bold tabular-nums text-foreground">{hasValue ? formatKrw(totalValue) : totalCost > 0 ? formatKrw(totalCost) : '—'}</span>
               </div>
               {hasValue && valuedCostInType > 0 ? (
                 <div className={`text-xs font-semibold tabular-nums flex items-center gap-1 ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                  <span className="text-[10px] font-medium text-muted-foreground">수익금</span>
+                  <span className="text-xs font-medium text-muted-foreground">수익금</span>
                   <span>{profit >= 0 ? '+' : ''}{formatKrw(profit)}</span>
                   {returnPct !== null && (
                     <>
                       <span className="text-border/60">|</span>
-                      <span className="text-[10px] font-medium text-muted-foreground">수익률</span>
+                      <span className="text-xs font-medium text-muted-foreground">수익률</span>
                       <span>{formatReturn(returnPct)}</span>
                     </>
                   )}
@@ -1207,7 +1205,7 @@ function AssetFilter({
                   <>
                     <AssetTypeBadge assetType={type as AssetPerformance['assetType']} />
                     {type === 'fund' && (
-                      <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
                         <HelpCircle className="h-3 w-3" />
                         1일 1회 기준가 갱신
                       </span>

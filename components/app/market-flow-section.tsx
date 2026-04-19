@@ -35,14 +35,14 @@ function FlowRow({
   const isPositive = (entry.changePercent ?? 0) >= 0
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/20 bg-white/[0.04] hover:bg-white/[0.07] transition-colors">
-      <span className="text-[10px] font-bold text-muted-foreground/40 w-4 shrink-0 text-right">
+    <div className="flex items-center gap-2 px-3 py-2 rounded-xl border border-border bg-muted/30 hover:bg-muted/60 transition-colors">
+      <span className="text-xs font-bold text-muted-foreground w-4 shrink-0 text-right">
         {rank}
       </span>
       <AssetLogo ticker={entry.ticker} name={entry.name} assetType={assetType} size={36} />
       <div className="flex-1 min-w-0">
         <p className="text-xs font-bold truncate leading-tight">{entry.name}</p>
-        <p className="text-[11px] text-muted-foreground mt-0.5 tabular-nums">
+        <p className="text-xs text-muted-foreground mt-0.5 tabular-nums">
           {showAmount && entry.netAmount > 0 ? `+${formatNetAmount(entry.netAmount)}` : '\u00A0'}
         </p>
       </div>

@@ -1,5 +1,6 @@
 import { HelpCircle } from 'lucide-react'
 
+
 const FAQS = [
   {
     id: 1,
@@ -48,20 +49,14 @@ const FAQS = [
 export default function HelpPage() {
   return (
     <div className="space-y-6">
-      {/* 히어로 배너 */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#0f0f0f] via-[#1a1a1a] to-[#111111] p-8 text-white shadow-xl">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
-          <div className="absolute -top-12 -right-12 w-64 h-64 rounded-full bg-cyan-400/5 blur-3xl" />
-          <div className="absolute bottom-0 left-1/3 w-80 h-48 rounded-full bg-cyan-400/10 blur-3xl" />
-          <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '22px 22px' }} />
+      {/* 페이지 헤더 */}
+      <div className="flex items-center gap-3 py-2">
+        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-cyan-500/10">
+          <HelpCircle className="h-4.5 w-4.5 text-cyan-600" />
         </div>
-        <div className="relative flex items-start justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-1.5 text-cyan-400/70 text-xs font-semibold tracking-widest uppercase">
-              <HelpCircle className="h-3.5 w-3.5" />도움말
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight leading-tight" style={{ fontFamily: "'Sunflower', sans-serif" }}>자주 묻는 질문</h1>
-          </div>
+        <div>
+          <h1 className="text-xl font-semibold text-foreground">자주 묻는 질문</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">도움말 및 API 정보</p>
         </div>
       </div>
 
@@ -75,7 +70,6 @@ export default function HelpPage() {
             className="rounded-xl border border-border bg-card overflow-hidden hover:shadow-md transition-shadow"
           >
             <div className={`h-1 ${faq.color}`} />
-            <div className="h-px bg-white/10" />
             <div className="px-6 py-4">
               <details className="group">
                 <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground font-[family-name:var(--font-sunflower)]">
