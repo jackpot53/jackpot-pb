@@ -294,7 +294,7 @@ export function Sidebar() {
         </svg>
       </div>
 
-      <nav className="flex-1 px-2 space-y-1.5 pt-2">
+      <nav className="flex-1 px-2 space-y-1.5 pt-2 overflow-y-auto">
         <style>{`
           @keyframes pro-shimmer {
             0% { background-position: -200% center; }
