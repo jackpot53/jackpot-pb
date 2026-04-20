@@ -32,6 +32,20 @@ export function useKisWsStatus(): WsStatus {
   return useContext(KisWsContext).status
 }
 
+export function useKisWsEnabled(): boolean {
+  return useContext(KisWsContext).enabled
+}
+
+/** Subscribe a listener to tick updates for one ticker. Returns cleanup fn. */
+export function subscribeToTick(ticker: string, fn: () => void): () => void {
+  return tickStore.subscribe(ticker, fn)
+}
+
+/** Get the latest cached Tick for a ticker (undefined if none yet). */
+export function getTickSnapshot(ticker: string): Tick | undefined {
+  return tickStore.getSnapshot(ticker)
+}
+
 /**
  * Tick store: keyed by ticker, the latest Tick (or null) per ticker.
  * Each <LivePrice> subscribes only to its own ticker's slot via useSyncExternalStore,

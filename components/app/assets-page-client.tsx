@@ -27,6 +27,7 @@ const AssetGroupChart = dynamic(
 )
 import { AssetLogo } from '@/components/app/asset-logo'
 import { LivePrice } from '@/components/app/live-price'
+import { useLivePerformance, useLivePerformances } from '@/lib/ws/live-performance'
 import type { CandlestickPoint } from '@/components/app/candlestick-chart'
 const CandlestickChart = dynamic(
   () => import('@/components/app/candlestick-chart').then(m => ({ default: m.CandlestickChart })),
@@ -201,12 +202,13 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
   lineData?: AssetHistoryPoint[]
   showSparkline?: boolean
 }) {
+  const live = useLivePerformance(asset)
   const [chartOpen, setChartOpen] = useState(false)
   const hasHolding = asset.totalQuantity > 0 || (asset.assetType === 'savings' && (asset.totalCostKrw > 0 || asset.monthlyContributionKrw != null))
   const isCrypto = asset.assetType === 'crypto'
-  const hasValue = asset.currentValueKrw > 0
-  const hasCost = asset.totalCostKrw > 0
-  const profit = asset.currentValueKrw - asset.totalCostKrw
+  const hasValue = live.currentValueKrw > 0
+  const hasCost = live.totalCostKrw > 0
+  const profit = live.currentValueKrw - live.totalCostKrw
   const mergedCount = (asset as MergedAsset).mergedCount ?? 1
 
   // US 자산 여부 (stock_us, etf_us) — currency가 아닌 assetType으로 판단
@@ -215,7 +217,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
   // 달러매수: US 자산을 USD로 직접 매수 (asset.currency = 'USD')
   const isKrwPurchase = isUsAsset && asset.currency === 'KRW'
   const isUsdPurchase = isUsAsset && asset.currency === 'USD'
-  const hasFxBreakdown = asset.stockReturnPct != null && asset.fxReturnPct != null
+  const hasFxBreakdown = live.stockReturnPct != null && live.fxReturnPct != null
 
   // FX 분해: 달러수익 × 현재환율 / 원금 × 환율변동 (유저 멘탈모델 기준)
   // stockGainKrw = qty × (현재USD가 - 매수USD가) × 현재환율  (달러 수익을 현재환율로 환산)
@@ -224,16 +226,16 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
   const avgCostUsd = asset.avgCostPerUnitOriginal != null ? asset.avgCostPerUnitOriginal / 100 : null
   const avgFxRate = asset.avgExchangeRateAtTime != null ? asset.avgExchangeRateAtTime / 10000 : null
   const stockGainKrw =
-    hasFxBreakdown && avgCostUsd != null && asset.currentPriceUsd != null && asset.currentFxRate != null
-      ? Math.round(qty * (asset.currentPriceUsd - avgCostUsd) * asset.currentFxRate)
+    hasFxBreakdown && avgCostUsd != null && live.currentPriceUsd != null && live.currentFxRate != null
+      ? Math.round(qty * (live.currentPriceUsd - avgCostUsd) * live.currentFxRate)
       : null
   const fxGainKrw =
-    hasFxBreakdown && avgCostUsd != null && avgFxRate != null && asset.currentFxRate != null
-      ? Math.round(qty * avgCostUsd * (asset.currentFxRate - avgFxRate))
+    hasFxBreakdown && avgCostUsd != null && avgFxRate != null && live.currentFxRate != null
+      ? Math.round(qty * avgCostUsd * (live.currentFxRate - avgFxRate))
       : null
 
-  const dailyChangePct = asset.dailyChangeBps !== null && asset.dailyChangeBps !== undefined
-    ? asset.dailyChangeBps / 100
+  const dailyChangePct = live.dailyChangeBps !== null && live.dailyChangeBps !== undefined
+    ? live.dailyChangeBps / 100
     : null
 
   const accountBadge = mergedCount > 1 ? (
@@ -380,24 +382,24 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
               <span className={fxGainKrw >= 0 ? 'text-red-500' : 'text-blue-500'}>
                 환차 {fxGainKrw >= 0 ? '+' : ''}{formatKrw(fxGainKrw)}
               </span>
-              {avgFxRate != null && asset.currentFxRate != null && (
+              {avgFxRate != null && live.currentFxRate != null && (
                 <>
                   <span className="text-border/60">|</span>
                   <span className="text-muted-foreground">
-                    환율 ₩{Math.round(avgFxRate).toLocaleString()} → ₩{Math.round(asset.currentFxRate).toLocaleString()}
+                    환율 ₩{Math.round(avgFxRate).toLocaleString()} → ₩{Math.round(live.currentFxRate).toLocaleString()}
                   </span>
-                  {asset.fxReturnPct != null && (
-                    <span className={`font-semibold ${asset.fxReturnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                      ({asset.fxReturnPct >= 0 ? '+' : ''}{asset.fxReturnPct.toFixed(1)}%)
+                  {live.fxReturnPct != null && (
+                    <span className={`font-semibold ${live.fxReturnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                      ({live.fxReturnPct >= 0 ? '+' : ''}{live.fxReturnPct.toFixed(1)}%)
                     </span>
                   )}
                 </>
               )}
             </>
-          ) : isUsdPurchase && asset.currentFxRate != null ? (
+          ) : isUsdPurchase && live.currentFxRate != null ? (
             <>
               <span className="text-border/60">|</span>
-              <span className="text-muted-foreground">₩{Math.round(asset.currentFxRate).toLocaleString()} 기준</span>
+              <span className="text-muted-foreground">₩{Math.round(live.currentFxRate).toLocaleString()} 기준</span>
             </>
           ) : isKrwPurchase ? (
             <>
@@ -414,9 +416,9 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
     <div className="mt-2.5 pt-2.5 border-t border-border flex items-center gap-2 tabular-nums flex-wrap">
       <span className="text-xs text-muted-foreground">평가금</span>
       <span className="text-sm font-semibold text-foreground">
-        {hasValue ? formatKrw(asset.currentValueKrw) : '—'}
-        {isUsdPurchase && asset.currentPriceUsd != null && hasHolding && hasValue && (
-          <span className="text-xs text-muted-foreground ml-1">({formatUsd(asset.currentPriceUsd * asset.totalQuantity / 1e8)})</span>
+        {hasValue ? formatKrw(live.currentValueKrw) : '—'}
+        {isUsdPurchase && live.currentPriceUsd != null && hasHolding && hasValue && (
+          <span className="text-xs text-muted-foreground ml-1">({formatUsd(live.currentPriceUsd * asset.totalQuantity / 1e8)})</span>
         )}
       </span>
       {hasValue && hasCost && (
@@ -425,8 +427,8 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
           <span className={`text-sm font-bold ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
             {profit >= 0 ? '+' : ''}{formatKrw(profit)}
           </span>
-          <span className={`text-xs font-semibold ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-            ({formatReturn(asset.returnPct)})
+          <span className={`text-xs font-semibold ${live.returnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+            ({formatReturn(live.returnPct)})
           </span>
         </>
       )}
@@ -441,7 +443,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
           onClick={() => setChartOpen(v => !v)}
           className="absolute top-2.5 right-2.5 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded-lg hover:bg-muted/40"
         >
-          {asset.returnPct >= 0
+          {live.returnPct >= 0
             ? <TrendingUp className="h-3 w-3 text-red-500" />
             : <TrendingDown className="h-3 w-3 text-blue-500" />}
           차트
@@ -471,7 +473,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
                 <AssetLineChart
                   data={lineData}
                   kind={asset.assetType === 'savings' || asset.assetType === 'insurance' ? 'line-projected' : 'line-nav'}
-                  positive={asset.returnPct >= 0}
+                  positive={live.returnPct >= 0}
                 />
               </div>
             </div>
@@ -494,12 +496,13 @@ function AssetGridCard({ asset, sparklineData, lineData }: {
   sparklineData?: OhlcPoint[]
   lineData?: AssetHistoryPoint[]
 }) {
-  const hasValue = asset.currentValueKrw > 0
-  const hasCost = asset.totalCostKrw > 0
-  const profit = asset.currentValueKrw - asset.totalCostKrw
+  const live = useLivePerformance(asset)
+  const hasValue = live.currentValueKrw > 0
+  const hasCost = live.totalCostKrw > 0
+  const profit = live.currentValueKrw - live.totalCostKrw
   const mergedCount = (asset as MergedAsset).mergedCount ?? 1
   const showSpark = !NO_SPARKLINE_TYPES.has(asset.assetType)
-  const dailyChangePct = asset.dailyChangeBps != null ? asset.dailyChangeBps / 100 : null
+  const dailyChangePct = live.dailyChangeBps != null ? live.dailyChangeBps / 100 : null
   const brokerageLabel = asset.brokerageId && BROKERAGE_LABELS[asset.brokerageId] ? BROKERAGE_LABELS[asset.brokerageId] : null
   const accountLabel = mergedCount > 1 ? `${mergedCount}계좌`
     : asset.accountType && ACCOUNT_TYPE_LABELS[asset.accountType] ? ACCOUNT_TYPE_LABELS[asset.accountType] : null
@@ -529,7 +532,7 @@ function AssetGridCard({ asset, sparklineData, lineData }: {
       {showSpark && (
         <div className="rounded-lg border border-border/30 bg-muted/20 overflow-hidden h-36">
           {lineData && lineData.length >= 2
-            ? <LineSparkline data={lineData} width={200} height={144} positive={asset.returnPct >= 0} />
+            ? <LineSparkline data={lineData} width={200} height={144} positive={live.returnPct >= 0} />
             : sparklineData
               ? <MiniCandleChart data={sparklineData} width={200} height={144} />
               : <div className="w-full h-full" />
@@ -542,7 +545,7 @@ function AssetGridCard({ asset, sparklineData, lineData }: {
         <div className="flex items-baseline gap-1">
           <Wallet className="h-3 w-3 text-muted-foreground/40 shrink-0" />
           <span className="text-xs text-muted-foreground">평가금</span>
-          <span className="text-sm font-semibold text-foreground">{hasValue ? formatKrw(asset.currentValueKrw) : '—'}</span>
+          <span className="text-sm font-semibold text-foreground">{hasValue ? formatKrw(live.currentValueKrw) : '—'}</span>
         </div>
         {hasValue && hasCost && (
           <>
@@ -551,7 +554,7 @@ function AssetGridCard({ asset, sparklineData, lineData }: {
               <span className="text-xs text-muted-foreground">수익금</span>
               <span className={`text-sm font-bold ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>{profit >= 0 ? '+' : ''}{formatKrw(profit)}</span>
               <span className="text-xs text-muted-foreground ml-1">수익률</span>
-              <span className={`text-xs font-semibold ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>{formatReturn(asset.returnPct)}</span>
+              <span className={`text-xs font-semibold ${live.returnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>{formatReturn(live.returnPct)}</span>
             </div>
           </>
         )}
@@ -622,13 +625,14 @@ function AssetCardList({ assets, title, sparklines, lineDataMap }: {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
+  const liveAssets = useLivePerformances(assets)
   const showSparkline = assets.some((a) => !NO_SPARKLINE_TYPES.has(a.assetType))
   const hasDuplicates = new Set(assets.map((a) => a.ticker ?? a.name)).size < assets.length
-  const hasStale = assets.some((a) => a.isStale)
+  const hasStale = liveAssets.some((a) => a.isStale)
   const displayAssets = merged ? mergeAssets(assets) : assets
 
-  const totalCost = assets.reduce((s, a) => s + a.totalCostKrw, 0)
-  const valuedAssets = assets.filter((a) => a.currentValueKrw > 0)
+  const totalCost = liveAssets.reduce((s, a) => s + a.totalCostKrw, 0)
+  const valuedAssets = liveAssets.filter((a) => a.currentValueKrw > 0)
   const totalValue = valuedAssets.reduce((s, a) => s + a.currentValueKrw, 0)
   const valuedCost = valuedAssets.reduce((s, a) => s + a.totalCostKrw, 0)
   const totalProfit = totalValue - valuedCost

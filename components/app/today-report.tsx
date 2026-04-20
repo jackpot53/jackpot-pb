@@ -1,5 +1,6 @@
 'use client'
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
+import { useLivePerformances } from '@/lib/ws/live-performance'
 import {
   TrendingUp, TrendingDown, Minus, TriangleAlert, ChevronDown,
   BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ShieldCheck, Gem, CreditCard,
@@ -263,7 +264,8 @@ function generateNarrative(
 
 export function TodayReport({ performances }: { performances: AssetPerformance[] }) {
   const [open, setOpen] = useState(true)
-  const { portfolioChangeBps, totalDailyChangeKrw, totalValueKrw, typeStats, topMovers, staleCount, liveCount } = useMemo(() => computeReport(performances), [performances])
+  const livePerformances = useLivePerformances(performances)
+  const { portfolioChangeBps, totalDailyChangeKrw, totalValueKrw, typeStats, topMovers, staleCount, liveCount } = useMemo(() => computeReport(livePerformances), [livePerformances])
 
   if (liveCount === 0) return null
 
