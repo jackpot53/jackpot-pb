@@ -72,7 +72,7 @@ async function ChartsPageContent({ userId }: { userId: string }) {
   if (allocations.length === 0) return null
 
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="space-y-3">
         <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
           <PieChart className="h-4 w-4 text-emerald-500" />자산 배분

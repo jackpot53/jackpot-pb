@@ -99,9 +99,10 @@ export function PortfolioRadialChart({
   const showCenter = activeIndex === null
 
   return (
-    <div data-component="PortfolioRadialChart" className="flex gap-10 items-center">
+    <div data-component="PortfolioRadialChart" className="@container">
+    <div className="flex flex-col @[560px]:flex-row gap-6 @[560px]:gap-10 items-center">
       {/* Donut chart */}
-      <div className="relative w-[300px] h-[300px] shrink-0">
+      <div className="relative w-[260px] h-[260px] @[560px]:w-[300px] @[560px]:h-[300px] shrink-0">
         <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
           <PieChart>
             <Pie
@@ -139,7 +140,7 @@ export function PortfolioRadialChart({
       </div>
 
       {/* Detail table */}
-      <div className="flex-1 space-y-3">
+      <div className="flex-1 w-full space-y-3">
         {chartData.map((d, i) => (
           <div
             key={d.type}
@@ -155,12 +156,13 @@ export function PortfolioRadialChart({
             <span className="text-xs font-medium tabular-nums w-10 text-right" style={{ color: d.fill }}>
               {d.pct.toFixed(1)}%
             </span>
-            <div className="w-28 h-1.5 rounded-full bg-muted overflow-hidden shrink-0">
+            <div className="hidden @[420px]:block w-28 h-1.5 rounded-full bg-muted overflow-hidden shrink-0">
               <div className="h-full rounded-full transition-all" style={{ width: `${d.pct}%`, backgroundColor: d.fill }} />
             </div>
           </div>
         ))}
       </div>
+    </div>
     </div>
   )
 }
