@@ -38,6 +38,12 @@ function debug(...args: unknown[]) {
   if (DEBUG) console.debug('[kis-ws]', ...args)
 }
 
+type QueuedFrame = { trId: string; trKey: string; trType: '1' | '2' }
+
+// KIS rejects batches of subscribe frames sent in rapid succession.
+// Serialize them with a small interval to ensure each is accepted.
+const FRAME_INTERVAL_MS = 40
+
 export class KisWsClient {
   private socket: WebSocket | null = null
   private approvalKey: string | null = null
@@ -48,6 +54,8 @@ export class KisWsClient {
   private reconnectAttempt = 0
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private intentionalClose = false
+  private frameQueue: QueuedFrame[] = []
+  private frameTimer: ReturnType<typeof setInterval> | null = null
 
   setApprovalKey(key: string) {
     this.approvalKey = key
@@ -93,9 +101,9 @@ export class KisWsClient {
       debug('socket open')
       this.reconnectAttempt = 0
       this.setStatus('open')
-      // Re-subscribe everything that had refcount > 0
+      // Re-subscribe everything that had refcount > 0, serialized via queue.
       for (const sub of this.subs.values()) {
-        if (sub.refcount > 0) this.sendFrame(sub.trId, sub.trKey, '1')
+        if (sub.refcount > 0) this.enqueueFrame(sub.trId, sub.trKey, '1')
       }
     })
 
@@ -122,6 +130,8 @@ export class KisWsClient {
       clearTimeout(this.reconnectTimer)
       this.reconnectTimer = null
     }
+    this.stopPump()
+    this.frameQueue = []
     if (this.socket) {
       try { this.socket.close() } catch {}
       this.socket = null
@@ -138,7 +148,7 @@ export class KisWsClient {
     if (existing) {
       existing.refcount++
       existing.lastUsed = Date.now()
-      debug('+ref', subKey, existing.refcount)
+      debug('+ref', subKey, existing.refcount, `(active: ${this.activeCount()})`)
       return
     }
 
@@ -158,8 +168,8 @@ export class KisWsClient {
       refcount: 1,
       lastUsed: Date.now(),
     })
-    debug('+sub', subKey)
-    if (this.status === 'open') this.sendFrame(trId, trKey, '1')
+    debug('+sub', subKey, `(active: ${this.activeCount()})`)
+    this.enqueueFrame(trId, trKey, '1')
   }
 
   unsubscribe(req: SubscribeRequest): void {
@@ -168,11 +178,11 @@ export class KisWsClient {
     if (!existing) return
 
     existing.refcount = Math.max(0, existing.refcount - 1)
-    debug('-ref', subKey, existing.refcount)
+    debug('-ref', subKey, existing.refcount, `(active: ${this.activeCount()})`)
     if (existing.refcount > 0) return
 
     this.subs.delete(subKey)
-    if (this.status === 'open') this.sendFrame(existing.trId, existing.trKey, '2')
+    this.enqueueFrame(existing.trId, existing.trKey, '2')
   }
 
   private toSubKey(req: SubscribeRequest): SubKey {
@@ -207,12 +217,40 @@ export class KisWsClient {
     }
     if (!oldest) return false
     const sub = this.subs.get(oldest.key)
-    if (sub && this.status === 'open') this.sendFrame(sub.trId, sub.trKey, '2')
+    if (sub) this.enqueueFrame(sub.trId, sub.trKey, '2')
     this.subs.delete(oldest.key)
     return true
   }
 
-  private sendFrame(trId: string, trKey: string, trType: '1' | '2'): void {
+  private enqueueFrame(trId: string, trKey: string, trType: '1' | '2'): void {
+    if (this.frameQueue.length >= 10) {
+      console.warn(`[kis-ws] frame queue growing large (${this.frameQueue.length}), possible backlog`)
+    }
+    this.frameQueue.push({ trId, trKey, trType })
+    this.startPump()
+  }
+
+  private startPump(): void {
+    if (this.frameTimer) return
+    this.frameTimer = setInterval(() => {
+      if (this.frameQueue.length === 0) {
+        this.stopPump()
+        return
+      }
+      if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return
+      const f = this.frameQueue.shift()!
+      this.sendFrameNow(f.trId, f.trKey, f.trType)
+    }, FRAME_INTERVAL_MS)
+  }
+
+  private stopPump(): void {
+    if (this.frameTimer) {
+      clearInterval(this.frameTimer)
+      this.frameTimer = null
+    }
+  }
+
+  private sendFrameNow(trId: string, trKey: string, trType: '1' | '2'): void {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return
     if (!this.approvalKey) return
 
@@ -251,9 +289,23 @@ export class KisWsClient {
 
     // JSON control frames (subscribe ack, ping/pong)
     try {
-      const obj = JSON.parse(raw) as { header?: { tr_id?: string } }
+      const obj = JSON.parse(raw) as {
+        header?: { tr_id?: string; tr_key?: string }
+        body?: { rt_cd?: string; msg_cd?: string; msg1?: string }
+      }
       if (obj.header?.tr_id === 'PINGPONG' && this.socket?.readyState === WebSocket.OPEN) {
         this.socket.send(raw)
+        return
+      }
+      if (obj.body?.rt_cd !== undefined && obj.body.rt_cd !== '0') {
+        console.warn('[kis-ws] subscribe failed', {
+          trId: obj.header?.tr_id,
+          trKey: obj.header?.tr_key,
+          code: obj.body.msg_cd,
+          msg: obj.body.msg1,
+        })
+      } else {
+        debug('ack', obj.header?.tr_id, obj.header?.tr_key, obj.body?.msg1)
       }
     } catch {
       // ignore
