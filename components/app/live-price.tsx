@@ -12,6 +12,8 @@ type Props = {
   fallbackChangePct: number | null
   className?: string
   changeClassName?: string
+  /** When false, always show fallback values (no WS subscription). Default true. */
+  enabled?: boolean
 }
 
 const KIS_LIVE_TYPES = new Set(['stock_kr', 'etf_kr', 'stock_us', 'etf_us'])
@@ -31,8 +33,9 @@ export function LivePrice({
   fallbackChangePct,
   className,
   changeClassName,
+  enabled = true,
 }: Props) {
-  const supportsLive = !!ticker && KIS_LIVE_TYPES.has(assetType)
+  const supportsLive = enabled && !!ticker && KIS_LIVE_TYPES.has(assetType)
   const tick = useKisLivePrice(supportsLive ? ticker : null, supportsLive ? assetType : null)
 
   const isUs = assetType === 'stock_us' || assetType === 'etf_us'

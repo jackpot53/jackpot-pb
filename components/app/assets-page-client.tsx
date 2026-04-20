@@ -28,6 +28,7 @@ const AssetGroupChart = dynamic(
 import { AssetLogo } from '@/components/app/asset-logo'
 import { LivePrice } from '@/components/app/live-price'
 import { useLivePerformance, useLivePerformances } from '@/lib/ws/live-performance'
+import { useKisWsEnabled } from '@/lib/ws/kis-ws-context'
 import type { CandlestickPoint } from '@/components/app/candlestick-chart'
 const CandlestickChart = dynamic(
   () => import('@/components/app/candlestick-chart').then(m => ({ default: m.CandlestickChart })),
@@ -196,13 +197,14 @@ function mergeAssets(assets: AssetPerformance[]): MergedAsset[] {
 
 
 
-function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
+function AssetCard({ asset, sparklineData, lineData, showSparkline, liveEnabled = false }: {
   asset: AssetPerformance & { mergedCount?: number }
   sparklineData?: OhlcPoint[]
   lineData?: AssetHistoryPoint[]
   showSparkline?: boolean
+  liveEnabled?: boolean
 }) {
-  const live = useLivePerformance(asset)
+  const live = useLivePerformance(asset, liveEnabled)
   const [chartOpen, setChartOpen] = useState(false)
   const hasHolding = asset.totalQuantity > 0 || (asset.assetType === 'savings' && (asset.totalCostKrw > 0 || asset.monthlyContributionKrw != null))
   const isCrypto = asset.assetType === 'crypto'
@@ -356,6 +358,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
                 fallbackPriceUsd={asset.currentPriceUsd}
                 fallbackChangePct={dailyChangePct}
                 changeClassName="ml-1"
+                enabled={liveEnabled}
               />
             </span>
           ) : dailyChangePct !== null && (
@@ -615,17 +618,23 @@ function SummaryBar({ assets }: { assets: AssetPerformance[] }) {
   )
 }
 
-function AssetCardList({ assets, title, sparklines, lineDataMap }: {
+const LIVE_ASSET_TYPES = new Set(['stock_kr', 'etf_kr', 'stock_us', 'etf_us'])
+
+function AssetCardList({ assets, title, sparklines, lineDataMap, liveEnabled = false, onToggleLive }: {
   assets: AssetPerformance[]
   title?: React.ReactNode
   sparklines?: Record<string, OhlcPoint[]>
   lineDataMap?: Record<string, AssetHistoryPoint[]>
+  liveEnabled?: boolean
+  onToggleLive?: () => void
 }) {
   const [merged, setMerged] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const wsEnabled = useKisWsEnabled()
+  const hasLiveAssets = wsEnabled && assets.some(a => LIVE_ASSET_TYPES.has(a.assetType))
 
-  const liveAssets = useLivePerformances(assets)
+  const liveAssets = useLivePerformances(assets, liveEnabled)
   const showSparkline = assets.some((a) => !NO_SPARKLINE_TYPES.has(a.assetType))
   const hasDuplicates = new Set(assets.map((a) => a.ticker ?? a.name)).size < assets.length
   const hasStale = liveAssets.some((a) => a.isStale)
@@ -648,7 +657,7 @@ function AssetCardList({ assets, title, sparklines, lineDataMap }: {
 
   return (
     <div className="space-y-2">
-      {(title || hasDuplicates || hasStale) && (
+      {(title || hasDuplicates || hasStale || hasLiveAssets) && (
         <div className="flex items-center justify-between gap-2 px-1 flex-wrap">
           <div className="flex items-center gap-x-3 gap-y-1 flex-wrap min-w-0">
             {title && <div className="flex items-center gap-2 flex-wrap">{title}</div>}
@@ -680,6 +689,20 @@ function AssetCardList({ assets, title, sparklines, lineDataMap }: {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {hasLiveAssets && onToggleLive && (
+              <button
+                onClick={onToggleLive}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors',
+                  liveEnabled
+                    ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
+                    : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted',
+                )}
+              >
+                <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', liveEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/40')} />
+                실시간
+              </button>
+            )}
             {hasStale && (
               <button
                 onClick={handleRefresh}
@@ -712,6 +735,7 @@ function AssetCardList({ assets, title, sparklines, lineDataMap }: {
             sparklineData={asset.ticker ? sparklines?.[asset.ticker] : undefined}
             lineData={lineDataMap?.[asset.assetId]}
             showSparkline={showSparkline}
+            liveEnabled={liveEnabled}
           />
         ))}
       </div>
@@ -840,6 +864,7 @@ function AssetFilter({
   dailyByType: Record<string, DailyDataPoint[]>
 }) {
   const [active, setActive] = useState<string>('all')
+  const [liveEnabled, setLiveEnabled] = useState(false)
   const showAll = types.length > 1
   const visibleTypes = active === 'all' ? types : types.filter((t) => t === active)
 
@@ -901,6 +926,8 @@ function AssetFilter({
                 assets={grouped[type]}
                 sparklines={sparklines}
                 lineDataMap={lineDataMap}
+                liveEnabled={liveEnabled}
+                onToggleLive={() => setLiveEnabled(v => !v)}
                 title={
                   <>
                     <AssetTypeBadge assetType={type as AssetPerformance['assetType']} />

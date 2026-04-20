@@ -100,10 +100,11 @@ function computeOverlayArray(assets: AssetPerformance[]): AssetPerformance[] {
 /**
  * Subscribe a single AssetPerformance to its live KIS tick.
  * Returns a new AssetPerformance with updated prices/returns when a tick arrives.
- * Falls back to the original `asset` when WS is disabled or no tick has arrived.
+ * Falls back to the original `asset` when WS is disabled, no tick has arrived,
+ * or `enabled` is false.
  */
-export function useLivePerformance(asset: AssetPerformance): AssetPerformance {
-  const eligible = !!asset.ticker && isLiveType(asset.assetType)
+export function useLivePerformance(asset: AssetPerformance, enabled = true): AssetPerformance {
+  const eligible = enabled && !!asset.ticker && isLiveType(asset.assetType)
   const tick = useKisLivePrice(eligible ? asset.ticker : null, eligible ? asset.assetType : null)
   return applyTickCached(asset, tick)
 }
@@ -116,12 +117,12 @@ export function useLivePerformance(asset: AssetPerformance): AssetPerformance {
  * Note: this only listens to the tick store — KIS WS subscriptions are managed
  * by the individual <AssetCard> components via useLivePerformance.
  */
-export function useLivePerformances(assets: AssetPerformance[]): AssetPerformance[] {
-  // Stable key derived from the live ticker set — re-subscribes only when tickers change
-  const tickerKey = assets
-    .filter(a => isLiveType(a.assetType) && !!a.ticker)
-    .map(a => a.ticker!)
-    .join('\x00')
+export function useLivePerformances(assets: AssetPerformance[], enabled = true): AssetPerformance[] {
+  // Stable key derived from the live ticker set — re-subscribes only when tickers change.
+  // Empty when disabled so subscribe/getSnapshot become no-ops.
+  const tickerKey = enabled
+    ? assets.filter(a => isLiveType(a.assetType) && !!a.ticker).map(a => a.ticker!).join('\x00')
+    : ''
 
   const subscribe = useCallback(
     (onChange: () => void) => {
@@ -133,8 +134,8 @@ export function useLivePerformances(assets: AssetPerformance[]): AssetPerformanc
   )
 
   const getSnapshot = useCallback(
-    () => computeOverlayArray(assets),
-    [assets],
+    () => enabled ? computeOverlayArray(assets) : assets,
+    [assets, enabled],
   )
 
   return useSyncExternalStore(subscribe, getSnapshot, () => assets)
