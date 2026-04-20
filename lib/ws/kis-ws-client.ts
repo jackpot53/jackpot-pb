@@ -29,6 +29,11 @@ type SubscriptionState = {
   trKey: string
   refcount: number
   lastUsed: number
+  // True once a subscribe frame has been queued for this socket session.
+  // Prevents double-sending: subscribe() queues the frame, so the open
+  // handler must skip subs already queued. Reset on unintentional close
+  // so the next open handler re-subscribes everything.
+  subscribeSent: boolean
 }
 
 type Listener = (tick: Tick) => void
@@ -101,9 +106,14 @@ export class KisWsClient {
       debug('socket open')
       this.reconnectAttempt = 0
       this.setStatus('open')
-      // Re-subscribe everything that had refcount > 0, serialized via queue.
+      // Only send frames for subs whose subscribe frame hasn't been queued yet
+      // (i.e. subs that survived a reconnect — their subscribeSent was reset on close).
+      // Subs created while connecting already have their frame in the queue.
       for (const sub of this.subs.values()) {
-        if (sub.refcount > 0) this.enqueueFrame(sub.trId, sub.trKey, '1')
+        if (sub.refcount > 0 && !sub.subscribeSent) {
+          sub.subscribeSent = true
+          this.enqueueFrame(sub.trId, sub.trKey, '1')
+        }
       }
     })
 
@@ -115,6 +125,11 @@ export class KisWsClient {
       if (this.intentionalClose) {
         this.setStatus('closed')
       } else {
+        // Prepare for reconnect: drop queued frames (will be re-sent after open)
+        // and reset subscribeSent so the open handler re-subscribes all active subs.
+        this.stopPump()
+        this.frameQueue = []
+        for (const sub of this.subs.values()) sub.subscribeSent = false
         this.scheduleReconnect()
       }
     })
@@ -167,6 +182,7 @@ export class KisWsClient {
       trKey,
       refcount: 1,
       lastUsed: Date.now(),
+      subscribeSent: true,  // frame is about to be queued below
     })
     debug('+sub', subKey, `(active: ${this.activeCount()})`)
     this.enqueueFrame(trId, trKey, '1')
@@ -223,9 +239,6 @@ export class KisWsClient {
   }
 
   private enqueueFrame(trId: string, trKey: string, trType: '1' | '2'): void {
-    if (this.frameQueue.length >= 10) {
-      console.warn(`[kis-ws] frame queue growing large (${this.frameQueue.length}), possible backlog`)
-    }
     this.frameQueue.push({ trId, trKey, trType })
     this.startPump()
   }
