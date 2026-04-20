@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useTransition, useRef, useCallback, memo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Layers, LayoutGrid, TrendingUp, TrendingDown, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown, HelpCircle, ShieldCheck, Gem, CreditCard, RefreshCw, Wallet } from 'lucide-react'
+import { Layers, LayoutGrid, TrendingUp, TrendingDown, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown, HelpCircle, ShieldCheck, Gem, CreditCard, RefreshCw, Wallet, Wifi, WifiOff } from 'lucide-react'
 
 import { buttonVariants } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -205,6 +205,10 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline, liveEnabled 
   liveEnabled?: boolean
 }) {
   const live = useLivePerformance(asset, liveEnabled)
+  const wsEnabled = useKisWsEnabled()
+  // live !== asset means a tick overlay was applied — the reference changes on first tick
+  const isLiveEligible = wsEnabled && !!asset.ticker && LIVE_ASSET_TYPES.has(asset.assetType)
+  const isLiveActive = isLiveEligible && liveEnabled && live !== asset
   const [chartOpen, setChartOpen] = useState(false)
   const hasHolding = asset.totalQuantity > 0 || (asset.assetType === 'savings' && (asset.totalCostKrw > 0 || asset.monthlyContributionKrw != null))
   const isCrypto = asset.assetType === 'crypto'
@@ -360,6 +364,11 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline, liveEnabled 
                 changeClassName="ml-1"
                 enabled={liveEnabled}
               />
+              {isLiveEligible && (
+                isLiveActive
+                  ? <Wifi className="h-3 w-3 text-emerald-500 animate-pulse shrink-0" aria-label="실시간 시세" />
+                  : <WifiOff className="h-3 w-3 text-muted-foreground/35 shrink-0" aria-label="캐시된 시세" />
+              )}
             </span>
           ) : dailyChangePct !== null && (
             <span className={`tabular-nums font-bold ${dailyChangePct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>

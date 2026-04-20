@@ -60,16 +60,7 @@ export function LivePrice({
   return (
     <>
       <span data-component="LivePrice" className={className}>
-        <span className="text-foreground inline-flex items-center gap-1">
-          {displayPriceLabel}
-          {isLive && (
-            <span
-              className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"
-              aria-label="실시간"
-              title="실시간 시세"
-            />
-          )}
-        </span>
+        <span className="text-foreground">{displayPriceLabel}</span>
       </span>
       {changePct !== null && (
         <span className={`tabular-nums font-bold ${positive ? 'text-red-500' : 'text-blue-500'} ${changeClassName ?? ''}`}>
