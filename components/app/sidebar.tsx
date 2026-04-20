@@ -164,6 +164,8 @@ export function Sidebar() {
   }, [])
   const { isOpen: isMobileOpen, close: closeMobile } = useMobileSidebar()
 
+  const showLabels = !collapsed || isMobileOpen
+
   const handleCollapse = (next: boolean) => {
     setCollapsed(next)
     localStorage.setItem('sidebar-collapsed', String(next))
@@ -191,7 +193,7 @@ export function Sidebar() {
       >
       {/* 헤더: 슬롯머신 + 토글 */}
       <div className="relative flex h-14 items-center justify-center shrink-0 border-b border-sidebar-border">
-        {!collapsed && <MiniSlotMachine />}
+        {showLabels && <MiniSlotMachine />}
         <button
           onClick={() => isMobileOpen ? closeMobile() : handleCollapse(!collapsed)}
           className={cn(
@@ -330,7 +332,7 @@ export function Sidebar() {
               title={collapsed ? item.label : undefined}
               className={cn(
                 'group flex items-center gap-3 rounded-lg transition-all duration-200',
-                collapsed ? 'justify-center p-2.5' : 'px-3 py-2.5',
+                collapsed && !isMobileOpen ? 'justify-center p-2.5' : 'px-3 py-2.5',
                 isActive
                   ? 'bg-sidebar-accent border border-sidebar-border'
                   : 'border border-transparent hover:bg-sidebar-accent/60 hover:border-sidebar-border/60'
@@ -339,7 +341,7 @@ export function Sidebar() {
               <div className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors duration-200">
                 <Icon size={15} className={cn(isActive ? item.activeColor : item.color)} />
               </div>
-              {!collapsed && (
+              {showLabels && (
                 <span className="flex items-center gap-2 min-w-0">
                   <span className={cn(
                     'whitespace-nowrap text-sm font-light transition-colors duration-200 font-[family-name:var(--font-sunflower)]',
@@ -355,7 +357,7 @@ export function Sidebar() {
                 </span>
               )}
             </Link>
-            {!collapsed && item.children && (
+            {showLabels && item.children && (
               <div className="mt-1 ml-5 pl-3 border-l border-sidebar-border/50 space-y-1">
                 {item.children.map((child) => {
                   const ChildIcon = child.icon
