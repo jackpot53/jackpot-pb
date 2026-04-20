@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { redirect } from 'next/navigation'
 import { getAuthUser } from '@/utils/supabase/server'
-import { LineChart, PieChart } from 'lucide-react'
+import { LineChart, PieChart, Wallet } from 'lucide-react'
 import { AnimatedLogo } from '@/components/app/animated-logo'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
@@ -15,6 +15,32 @@ import { timed } from '@/lib/perf'
 const ASSET_TYPE_ORDER = [
   'stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'real_estate', 'insurance', 'precious_metal',
 ] as const
+
+const ACCOUNT_TYPE_ORDER = [
+  'isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance',
+] as const
+
+const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+  isa:        'ISA',
+  irp:        'IRP',
+  pension:    '연금저축',
+  dc:         'DC',
+  brokerage:  '위탁',
+  spot:       '현물',
+  cma:        'CMA',
+  insurance:  '보험',
+}
+
+const ACCOUNT_TYPE_COLORS: Record<string, string> = {
+  isa:        '#8b5cf6',
+  irp:        '#a855f7',
+  pension:    '#d946ef',
+  dc:         '#ec4899',
+  brokerage:  '#84cc16',
+  spot:       '#22c55e',
+  cma:        '#10b981',
+  insurance:  '#14b8a6',
+}
 
 async function ChartsPageContent({ userId }: { userId: string }) {
   after(() => { void refreshAllPricesInternal().catch(() => {}) })
@@ -31,18 +57,51 @@ async function ChartsPageContent({ userId }: { userId: string }) {
     .filter((a) => a.valueKrw > 0)
     .sort((a, b) => b.pct - a.pct)
 
+  const accountTotalValue = performances
+    .filter((a) => a.accountType && (ACCOUNT_TYPE_ORDER as readonly string[]).includes(a.accountType))
+    .reduce((s, a) => s + (a.currentValueKrw || a.totalCostKrw), 0)
+  const accountAllocations: AllocationItem[] = ACCOUNT_TYPE_ORDER
+    .map((type) => {
+      const items = performances.filter((a) => a.accountType === type)
+      const valueKrw = items.reduce((s, a) => s + (a.currentValueKrw || a.totalCostKrw), 0)
+      return { type, valueKrw, pct: accountTotalValue > 0 ? (valueKrw / accountTotalValue) * 100 : 0 }
+    })
+    .filter((a) => a.valueKrw > 0)
+    .sort((a, b) => b.pct - a.pct)
+
   if (allocations.length === 0) return null
 
   return (
-    <div className="space-y-3">
-      <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-        <PieChart className="h-4 w-4 text-emerald-500" />자산 배분
-      </h2>
-      <Card className="shadow-sm">
-        <CardContent className="pt-6">
-          <PortfolioRadialChart allocations={allocations} totalValueKrw={totalValue} />
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+          <PieChart className="h-4 w-4 text-emerald-500" />자산 배분
+        </h2>
+        <Card className="shadow-sm">
+          <CardContent className="pt-6">
+            <PortfolioRadialChart allocations={allocations} totalValueKrw={totalValue} />
+          </CardContent>
+        </Card>
+      </div>
+
+      {accountAllocations.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+            <Wallet className="h-4 w-4 text-violet-500" />계정 유형별
+          </h2>
+          <Card className="shadow-sm">
+            <CardContent className="pt-6">
+              <PortfolioRadialChart
+                allocations={accountAllocations}
+                totalValueKrw={accountTotalValue}
+                labels={ACCOUNT_TYPE_LABELS}
+                colors={ACCOUNT_TYPE_COLORS}
+                centerSubtitle="계정"
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

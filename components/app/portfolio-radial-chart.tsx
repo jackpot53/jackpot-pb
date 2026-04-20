@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from 'recharts'
 import { formatKrwShort } from '@/lib/format'
 
-const ASSET_TYPE_LABELS: Record<string, string> = {
+const DEFAULT_ASSET_TYPE_LABELS: Record<string, string> = {
   stock_kr:      '주식 (국내)',
   stock_us:      '주식 (미국)',
   etf_kr:        'ETF (국내)',
@@ -17,7 +17,7 @@ const ASSET_TYPE_LABELS: Record<string, string> = {
   precious_metal:'금/은',
 }
 
-const ASSET_TYPE_COLORS: Record<string, string> = {
+const DEFAULT_ASSET_TYPE_COLORS: Record<string, string> = {
   stock_kr:      '#3b82f6',
   stock_us:      '#6366f1',
   etf_kr:        '#06b6d4',
@@ -44,17 +44,17 @@ interface ActiveShapeProps {
   startAngle: number
   endAngle: number
   fill: string
-  payload: { type: string; valueKrw: number; pct: number }
+  payload: { type: string; valueKrw: number; pct: number; name: string }
 }
 
 function renderActiveShape(props: ActiveShapeProps) {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill, payload } = props
-  const { type, valueKrw, pct } = payload
+  const { valueKrw, pct, name } = payload
 
   return (
     <g>
       <text x={cx} y={cy - 14} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 13, fontWeight: 600, fill: '#111' }}>
-        {ASSET_TYPE_LABELS[type] ?? type}
+        {name}
       </text>
       <text x={cx} y={cy + 8} textAnchor="middle" dominantBaseline="middle" style={{ fontSize: 18, fontWeight: 700, fill }}>
         {pct.toFixed(1)}%
@@ -71,17 +71,28 @@ function renderActiveShape(props: ActiveShapeProps) {
 interface PortfolioRadialChartProps {
   allocations: AllocationItem[]
   totalValueKrw: number
+  labels?: Record<string, string>
+  colors?: Record<string, string>
+  centerTitle?: string
+  centerSubtitle?: string
 }
 
-export function PortfolioRadialChart({ allocations, totalValueKrw }: PortfolioRadialChartProps) {
+export function PortfolioRadialChart({
+  allocations,
+  totalValueKrw,
+  labels = DEFAULT_ASSET_TYPE_LABELS,
+  colors = DEFAULT_ASSET_TYPE_COLORS,
+  centerTitle = '총 자산',
+  centerSubtitle = '자산군',
+}: PortfolioRadialChartProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
 
   if (allocations.length === 0) return null
 
   const chartData = allocations.map((a) => ({
     ...a,
-    name: ASSET_TYPE_LABELS[a.type] ?? a.type,
-    fill: ASSET_TYPE_COLORS[a.type] ?? '#94a3b8',
+    name: labels[a.type] ?? a.type,
+    fill: colors[a.type] ?? '#94a3b8',
     value: a.pct,
   }))
 
@@ -120,9 +131,9 @@ export function PortfolioRadialChart({ allocations, totalValueKrw }: PortfolioRa
         {/* Center label when nothing is hovered */}
         {showCenter && (
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-xs text-muted-foreground">총 자산</span>
+            <span className="text-xs text-muted-foreground">{centerTitle}</span>
             <span className="text-xl font-bold tabular-nums mt-0.5">{formatKrwShort(totalValueKrw)}</span>
-            <span className="text-xs text-muted-foreground mt-0.5">{allocations.length}개 자산군</span>
+            <span className="text-xs text-muted-foreground mt-0.5">{allocations.length}개 {centerSubtitle}</span>
           </div>
         )}
       </div>
