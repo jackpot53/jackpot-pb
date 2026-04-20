@@ -367,7 +367,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline, liveEnabled 
               {isLiveEligible && (
                 isLiveActive
                   ? <Wifi className="h-3 w-3 text-emerald-500 animate-pulse shrink-0" aria-label="실시간 시세" />
-                  : <WifiOff className="h-3 w-3 text-muted-foreground/35 shrink-0" aria-label="캐시된 시세" />
+                  : <WifiOff className="h-3 w-3 text-amber-400 shrink-0" aria-label="캐시된 시세" />
               )}
             </span>
           ) : dailyChangePct !== null && (
