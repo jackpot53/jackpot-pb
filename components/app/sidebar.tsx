@@ -157,10 +157,11 @@ function MiniSlotMachine() {
 
 export function Sidebar() {
   const pathname = usePathname()
-  const [collapsed, setCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem('sidebar-collapsed') === 'true'
-  })
+  const [collapsed, setCollapsed] = useState(false)
+
+  useEffect(() => {
+    setCollapsed(localStorage.getItem('sidebar-collapsed') === 'true')
+  }, [])
   const { isOpen: isMobileOpen, close: closeMobile } = useMobileSidebar()
 
   const handleCollapse = (next: boolean) => {
@@ -192,7 +193,7 @@ export function Sidebar() {
       <div className="relative flex h-14 items-center justify-center shrink-0 border-b border-sidebar-border">
         {!collapsed && <MiniSlotMachine />}
         <button
-          onClick={() => handleCollapse(!collapsed)}
+          onClick={() => isMobileOpen ? closeMobile() : handleCollapse(!collapsed)}
           className={cn(
             'p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors rounded-md',
             collapsed ? '' : 'absolute right-2'

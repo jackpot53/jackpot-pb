@@ -197,17 +197,17 @@ function mergeAssets(assets: AssetPerformance[]): MergedAsset[] {
 
 
 
-function AssetCard({ asset, sparklineData, lineData, showSparkline, liveEnabled = false }: {
+function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
   asset: AssetPerformance & { mergedCount?: number }
   sparklineData?: OhlcPoint[]
   lineData?: AssetHistoryPoint[]
   showSparkline?: boolean
-  liveEnabled?: boolean
 }) {
-  const live = useLivePerformance(asset, liveEnabled)
   const wsEnabled = useKisWsEnabled()
-  // live !== asset means a tick overlay was applied — the reference changes on first tick
   const isLiveEligible = wsEnabled && !!asset.ticker && LIVE_ASSET_TYPES.has(asset.assetType)
+  const [liveEnabled, setLiveEnabled] = useState(false)
+  const live = useLivePerformance(asset, isLiveEligible && liveEnabled)
+  // live !== asset means a tick overlay was applied — the reference changes on first tick
   const isLiveActive = isLiveEligible && liveEnabled && live !== asset
   const [chartOpen, setChartOpen] = useState(false)
   const hasHolding = asset.totalQuantity > 0 || (asset.assetType === 'savings' && (asset.totalCostKrw > 0 || asset.monthlyContributionKrw != null))
@@ -365,9 +365,21 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline, liveEnabled 
                 enabled={liveEnabled}
               />
               {isLiveEligible && (
-                isLiveActive
-                  ? <Wifi className="h-3 w-3 text-emerald-500 animate-pulse shrink-0" aria-label="실시간 시세" />
-                  : <WifiOff className="h-3 w-3 text-amber-400 shrink-0" aria-label="캐시된 시세" />
+                <button
+                  onClick={() => setLiveEnabled(v => !v)}
+                  className={cn(
+                    'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[10px] font-medium transition-colors shrink-0',
+                    liveEnabled
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                      : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted',
+                  )}
+                >
+                  {isLiveActive
+                    ? <Wifi className="h-2.5 w-2.5 animate-pulse" />
+                    : <WifiOff className="h-2.5 w-2.5" />
+                  }
+                  실시간
+                </button>
               )}
             </span>
           ) : dailyChangePct !== null && (
@@ -463,7 +475,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline, liveEnabled 
         </button>
       )}
 
-      <div className="flex items-stretch gap-3 px-4 py-3.5">
+      <div className={cn('flex items-stretch gap-3 px-4 py-3.5', ((showSparkline && asset.ticker) || lineData !== undefined) && 'pr-16')}>
         {/* 로고 */}
         <div className="shrink-0 self-center">
           <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={40} />
@@ -629,21 +641,18 @@ function SummaryBar({ assets }: { assets: AssetPerformance[] }) {
 
 const LIVE_ASSET_TYPES = new Set(['stock_kr', 'etf_kr', 'stock_us', 'etf_us'])
 
-function AssetCardList({ assets, title, sparklines, lineDataMap, liveEnabled = false, onToggleLive }: {
+function AssetCardList({ assets, title, sparklines, lineDataMap }: {
   assets: AssetPerformance[]
   title?: React.ReactNode
   sparklines?: Record<string, OhlcPoint[]>
   lineDataMap?: Record<string, AssetHistoryPoint[]>
-  liveEnabled?: boolean
-  onToggleLive?: () => void
 }) {
   const [merged, setMerged] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
-  const wsEnabled = useKisWsEnabled()
-  const hasLiveAssets = wsEnabled && assets.some(a => LIVE_ASSET_TYPES.has(a.assetType))
 
-  const liveAssets = useLivePerformances(assets, liveEnabled)
+  // 헤더 통계: 개별 카드에서 실시간 켠 종목의 tick이 store에 쌓이면 자동 반영
+  const liveAssets = useLivePerformances(assets, true)
   const showSparkline = assets.some((a) => !NO_SPARKLINE_TYPES.has(a.assetType))
   const hasDuplicates = new Set(assets.map((a) => a.ticker ?? a.name)).size < assets.length
   const hasStale = liveAssets.some((a) => a.isStale)
@@ -666,7 +675,7 @@ function AssetCardList({ assets, title, sparklines, lineDataMap, liveEnabled = f
 
   return (
     <div className="space-y-2">
-      {(title || hasDuplicates || hasStale || hasLiveAssets) && (
+      {(title || hasDuplicates || hasStale) && (
         <div className="flex items-center justify-between gap-2 px-1 flex-wrap">
           <div className="flex items-center gap-x-3 gap-y-1 flex-wrap min-w-0">
             {title && <div className="flex items-center gap-2 flex-wrap">{title}</div>}
@@ -698,20 +707,6 @@ function AssetCardList({ assets, title, sparklines, lineDataMap, liveEnabled = f
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {hasLiveAssets && onToggleLive && (
-              <button
-                onClick={onToggleLive}
-                className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-colors',
-                  liveEnabled
-                    ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
-                    : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted',
-                )}
-              >
-                <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', liveEnabled ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/40')} />
-                실시간
-              </button>
-            )}
             {hasStale && (
               <button
                 onClick={handleRefresh}
@@ -744,7 +739,6 @@ function AssetCardList({ assets, title, sparklines, lineDataMap, liveEnabled = f
             sparklineData={asset.ticker ? sparklines?.[asset.ticker] : undefined}
             lineData={lineDataMap?.[asset.assetId]}
             showSparkline={showSparkline}
-            liveEnabled={liveEnabled}
           />
         ))}
       </div>
@@ -873,7 +867,6 @@ function AssetFilter({
   dailyByType: Record<string, DailyDataPoint[]>
 }) {
   const [active, setActive] = useState<string>('all')
-  const [liveEnabled, setLiveEnabled] = useState(false)
   const showAll = types.length > 1
   const visibleTypes = active === 'all' ? types : types.filter((t) => t === active)
 
@@ -935,8 +928,6 @@ function AssetFilter({
                 assets={grouped[type]}
                 sparklines={sparklines}
                 lineDataMap={lineDataMap}
-                liveEnabled={liveEnabled}
-                onToggleLive={() => setLiveEnabled(v => !v)}
                 title={
                   <>
                     <AssetTypeBadge assetType={type as AssetPerformance['assetType']} />
