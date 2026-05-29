@@ -8,7 +8,6 @@ import { getAllSnapshotsWithBreakdowns } from '@/db/queries/portfolio-snapshots'
 import { getRealizedProfitKrw } from '@/db/queries/transactions'
 import { toMonthlyData, toAnnualData, toDailyData, snapshotsForType } from '@/lib/snapshot/aggregation'
 import { AssetsPageClient } from '@/components/app/assets-page-client'
-import { SummaryCards } from '@/components/app/summary-cards'
 import { timed, perfMark, perfLog } from '@/lib/perf'
 
 export default async function AssetsPage() {
@@ -52,24 +51,16 @@ async function AssetsContent({ userId }: { userId: string }) {
     dailyByType[type] = toDailyData(typeSnaps)
   }
 
-  const grouped = performances.reduce<Record<string, typeof performances>>((acc, a) => {
-    if (!acc[a.assetType]) acc[a.assetType] = []
-    acc[a.assetType].push(a)
-    return acc
-  }, {})
-
   return (
-    <>
-      <SummaryCards grouped={grouped} performances={performances} realizedProfitKrw={realizedProfitKrw} showTypeStrip={false} />
-      <AssetsPageClient
-        performances={performances}
-        sparklines={{}}
-        monthlyData={monthlyData}
-        annualData={annualData}
-        monthlyByType={monthlyByType}
-        annualByType={annualByType}
-        dailyByType={dailyByType}
-      />
-    </>
+    <AssetsPageClient
+      performances={performances}
+      realizedProfitKrw={realizedProfitKrw}
+      sparklines={{}}
+      monthlyData={monthlyData}
+      annualData={annualData}
+      monthlyByType={monthlyByType}
+      annualByType={annualByType}
+      dailyByType={dailyByType}
+    />
   )
 }

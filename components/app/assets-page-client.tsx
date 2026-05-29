@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useTransition, useRef, useCallback, memo, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { Layers, LayoutGrid, TrendingUp, TrendingDown, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown, HelpCircle, ShieldCheck, Gem, CreditCard, RefreshCw, Wallet } from 'lucide-react'
+import { Layers, LayoutGrid, TrendingUp, TrendingDown, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown, HelpCircle, ShieldCheck, Gem, CreditCard, RefreshCw, Wallet, Shield, Heart, Store, Banknote, Coins, Globe, Briefcase, Landmark, Users } from 'lucide-react'
 
 import { buttonVariants } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
@@ -34,6 +34,7 @@ const CandlestickChart = dynamic(
 import { formatKrw, formatUsd, formatReturn, formatQty } from '@/lib/portfolio'
 import type { AssetPerformance } from '@/lib/portfolio'
 import { TodayReport } from '@/components/app/today-report'
+import { SummaryCards } from '@/components/app/summary-cards'
 import type { MonthlyDataPoint, AnnualDataPoint, DailyDataPoint } from '@/lib/snapshot/aggregation'
 
 const ASSET_TYPE_ORDER = [
@@ -41,12 +42,47 @@ const ASSET_TYPE_ORDER = [
 ] as const
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
-  isa: 'ISA',
-  irp: 'IRP',
-  pension: '연금저축',
-  dc: 'DC',
-  brokerage: '위탁',
-  spot: '현물',
+  isa: 'ISA', irp: 'IRP', pension: '연금저축', dc: 'DC', brokerage: '위탁', spot: '현물', cma: 'CMA', insurance: '보험',
+  upbit: '업비트', bithumb: '빗썸', coinone: '코인원', korbit: '코빗',
+  binance: '바이낸스', coinbase: '코인베이스', kraken: '크라켄', okx: 'OKX',
+  fund_mirae: '미래에셋', fund_samsung: '삼성', fund_kb: 'KB', fund_shinhan: '신한', fund_hanwha: '한화',
+  fund_nh: 'NH아문디', fund_korea: '한국투자', fund_kiwoom: '키움', fund_hana: '하나', fund_woori: '우리',
+  fund_ibk: 'IBK', fund_daishin: '대신', fund_timefolio: '타임폴리오', fund_truston: '트러스톤',
+  bank_kb: 'KB국민', bank_shinhan: '신한', bank_woori: '우리', bank_hana: '하나', bank_nh: 'NH농협',
+  bank_kakao: '카카오', bank_toss: '토스', bank_k: '케이뱅크',
+  bank_ibk: 'IBK기업', bank_kdb: 'KDB산업',
+  bank_busan: '부산', bank_daegu: '대구', bank_gwangju: '광주', bank_jeonbuk: '전북', bank_jeju: '제주',
+  bank_sbi: 'SBI저축', bank_ok: 'OK저축', bank_welcome: '웰컴저축', bank_pepper: '페퍼저축',
+  bank_shincom: '신협', bank_saemaul: '새마을금고',
+  coop_shincom: '신협', coop_saemaul: '새마을금고', coop_suhyup: '수협', coop_nh: '농협', coop_nfcf: '산림조합',
+  ins_samsung_life: '삼성생명', ins_hanwha_life: '한화생명', ins_kyobo: '교보생명',
+  ins_shinhan_life: '신한라이프', ins_nh_life: 'NH농협생명', ins_kb_life: 'KB라이프',
+  ins_aia: 'AIA생명', ins_metlife: '메트라이프', ins_prudential: '푸르덴셜',
+  ins_samsung_fire: '삼성화재', ins_hyundai: '현대해상', ins_db_fire: 'DB손보',
+  ins_kb_fire: 'KB손보', ins_meritz: '메리츠화재', ins_hanwha_fire: '한화손보',
+  ins_lotte_fire: '롯데손보', ins_im_life: 'IM라이프',
+}
+
+const ACCOUNT_TYPE_ICONS: Record<string, React.ElementType> = {
+  isa: Shield, irp: PiggyBank, pension: Heart, dc: Building2, brokerage: Store, spot: Banknote, cma: CreditCard, insurance: ShieldCheck,
+  upbit: Coins, bithumb: Coins, coinone: Coins, korbit: Coins,
+  binance: Globe, coinbase: Globe, kraken: Globe, okx: Globe,
+  fund_mirae: Briefcase, fund_samsung: Briefcase, fund_kb: Briefcase, fund_shinhan: Briefcase, fund_hanwha: Briefcase,
+  fund_nh: Briefcase, fund_korea: Briefcase, fund_kiwoom: Briefcase, fund_hana: Briefcase, fund_woori: Briefcase,
+  fund_ibk: Briefcase, fund_daishin: Briefcase, fund_timefolio: Briefcase, fund_truston: Briefcase,
+  bank_kb: Landmark, bank_shinhan: Landmark, bank_woori: Landmark, bank_hana: Landmark, bank_nh: Landmark,
+  bank_kakao: Landmark, bank_toss: Landmark, bank_k: Landmark,
+  bank_ibk: Landmark, bank_kdb: Landmark,
+  bank_busan: Landmark, bank_daegu: Landmark, bank_gwangju: Landmark, bank_jeonbuk: Landmark, bank_jeju: Landmark,
+  bank_sbi: Landmark, bank_ok: Landmark, bank_welcome: Landmark, bank_pepper: Landmark,
+  bank_shincom: Landmark, bank_saemaul: Landmark,
+  coop_shincom: Users, coop_saemaul: Users, coop_suhyup: Users, coop_nh: Users, coop_nfcf: Users,
+  ins_samsung_life: Heart, ins_hanwha_life: Heart, ins_kyobo: Heart,
+  ins_shinhan_life: Heart, ins_nh_life: Heart, ins_kb_life: Heart,
+  ins_aia: Heart, ins_metlife: Heart, ins_prudential: Heart,
+  ins_samsung_fire: ShieldCheck, ins_hyundai: ShieldCheck, ins_db_fire: ShieldCheck,
+  ins_kb_fire: ShieldCheck, ins_meritz: ShieldCheck, ins_hanwha_fire: ShieldCheck,
+  ins_lotte_fire: ShieldCheck, ins_im_life: Heart,
 }
 
 const ASSET_TYPE_LABELS: Record<string, string> = {
@@ -751,6 +787,7 @@ function CollapsibleChart({ assets, sparklines, monthlyData, annualData, dailyDa
 
 interface AssetsPageClientProps {
   performances: AssetPerformance[]
+  realizedProfitKrw?: number
   sparklines?: Record<string, OhlcPoint[]>
   monthlyData?: MonthlyDataPoint[]
   annualData?: AnnualDataPoint[]
@@ -759,7 +796,7 @@ interface AssetsPageClientProps {
   dailyByType?: Record<string, DailyDataPoint[]>
 }
 
-export function AssetsPageClient({ performances, sparklines: initialSparklines, monthlyData = [], annualData = [], monthlyByType = {}, annualByType = {}, dailyByType = {} }: AssetsPageClientProps) {
+export function AssetsPageClient({ performances, realizedProfitKrw = 0, sparklines: initialSparklines, monthlyData = [], annualData = [], monthlyByType = {}, annualByType = {}, dailyByType = {} }: AssetsPageClientProps) {
   const [sparklines, setSparklines] = useState<Record<string, OhlcPoint[]>>(initialSparklines ?? {})
   const [lineDataMap, setLineDataMap] = useState<Record<string, AssetHistoryPoint[]>>({})
 
@@ -792,6 +829,9 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
       .catch(() => {})
   }, [performances])
 
+  const [active, setActive] = useState<string>('all')
+  const [activeAccount, setActiveAccount] = useState<'all' | 'personal' | 'pension'>('all')
+
   const { grouped, types } = useMemo(() => {
     const grouped = ASSET_TYPE_ORDER.reduce<Record<string, AssetPerformance[]>>((acc, type) => {
       const items = performances.filter((a) => a.assetType === type)
@@ -800,6 +840,22 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
     }, {})
     return { grouped, types: Object.keys(grouped) }
   }, [performances])
+
+  const filteredPerformances = useMemo(() => {
+    let result = performances
+    if (active !== 'all') result = result.filter((a) => a.assetType === active)
+    if (activeAccount === 'personal') result = result.filter((a) => a.accountType === 'brokerage')
+    else if (activeAccount === 'pension') result = result.filter((a) => !!a.accountType && a.accountType !== 'brokerage')
+    return result
+  }, [performances, active, activeAccount])
+
+  const filteredGroupedForSummary = useMemo(() =>
+    filteredPerformances.reduce<Record<string, AssetPerformance[]>>((acc, a) => {
+      if (!acc[a.assetType]) acc[a.assetType] = []
+      acc[a.assetType].push(a)
+      return acc
+    }, {})
+  , [filteredPerformances])
 
   if (performances.length === 0) {
     return (
@@ -812,10 +868,20 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
 
   return (
     <div data-component="AssetsPageClient" className="space-y-6">
+      <SummaryCards
+        grouped={filteredGroupedForSummary}
+        performances={filteredPerformances}
+        realizedProfitKrw={realizedProfitKrw}
+        showTypeStrip={false}
+      />
       <TodayReport performances={performances} />
       <AssetFilter
         types={types}
         grouped={grouped}
+        active={active}
+        setActive={setActive}
+        activeAccount={activeAccount}
+        setActiveAccount={setActiveAccount}
         sparklines={sparklines}
         lineDataMap={lineDataMap}
         monthlyByType={monthlyByType}
@@ -827,34 +893,59 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
 }
 
 function AssetFilter({
-  types, grouped, sparklines, lineDataMap, monthlyByType, annualByType, dailyByType,
+  types, grouped, active, setActive, activeAccount, setActiveAccount,
+  sparklines, lineDataMap, monthlyByType, annualByType, dailyByType,
 }: {
   types: string[]
   grouped: Record<string, AssetPerformance[]>
+  active: string
+  setActive: (v: string) => void
+  activeAccount: 'all' | 'personal' | 'pension'
+  setActiveAccount: (v: 'all' | 'personal' | 'pension') => void
   sparklines: Record<string, OhlcPoint[]>
   lineDataMap: Record<string, AssetHistoryPoint[]>
   monthlyByType: Record<string, MonthlyDataPoint[]>
   annualByType: Record<string, AnnualDataPoint[]>
   dailyByType: Record<string, DailyDataPoint[]>
 }) {
-  const [active, setActive] = useState<string>('all')
+
+  const allAssets = useMemo(() => Object.values(grouped).flat(), [grouped])
+
+  const isPersonal = (a: AssetPerformance) => a.accountType === 'brokerage'
+  const isPension  = (a: AssetPerformance) => !!a.accountType && a.accountType !== 'brokerage'
+
+  const personalCount = useMemo(() => allAssets.filter(isPersonal).length, [allAssets])
+  const pensionCount  = useMemo(() => allAssets.filter(isPension).length,  [allAssets])
+
+  const filteredGrouped = useMemo(() => {
+    if (activeAccount === 'all') return grouped
+    const pred = activeAccount === 'personal' ? isPersonal : isPension
+    const result: Record<string, AssetPerformance[]> = {}
+    for (const type of types) {
+      const filtered = (grouped[type] ?? []).filter(pred)
+      if (filtered.length > 0) result[type] = filtered
+    }
+    return result
+  }, [grouped, types, activeAccount])
+
   const showAll = types.length > 1
-  const visibleTypes = active === 'all' ? types : types.filter((t) => t === active)
+  const showAccountFilter = personalCount > 0 && pensionCount > 0
+  const visibleTypes = (active === 'all' ? types : types.filter((t) => t === active))
+    .filter((t) => (filteredGrouped[t]?.length ?? 0) > 0)
+
+  const pillCls = (isActive: boolean) => cn(
+    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors',
+    isActive
+      ? 'bg-foreground border-foreground text-background shadow-sm'
+      : 'bg-muted/60 border-border text-foreground/70 hover:text-foreground hover:bg-muted',
+  )
 
   return (
-    <div className="space-y-4">
-      {/* 필터 pills */}
+    <div className="space-y-3">
+      {/* 자산 유형 필터 pills */}
       {showAll && (
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setActive('all')}
-            className={cn(
-              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors',
-              active === 'all'
-                ? 'bg-foreground border-foreground text-background shadow-sm'
-                : 'bg-muted/60 border-border text-foreground/70 hover:text-foreground hover:bg-muted',
-            )}
-          >
+          <button onClick={() => setActive('all')} className={pillCls(active === 'all')}>
             <LayoutGrid className="h-3 w-3" />
             전체
             <span className="opacity-60">({types.reduce((s, t) => s + grouped[t].length, 0)})</span>
@@ -863,16 +954,7 @@ function AssetFilter({
             const Icon = ASSET_TYPE_ICONS[type]
             const isActive = active === type
             return (
-              <button
-                key={type}
-                onClick={() => setActive(isActive ? 'all' : type)}
-                className={cn(
-                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors',
-                  isActive
-                    ? 'bg-foreground border-foreground text-background shadow-sm'
-                    : 'bg-muted/60 border-border text-foreground/70 hover:text-foreground hover:bg-muted',
-                )}
-              >
+              <button key={type} onClick={() => setActive(isActive ? 'all' : type)} className={pillCls(isActive)}>
                 {Icon && <Icon className="h-3 w-3" />}
                 {ASSET_TYPE_LABELS_SHORT[type] ?? ASSET_TYPE_LABELS[type]}
                 <span className="opacity-60">({grouped[type].length})</span>
@@ -882,39 +964,72 @@ function AssetFilter({
         </div>
       )}
 
+      {/* 계좌 유형 필터 pills */}
+      {showAccountFilter && (
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setActiveAccount('all')} className={pillCls(activeAccount === 'all')}>
+            <Wallet className="h-3 w-3" />
+            전체
+            <span className="opacity-60">({allAssets.length})</span>
+          </button>
+          <button onClick={() => setActiveAccount(activeAccount === 'personal' ? 'all' : 'personal')} className={pillCls(activeAccount === 'personal')}>
+            <Store className="h-3 w-3" />
+            개인포트폴리오
+            <span className="opacity-60">({personalCount})</span>
+          </button>
+          <button onClick={() => setActiveAccount(activeAccount === 'pension' ? 'all' : 'pension')} className={pillCls(activeAccount === 'pension')}>
+            <Shield className="h-3 w-3" />
+            연금계좌
+            <span className="opacity-60">({pensionCount})</span>
+          </button>
+        </div>
+      )}
+
       {/* 콘텐츠 */}
-      <div className="space-y-0">
-        {visibleTypes.map((type, i) => (
-          <div key={type}>
-            {i > 0 && <Separator className="my-6 bg-foreground" />}
-            <div className="space-y-3">
-              <CollapsibleChart
-                assets={grouped[type]}
-                sparklines={sparklines}
-                monthlyData={monthlyByType[type] ?? []}
-                annualData={annualByType[type] ?? []}
-                dailyData={dailyByType[type] ?? []}
-              />
-              <AssetCardList
-                assets={grouped[type]}
-                sparklines={sparklines}
-                lineDataMap={lineDataMap}
-                title={
-                  <>
-                    <AssetTypeBadge assetType={type as AssetPerformance['assetType']} />
-                    {type === 'fund' && (
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <HelpCircle className="h-3 w-3" />
-                        1일 1회 기준가 갱신
-                      </span>
-                    )}
-                  </>
-                }
-              />
+      {visibleTypes.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <p className="text-sm text-muted-foreground">선택한 조건에 해당하는 자산이 없습니다.</p>
+          <button
+            onClick={() => { setActive('all'); setActiveAccount('all') }}
+            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+          >
+            전체 보기
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-0">
+          {visibleTypes.map((type, i) => (
+            <div key={type}>
+              {i > 0 && <Separator className="my-6 bg-foreground" />}
+              <div className="space-y-3">
+                <CollapsibleChart
+                  assets={filteredGrouped[type]}
+                  sparklines={sparklines}
+                  monthlyData={monthlyByType[type] ?? []}
+                  annualData={annualByType[type] ?? []}
+                  dailyData={dailyByType[type] ?? []}
+                />
+                <AssetCardList
+                  assets={filteredGrouped[type]}
+                  sparklines={sparklines}
+                  lineDataMap={lineDataMap}
+                  title={
+                    <>
+                      <AssetTypeBadge assetType={type as AssetPerformance['assetType']} />
+                      {type === 'fund' && (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <HelpCircle className="h-3 w-3" />
+                          1일 1회 기준가 갱신
+                        </span>
+                      )}
+                    </>
+                  }
+                />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
