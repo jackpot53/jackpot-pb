@@ -2,9 +2,10 @@
 import { useState, useEffect, useTransition, useRef, useCallback, memo, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Layers, LayoutGrid, TrendingUp, TrendingDown, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown, HelpCircle, ShieldCheck, Gem, CreditCard, RefreshCw, Wallet, Shield, Heart, Store, Banknote, Coins, Globe, Briefcase, Landmark, Users, X } from 'lucide-react'
+import { Layers, LayoutGrid, TrendingUp, TrendingDown, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown, HelpCircle, ShieldCheck, Gem, CreditCard, RefreshCw, Wallet, Shield, Heart, Store, Banknote, Coins, Globe, Briefcase, Landmark, Users } from 'lucide-react'
 
 import { buttonVariants } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { cn } from '@/lib/utils'
@@ -962,145 +963,53 @@ function AssetFilter({
   const visibleTypes = (active === 'all' ? types : types.filter((t) => t === active))
     .filter((t) => (filteredGrouped[t]?.length ?? 0) > 0)
 
-  const [filterOpen, setFilterOpen] = useState(false)
-
-  type ActiveChip = { key: string; label: string; icon?: React.ReactNode; onClear: () => void }
-  const activeChips: ActiveChip[] = []
-  if (active !== 'all') {
-    const Icon = ASSET_TYPE_ICONS[active]
-    activeChips.push({
-      key: `type-${active}`,
-      label: ASSET_TYPE_LABELS_SHORT[active] ?? ASSET_TYPE_LABELS[active],
-      icon: Icon ? <Icon className="h-3 w-3" /> : undefined,
-      onClear: () => setActive('all'),
-    })
-  }
-  if (activeAccount === 'personal') activeChips.push({ key: 'acct-personal', label: '개인포트폴리오', icon: <Store className="h-3 w-3" />, onClear: () => setActiveAccount('all') })
-  if (activeAccount === 'pension')  activeChips.push({ key: 'acct-pension',  label: '연금계좌',       icon: <Shield className="h-3 w-3" />, onClear: () => setActiveAccount('all') })
-  if (activeOwner !== 'all') activeChips.push({
-    key: `owner-${activeOwner}`,
-    label: activeOwner,
-    icon: <span className="text-xs leading-none">{OWNER_ICONS[activeOwner] ?? '👤'}</span>,
-    onClear: () => setActiveOwner('all'),
-  })
-
-  const pillCls = (isActive: boolean) => cn(
-    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors',
-    isActive
-      ? 'bg-foreground border-foreground text-background shadow-sm'
-      : 'bg-muted/60 border-border text-foreground/70 hover:text-foreground hover:bg-muted',
-  )
-
   return (
     <div className="space-y-3">
-      {/* 필터 헤더 — 토글 + 활성 칩 */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <button
-          onClick={() => setFilterOpen((v) => !v)}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold text-foreground/80 hover:bg-muted transition-colors"
-        >
-          <ChevronDown className={cn('h-4 w-4 transition-transform duration-200', !filterOpen && '-rotate-90')} />
-          필터
-          {activeChips.length > 0 && (
-            <span className="ml-0.5 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-foreground text-background text-[10px] font-bold">
-              {activeChips.length}
-            </span>
-          )}
-        </button>
-        {activeChips.length > 0 && (
-          <>
-            <div className="h-4 w-px bg-border" aria-hidden />
-            {activeChips.map((chip) => (
-              <button
-                key={chip.key}
-                onClick={chip.onClear}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border border-border bg-background hover:bg-muted transition-colors"
-                aria-label={`${chip.label} 필터 해제`}
-              >
-                {chip.icon}
-                {chip.label}
-                <X className="h-3 w-3 opacity-60" />
-              </button>
-            ))}
-            {activeChips.length >= 2 && (
-              <button
-                onClick={() => { setActive('all'); setActiveAccount('all'); setActiveOwner('all') }}
-                className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
-              >
-                전체 초기화
-              </button>
-            )}
-          </>
+      {/* 필터 셀렉트 행 */}
+      <div className="flex flex-wrap gap-2">
+        {showAll && (
+          <Select value={active} onValueChange={(v) => setActive(v ?? 'all')}>
+            <SelectTrigger className="h-8 w-36 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체 자산</SelectItem>
+              {types.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {ASSET_TYPE_LABELS_SHORT[type] ?? ASSET_TYPE_LABELS[type]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        {showAccountFilter && (
+          <Select value={activeAccount} onValueChange={(v) => setActiveAccount(v as 'all' | 'personal' | 'pension')}>
+            <SelectTrigger className="h-8 w-36 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체 계좌</SelectItem>
+              <SelectItem value="personal">개인포트폴리오</SelectItem>
+              <SelectItem value="pension">연금계좌</SelectItem>
+            </SelectContent>
+          </Select>
+        )}
+        {showOwnerFilter && (
+          <Select value={activeOwner} onValueChange={(v) => setActiveOwner(v ?? 'all')}>
+            <SelectTrigger className="h-8 w-28 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체 소유주</SelectItem>
+              {ownersInData.map((owner) => (
+                <SelectItem key={owner} value={owner}>
+                  {OWNER_ICONS[owner]} {owner}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
       </div>
-
-      {/* 필터 pill 패널 (펼쳐야 노출) */}
-      {filterOpen && <>
-      {/* 자산 유형 필터 pills */}
-      {showAll && (
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => setActive('all')} className={pillCls(active === 'all')}>
-            <LayoutGrid className="h-3 w-3" />
-            전체
-            <span className="opacity-60">({types.reduce((s, t) => s + grouped[t].length, 0)})</span>
-          </button>
-          {types.map((type) => {
-            const Icon = ASSET_TYPE_ICONS[type]
-            const isActive = active === type
-            return (
-              <button key={type} onClick={() => setActive(isActive ? 'all' : type)} className={pillCls(isActive)}>
-                {Icon && <Icon className="h-3 w-3" />}
-                {ASSET_TYPE_LABELS_SHORT[type] ?? ASSET_TYPE_LABELS[type]}
-                <span className="opacity-60">({grouped[type].length})</span>
-              </button>
-            )
-          })}
-        </div>
-      )}
-
-      {/* 계좌 유형 필터 pills */}
-      {showAccountFilter && (
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => setActiveAccount('all')} className={pillCls(activeAccount === 'all')}>
-            <Wallet className="h-3 w-3" />
-            전체
-            <span className="opacity-60">({allAssets.length})</span>
-          </button>
-          <button onClick={() => setActiveAccount(activeAccount === 'personal' ? 'all' : 'personal')} className={pillCls(activeAccount === 'personal')}>
-            <Store className="h-3 w-3" />
-            개인포트폴리오
-            <span className="opacity-60">({personalCount})</span>
-          </button>
-          <button onClick={() => setActiveAccount(activeAccount === 'pension' ? 'all' : 'pension')} className={pillCls(activeAccount === 'pension')}>
-            <Shield className="h-3 w-3" />
-            연금계좌
-            <span className="opacity-60">({pensionCount})</span>
-          </button>
-        </div>
-      )}
-
-      {/* 실소유주 필터 pills */}
-      {showOwnerFilter && (
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => setActiveOwner('all')} className={pillCls(activeOwner === 'all')}>
-            <Users className="h-3 w-3" />
-            전체
-            <span className="opacity-60">({allAssets.filter((a) => !!a.owner).length})</span>
-          </button>
-          {ownersInData.map((owner) => (
-            <button
-              key={owner}
-              onClick={() => setActiveOwner(activeOwner === owner ? 'all' : owner)}
-              className={pillCls(activeOwner === owner)}
-            >
-              <span className="text-xs leading-none">{OWNER_ICONS[owner] ?? '👤'}</span>
-              {owner}
-              <span className="opacity-60">({ownerCounts.get(owner)})</span>
-            </button>
-          ))}
-        </div>
-      )}
-      </>}
 
       {/* 콘텐츠 */}
       {visibleTypes.length === 0 ? (
