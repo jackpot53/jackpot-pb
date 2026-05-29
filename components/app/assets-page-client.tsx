@@ -839,25 +839,35 @@ export function AssetsPageClient({ performances, realizedProfitKrw = 0, sparklin
   const [activeAccount, setActiveAccount] = useState<'all' | 'personal' | 'pension' | 'direct'>('all')
   const [activeOwner, setActiveOwner] = useState<string>('all')
 
-  const { grouped, types } = useMemo(() => {
-    const grouped = ASSET_TYPE_ORDER.reduce<Record<string, AssetPerformance[]>>((acc, type) => {
+  // grouped은 AssetFilter 내부의 showAccountFilter/showOwnerFilter 계산에 쓰이므로 전체 기준 유지
+  const grouped = useMemo(() => {
+    return ASSET_TYPE_ORDER.reduce<Record<string, AssetPerformance[]>>((acc, type) => {
       const items = performances.filter((a) => a.assetType === type)
       if (items.length > 0) acc[type] = items
       return acc
     }, {})
-    return { grouped, types: Object.keys(grouped) }
   }, [performances])
 
-  const filteredPerformances = useMemo(() => {
+  const preTypeFiltered = useMemo(() => {
     let result = performances
-    if (active !== 'all') result = result.filter((a) => a.assetType === active)
     const PENSION_TYPES = ['isa', 'irp', 'pension', 'dc']
     if (activeAccount === 'personal') result = result.filter((a) => a.accountType === 'brokerage')
     else if (activeAccount === 'pension') result = result.filter((a) => !!a.accountType && PENSION_TYPES.includes(a.accountType))
     else if (activeAccount === 'direct') result = result.filter((a) => a.assetType !== 'fund' && (!a.accountType || (!PENSION_TYPES.includes(a.accountType) && a.accountType !== 'brokerage')))
     if (activeOwner !== 'all') result = result.filter((a) => a.owner === activeOwner)
     return result
-  }, [performances, active, activeAccount, activeOwner])
+  }, [performances, activeAccount, activeOwner])
+
+  // 종목 select 옵션은 계좌/소유주 필터 결과 기준으로 좁힘
+  const types = useMemo(() => {
+    const seen = new Set(preTypeFiltered.map((a) => a.assetType))
+    return ASSET_TYPE_ORDER.filter((t) => seen.has(t))
+  }, [preTypeFiltered])
+
+  const filteredPerformances = useMemo(() => {
+    if (active !== 'all') return preTypeFiltered.filter((a) => a.assetType === active)
+    return preTypeFiltered
+  }, [preTypeFiltered, active])
 
   const filteredGroupedForSummary = useMemo(() =>
     filteredPerformances.reduce<Record<string, AssetPerformance[]>>((acc, a) => {
