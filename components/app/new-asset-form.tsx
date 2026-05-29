@@ -831,11 +831,11 @@ export function NewAssetForm({ onSubmit }: {
                   <FormItem className="flex-1 min-w-0">
                     <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground pb-2.5 mb-3 border-b border-border">
                       <Wallet className="h-4 w-4" />
-                      {assetType === 'crypto' ? '거래소' : assetType === 'fund' ? '운용사' : assetType === 'savings' ? '은행' : assetType === 'insurance' ? '보험사' : assetType === 'contribution' ? '조합' : '금융회사'}
+                      {assetType === 'crypto' ? '거래소' : assetType === 'savings' ? '은행' : assetType === 'insurance' ? '보험사' : assetType === 'contribution' ? '조합' : '금융회사'}
                     </FormLabel>
                     <FormControl>
                       <div className="rounded-xl border border-border bg-muted/50 p-2">
-                        {(assetType === 'crypto' ? EXCHANGE_GROUPS : assetType === 'fund' ? FUND_COMPANY_GROUPS : assetType === 'insurance' ? INSURANCE_GROUPS : assetType === 'contribution' ? COOP_GROUPS : BANK_GROUPS).map((group) => (
+                        {(assetType === 'crypto' ? EXCHANGE_GROUPS : assetType === 'insurance' ? INSURANCE_GROUPS : assetType === 'contribution' ? COOP_GROUPS : BANK_GROUPS).map((group) => (
                           <div key={group.label} className="mb-1.5 last:mb-0">
                             <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{group.label}</p>
                             <div className={cn('grid gap-1.5', assetType === 'savings' ? 'grid-cols-5' : 'grid-cols-4')}>
