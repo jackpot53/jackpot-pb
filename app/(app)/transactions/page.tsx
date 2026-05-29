@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getAuthUser } from '@/utils/supabase/server'
 import { getAllTransactionsWithAsset } from '@/db/queries/transactions'
 import { getAssets } from '@/db/queries/assets'
+import { getHoldingQuantitiesByUserId } from '@/db/queries/holdings'
 import { TransactionsPageClient } from '@/components/app/transactions-page-client'
 
 export default async function TransactionsPage() {
@@ -19,12 +20,19 @@ export default async function TransactionsPage() {
 }
 
 async function TransactionsContent({ userId }: { userId: string }) {
-  const [txns, assets] = await Promise.all([
+  const [txns, assets, holdingQtys] = await Promise.all([
     getAllTransactionsWithAsset(userId),
     getAssets(userId),
+    getHoldingQuantitiesByUserId(userId),
   ])
 
-  const assetOptions = assets.map((a) => ({ id: a.id, name: a.name, assetType: a.assetType, currency: a.currency }))
+  const assetOptions = assets.map((a) => ({
+    id: a.id,
+    name: a.name,
+    assetType: a.assetType,
+    currency: a.currency,
+    totalQuantity: holdingQtys.get(a.id) ?? 0,
+  }))
 
   return (
     <TransactionsPageClient transactions={txns} assetOptions={assetOptions} />

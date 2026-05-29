@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { TrendingDown, CircleMinus, Save } from 'lucide-react'
+import { decodeQuantity } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -26,9 +27,10 @@ interface AssetInfo {
 
 interface Props {
   asset: AssetInfo
+  holdingQty?: number
 }
 
-export function SellTransactionDialog({ asset }: Props) {
+export function SellTransactionDialog({ asset, holdingQty = 0 }: Props) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -80,7 +82,7 @@ export function SellTransactionDialog({ asset }: Props) {
           assetId={asset.id}
           assetType={asset.assetType}
           currency={asset.currency}
-          defaultValues={{ type: 'sell' }}
+          defaultValues={{ type: 'sell', quantity: holdingQty > 0 ? decodeQuantity(holdingQty) : '' }}
           onSubmit={async (data) => {
             const result = await createTransaction(asset.id, data)
             if (!result?.error) setOpen(false)

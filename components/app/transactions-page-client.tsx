@@ -23,6 +23,7 @@ interface AssetOption {
   name: string
   assetType: AssetType
   currency: Currency
+  totalQuantity: number
 }
 
 interface Props {
@@ -53,7 +54,7 @@ function NoTransactionCard({ asset }: { asset: AssetOption }) {
   )
 }
 
-function TransactionCard({ tx, onDeleted }: { tx: TransactionWithAsset; onDeleted: (id: string) => void }) {
+function TransactionCard({ tx, holdingQty, onDeleted }: { tx: TransactionWithAsset; holdingQty: number; onDeleted: (id: string) => void }) {
   const isUsAsset = tx.assetType === 'stock_us' || tx.assetType === 'etf_us'
   const isKrwPurchase = isUsAsset && tx.currency === 'KRW'
   const isUsdPurchase = isUsAsset && tx.currency === 'USD'
@@ -117,7 +118,7 @@ function TransactionCard({ tx, onDeleted }: { tx: TransactionWithAsset; onDelete
         )}
       </div>
       <div className="flex items-center shrink-0">
-        <SellTransactionDialog asset={{ id: tx.assetId, name: tx.assetName, ticker: tx.ticker, assetType: tx.assetType as AssetType, currency: tx.currency as Currency }} />
+        <SellTransactionDialog asset={{ id: tx.assetId, name: tx.assetName, ticker: tx.ticker, assetType: tx.assetType as AssetType, currency: tx.currency as Currency }} holdingQty={holdingQty} />
         <EditTransactionDialog tx={tx} />
         <DeleteTransactionDialog
           transactionId={tx.id}
@@ -294,7 +295,7 @@ export function TransactionsPageClient({ transactions, assetOptions }: Props) {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-1.5">
           {paginated.map((tx) => (
-            <TransactionCard key={tx.id} tx={tx} onDeleted={handleDeleted} />
+            <TransactionCard key={tx.id} tx={tx} holdingQty={assetOptions.find(a => a.id === tx.assetId)?.totalQuantity ?? 0} onDeleted={handleDeleted} />
           ))}
           {assetFilter === '전체' && assetsWithNoTx.map((a) => (
             <NoTransactionCard key={a.id} asset={a} />
