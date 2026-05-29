@@ -3,7 +3,7 @@ import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useTransition, useState, useEffect, useRef } from 'react'
-import { Loader2, Save, X, ArrowLeftRight, CalendarDays, Hash, CircleDollarSign, BadgeDollarSign, Coins, StickyNote } from 'lucide-react'
+import { Loader2, Save, X, ArrowLeftRight, CalendarDays, Hash, CircleDollarSign, BadgeDollarSign, Coins, StickyNote, Wallet, Briefcase } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -27,6 +27,43 @@ import type { AssetType, Currency } from '@/lib/types/asset'
 import { formatKrwRounded } from '@/lib/format'
 
 const STOCK_ETF_TYPES: AssetType[] = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us']
+
+const ACCOUNT_TYPE_LABELS: Record<string, string> = {
+  isa: 'ISA', irp: 'IRP', pension: '연금저축', dc: 'DC', brokerage: '위탁',
+  upbit: '업비트', bithumb: '빗썸', coinone: '코인원', korbit: '코빗',
+  binance: '바이낸스', coinbase: '코인베이스', kraken: '크라켄', okx: 'OKX',
+  fund_mirae: '미래에셋', fund_samsung: '삼성', fund_kb: 'KB', fund_shinhan: '신한', fund_hanwha: '한화',
+  fund_nh: 'NH아문디', fund_korea: '한국투자', fund_kiwoom: '키움', fund_hana: '하나', fund_woori: '우리',
+  fund_ibk: 'IBK', fund_daishin: '대신', fund_timefolio: '타임폴리오', fund_truston: '트러스톤',
+  bank_kb: 'KB국민', bank_shinhan: '신한', bank_woori: '우리', bank_hana: '하나', bank_nh: 'NH농협',
+  bank_kakao: '카카오', bank_toss: '토스', bank_k: '케이뱅크', bank_ibk: 'IBK기업', bank_kdb: 'KDB산업',
+  bank_busan: '부산', bank_daegu: '대구', bank_gwangju: '광주', bank_jeonbuk: '전북', bank_jeju: '제주',
+  bank_sbi: 'SBI저축', bank_ok: 'OK저축', bank_welcome: '웰컴저축', bank_pepper: '페퍼저축',
+  bank_shincom: '신협', bank_saemaul: '새마을금고',
+  coop_shincom: '신협', coop_saemaul: '새마을금고', coop_suhyup: '수협', coop_nh: '농협', coop_nfcf: '산림조합',
+  ins_samsung_life: '삼성생명', ins_hanwha_life: '한화생명', ins_kyobo: '교보생명',
+  ins_shinhan_life: '신한라이프', ins_nh_life: 'NH농협생명', ins_kb_life: 'KB라이프',
+  ins_aia: 'AIA생명', ins_metlife: '메트라이프', ins_prudential: '푸르덴셜',
+  ins_samsung_fire: '삼성화재', ins_hyundai: '현대해상', ins_db_fire: 'DB손보',
+  ins_kb_fire: 'KB손보', ins_meritz: '메리츠화재', ins_hanwha_fire: '한화손보',
+  ins_lotte_fire: '롯데손보', ins_im_life: 'IM라이프',
+}
+const BROKERAGE_LABELS: Record<string, string> = {
+  sec_mirae: '미래에셋', sec_samsung: '삼성', sec_korea: '한국투자',
+  sec_kb: 'KB', sec_nh: 'NH투자', sec_shinhan: '신한투자',
+  sec_kiwoom: '키움', sec_daishin: '대신', sec_hana: '하나',
+  sec_meritz: '메리츠', sec_toss: '토스', sec_kakao: '카카오페이',
+  sec_hyundai: '현대차', sec_kyobo: '교보', sec_ibk: 'IBK',
+}
+const ACCOUNT_OPTIONS: Record<string, string[]> = {
+  stock: ['isa', 'irp', 'pension', 'dc', 'brokerage'],
+  fund: ['isa', 'irp', 'pension', 'dc', 'brokerage'],
+  crypto: ['upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx'],
+  savings: ['bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul'],
+  insurance: ['ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life', 'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_im_life', 'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire'],
+  fund_company: ['fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston'],
+  brokerage: Object.keys(BROKERAGE_LABELS),
+}
 
 function buildSchema(assetType: AssetType) {
   return z.object({
@@ -67,6 +104,9 @@ interface TransactionFormProps {
   onCancel: () => void
   formId?: string
   hideActions?: boolean
+  initialAccountType?: string | null
+  initialBrokerageId?: string | null
+  onSaveAccountType?: (accountType: string | null, brokerageId: string | null) => Promise<void>
 }
 
 
@@ -79,9 +119,14 @@ export function TransactionForm({
   onCancel,
   formId,
   hideActions,
+  initialAccountType,
+  initialBrokerageId,
+  onSaveAccountType,
 }: TransactionFormProps) {
   const [isPending, startTransition] = useTransition()
   const [krwPreview, setKrwPreview] = useState<string | null>(null)
+  const [accountType, setAccountType] = useState(initialAccountType ?? '')
+  const [brokerageId, setBrokerageId] = useState(initialBrokerageId ?? '')
   const [isFetchingFx, setIsFetchingFx] = useState(false)
   const fxFetchedDate = useRef<string | null>(null)
   const isUSD = currency === 'USD'
@@ -138,7 +183,10 @@ export function TransactionForm({
 
   function handleSubmit(data: TransactionFormValues) {
     startTransition(async () => {
-      const result = await onSubmit(data)
+      const [result] = await Promise.all([
+        onSubmit(data),
+        onSaveAccountType ? onSaveAccountType(accountType || null, brokerageId || null) : Promise.resolve(),
+      ])
       if (result?.error) {
         form.setError('root', { message: result.error })
       }
@@ -265,6 +313,59 @@ export function TransactionForm({
             </div>
           </FormItem>
         )} />
+
+        {onSaveAccountType && (() => {
+          const isStockEtf = STOCK_ETF_TYPES.includes(assetType)
+          const isFund = assetType === 'fund'
+          const isCrypto = assetType === 'crypto'
+          const isSavings = assetType === 'savings'
+          const isInsurance = assetType === 'insurance'
+          const accountLabel = isCrypto ? '거래소' : isSavings ? '은행' : isInsurance ? '보험사' : '계좌 유형'
+          const accountOptions = isCrypto ? ACCOUNT_OPTIONS.crypto : isSavings ? ACCOUNT_OPTIONS.savings : isInsurance ? ACCOUNT_OPTIONS.insurance : ACCOUNT_OPTIONS.stock
+          const showBrokerageRow = isStockEtf || isFund
+          const brokerageOptions = isFund ? ACCOUNT_OPTIONS.fund_company : ACCOUNT_OPTIONS.brokerage
+          const brokerageLabel = isFund ? '운용사' : '증권사'
+          const getBrokerLabel = (v: string) => isFund ? ACCOUNT_TYPE_LABELS[v] : (BROKERAGE_LABELS[v] ?? v)
+
+          return (
+            <>
+              {showBrokerageRow && (
+                <div className="flex flex-row items-center gap-4 rounded-xl border border-border bg-muted/20 px-4 py-2.5">
+                  <span className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40 text-sm font-medium">
+                    <Briefcase className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />{brokerageLabel}
+                  </span>
+                  <div className="flex-1">
+                    <Select value={brokerageId} onValueChange={(v) => setBrokerageId(v ?? '')}>
+                      <SelectTrigger className="border-0 bg-transparent shadow-none focus:ring-0 p-0 h-auto">
+                        <SelectValue>{brokerageId ? getBrokerLabel(brokerageId) : '선택 안함'}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">선택 안함</SelectItem>
+                        {brokerageOptions.map((v) => <SelectItem key={v} value={v}>{getBrokerLabel(v)}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+              <div className="flex flex-row items-center gap-4 rounded-xl border border-border bg-muted/20 px-4 py-2.5">
+                <span className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40 text-sm font-medium">
+                  <Wallet className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />{accountLabel}
+                </span>
+                <div className="flex-1">
+                  <Select value={accountType} onValueChange={(v) => setAccountType(v ?? '')}>
+                    <SelectTrigger className="border-0 bg-transparent shadow-none focus:ring-0 p-0 h-auto">
+                      <SelectValue>{accountType ? ACCOUNT_TYPE_LABELS[accountType] ?? accountType : '선택 안함'}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">선택 안함</SelectItem>
+                      {accountOptions.map((v) => <SelectItem key={v} value={v}>{ACCOUNT_TYPE_LABELS[v]}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </>
+          )
+        })()}
 
         {form.formState.errors.root && (
           <p className="text-sm text-destructive">{form.formState.errors.root.message}</p>
