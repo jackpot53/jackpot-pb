@@ -278,11 +278,11 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
     : null
 
   const accountBadge = mergedCount > 1 ? (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground ring-1 ring-border">
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-none text-xs font-semibold bg-muted text-muted-foreground ring-1 ring-border">
       {mergedCount}계좌
     </span>
   ) : asset.accountType && ACCOUNT_TYPE_LABELS[asset.accountType] ? (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground ring-1 ring-border">
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-none text-xs font-semibold bg-muted text-muted-foreground ring-1 ring-border">
       {ACCOUNT_TYPE_LABELS[asset.accountType]}
     </span>
   ) : null
@@ -310,7 +310,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
         <span className="text-xs text-muted-foreground tabular-nums shrink-0">
           만기일 {asset.maturityDate.replace(/-/g, '.')}
         </span>
-        <span className={`shrink-0 inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded-full tabular-nums ${isExpired ? 'bg-muted text-muted-foreground' : isDueSoon ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
+        <span className={`shrink-0 inline-flex items-center text-xs font-semibold px-1.5 py-0.5 rounded-none tabular-nums ${isExpired ? 'bg-muted text-muted-foreground' : isDueSoon ? 'bg-orange-100 text-orange-700' : 'bg-emerald-100 text-emerald-700'}`}>
           {label}
         </span>
       </>
@@ -358,7 +358,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
           {isSavings && asset.interestRateBp != null && asset.interestRateBp > 0 && (
             <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-emerald-600">연{(asset.interestRateBp / 10000).toFixed(2)}%</span>
             {asset.compoundType && (
-              <span className="ml-1 text-xs px-1.5 py-0.5 rounded-md font-medium text-white" style={{
+              <span className="ml-1 text-xs px-1.5 py-0.5 rounded-none font-medium text-white" style={{
                 backgroundColor: asset.compoundType === 'simple' ? '#3b82f6' : '#10b981'
               }}>
                 {asset.compoundType === 'simple' ? '단리' : '복리'}
@@ -369,7 +369,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
           {isInsurance && asset.insuranceDetails?.expectedReturnRateBp != null && asset.insuranceDetails.expectedReturnRateBp > 0 && (
             <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-emerald-600">연{(asset.insuranceDetails.expectedReturnRateBp / 10000).toFixed(2)}%</span>
             {asset.insuranceDetails.compoundType && (
-              <span className="ml-1 text-xs px-1.5 py-0.5 rounded-md font-medium text-white" style={{
+              <span className="ml-1 text-xs px-1.5 py-0.5 rounded-none font-medium text-white" style={{
                 backgroundColor: asset.insuranceDetails.compoundType === 'simple' ? '#3b82f6' : '#10b981'
               }}>
                 {asset.insuranceDetails.compoundType === 'simple' ? '단리' : '복리'}
