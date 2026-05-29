@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import { DeleteTransactionDialog } from '@/components/app/delete-transaction-dialog'
 import { EditTransactionDialog } from '@/components/app/edit-transaction-dialog'
 import { DeleteAssetDialog } from '@/components/app/delete-asset-dialog'
+import { SellTransactionDialog } from '@/components/app/sell-transaction-dialog'
 import { AssetLogo } from '@/components/app/asset-logo'
 import { cn } from '@/lib/utils'
 import type { TransactionWithAsset } from '@/db/queries/transactions'
@@ -116,6 +117,7 @@ function TransactionCard({ tx, onDeleted }: { tx: TransactionWithAsset; onDelete
         )}
       </div>
       <div className="flex items-center gap-1 shrink-0">
+        <SellTransactionDialog asset={{ id: tx.assetId, name: tx.assetName, ticker: tx.ticker, assetType: tx.assetType as AssetType, currency: tx.currency as Currency }} />
         <EditTransactionDialog tx={tx} />
         <DeleteTransactionDialog
           transactionId={tx.id}
