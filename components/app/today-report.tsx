@@ -262,7 +262,7 @@ function generateNarrative(
 // ── component ───────────────────────────────────────────────────────────────
 
 export function TodayReport({ performances }: { performances: AssetPerformance[] }) {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
   const { portfolioChangeBps, totalDailyChangeKrw, totalValueKrw, typeStats, topMovers, staleCount, liveCount } = useMemo(() => computeReport(performances), [performances])
 
   if (liveCount === 0) return null

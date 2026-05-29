@@ -198,6 +198,7 @@ const OWNER_ICONS: Record<string, string> = {
   개인: '👤', 엄마: '👩', 아빠: '👨', 동생: '🧒', 누나: '👱‍♀️',
   형: '👱‍♂️', 아내: '👰', 남편: '🤵', 딸: '👧', 아들: '👦',
 }
+const OWNER_ORDER = ['개인', '엄마', '아빠', '동생', '누나', '형', '아내', '남편', '딸', '아들']
 
 type MergedAsset = AssetPerformance & { mergedCount: number }
 
@@ -831,6 +832,7 @@ export function AssetsPageClient({ performances, realizedProfitKrw = 0, sparklin
 
   const [active, setActive] = useState<string>('all')
   const [activeAccount, setActiveAccount] = useState<'all' | 'personal' | 'pension'>('all')
+  const [activeOwner, setActiveOwner] = useState<string>('all')
 
   const { grouped, types } = useMemo(() => {
     const grouped = ASSET_TYPE_ORDER.reduce<Record<string, AssetPerformance[]>>((acc, type) => {
@@ -846,8 +848,9 @@ export function AssetsPageClient({ performances, realizedProfitKrw = 0, sparklin
     if (active !== 'all') result = result.filter((a) => a.assetType === active)
     if (activeAccount === 'personal') result = result.filter((a) => a.accountType === 'brokerage')
     else if (activeAccount === 'pension') result = result.filter((a) => !!a.accountType && a.accountType !== 'brokerage')
+    if (activeOwner !== 'all') result = result.filter((a) => a.owner === activeOwner)
     return result
-  }, [performances, active, activeAccount])
+  }, [performances, active, activeAccount, activeOwner])
 
   const filteredGroupedForSummary = useMemo(() =>
     filteredPerformances.reduce<Record<string, AssetPerformance[]>>((acc, a) => {
@@ -882,6 +885,8 @@ export function AssetsPageClient({ performances, realizedProfitKrw = 0, sparklin
         setActive={setActive}
         activeAccount={activeAccount}
         setActiveAccount={setActiveAccount}
+        activeOwner={activeOwner}
+        setActiveOwner={setActiveOwner}
         sparklines={sparklines}
         lineDataMap={lineDataMap}
         monthlyByType={monthlyByType}
@@ -894,6 +899,7 @@ export function AssetsPageClient({ performances, realizedProfitKrw = 0, sparklin
 
 function AssetFilter({
   types, grouped, active, setActive, activeAccount, setActiveAccount,
+  activeOwner, setActiveOwner,
   sparklines, lineDataMap, monthlyByType, annualByType, dailyByType,
 }: {
   types: string[]
@@ -902,6 +908,8 @@ function AssetFilter({
   setActive: (v: string) => void
   activeAccount: 'all' | 'personal' | 'pension'
   setActiveAccount: (v: 'all' | 'personal' | 'pension') => void
+  activeOwner: string
+  setActiveOwner: (v: string) => void
   sparklines: Record<string, OhlcPoint[]>
   lineDataMap: Record<string, AssetHistoryPoint[]>
   monthlyByType: Record<string, MonthlyDataPoint[]>
@@ -917,24 +925,44 @@ function AssetFilter({
   const personalCount = useMemo(() => allAssets.filter(isPersonal).length, [allAssets])
   const pensionCount  = useMemo(() => allAssets.filter(isPension).length,  [allAssets])
 
+  const ownerCounts = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const a of allAssets) {
+      if (!a.owner) continue
+      map.set(a.owner, (map.get(a.owner) ?? 0) + 1)
+    }
+    return map
+  }, [allAssets])
+
+  const ownersInData = useMemo(
+    () => OWNER_ORDER.filter((o) => (ownerCounts.get(o) ?? 0) > 0),
+    [ownerCounts],
+  )
+
   const filteredGrouped = useMemo(() => {
-    if (activeAccount === 'all') return grouped
-    const pred = activeAccount === 'personal' ? isPersonal : isPension
+    if (activeAccount === 'all' && activeOwner === 'all') return grouped
+    const accountPred = activeAccount === 'all'
+      ? () => true
+      : activeAccount === 'personal' ? isPersonal : isPension
+    const ownerPred = activeOwner === 'all'
+      ? () => true
+      : (a: AssetPerformance) => a.owner === activeOwner
     const result: Record<string, AssetPerformance[]> = {}
     for (const type of types) {
-      const filtered = (grouped[type] ?? []).filter(pred)
+      const filtered = (grouped[type] ?? []).filter((a) => accountPred(a) && ownerPred(a))
       if (filtered.length > 0) result[type] = filtered
     }
     return result
-  }, [grouped, types, activeAccount])
+  }, [grouped, types, activeAccount, activeOwner])
 
   const showAll = types.length > 1
   const showAccountFilter = personalCount > 0 && pensionCount > 0
+  const showOwnerFilter = ownersInData.length >= 2
   const visibleTypes = (active === 'all' ? types : types.filter((t) => t === active))
     .filter((t) => (filteredGrouped[t]?.length ?? 0) > 0)
 
   const pillCls = (isActive: boolean) => cn(
-    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors',
+    'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors',
     isActive
       ? 'bg-foreground border-foreground text-background shadow-sm'
       : 'bg-muted/60 border-border text-foreground/70 hover:text-foreground hover:bg-muted',
@@ -985,12 +1013,34 @@ function AssetFilter({
         </div>
       )}
 
+      {/* 실소유주 필터 pills */}
+      {showOwnerFilter && (
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setActiveOwner('all')} className={pillCls(activeOwner === 'all')}>
+            <Users className="h-3 w-3" />
+            전체
+            <span className="opacity-60">({allAssets.filter((a) => !!a.owner).length})</span>
+          </button>
+          {ownersInData.map((owner) => (
+            <button
+              key={owner}
+              onClick={() => setActiveOwner(activeOwner === owner ? 'all' : owner)}
+              className={pillCls(activeOwner === owner)}
+            >
+              <span className="text-xs leading-none">{OWNER_ICONS[owner] ?? '👤'}</span>
+              {owner}
+              <span className="opacity-60">({ownerCounts.get(owner)})</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* 콘텐츠 */}
       {visibleTypes.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-center">
           <p className="text-sm text-muted-foreground">선택한 조건에 해당하는 자산이 없습니다.</p>
           <button
-            onClick={() => { setActive('all'); setActiveAccount('all') }}
+            onClick={() => { setActive('all'); setActiveAccount('all'); setActiveOwner('all') }}
             className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
           >
             전체 보기
