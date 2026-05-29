@@ -13,6 +13,8 @@ export interface TransactionWithAsset extends Transaction {
   assetType: string
   ticker: string | null
   depositStartDate: string | null
+  accountType: string | null
+  brokerageId: string | null
 }
 
 /**
@@ -96,6 +98,8 @@ export const getAllTransactionsWithAsset = cache(async (userId: string): Promise
       assetType: assets.assetType,
       ticker: assets.ticker,
       depositStartDate: savingsDetails.depositStartDate,
+      accountType: assets.accountType,
+      brokerageId: assets.brokerageId,
     })
     .from(transactions)
     .innerJoin(assets, and(eq(transactions.assetId, assets.id), eq(assets.userId, userId)))

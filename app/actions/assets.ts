@@ -508,6 +508,40 @@ export async function updateAsset(
   revalidatePath(`/assets/${id}`)
 }
 
+const accountTypeValues = [
+  'isa', 'irp', 'pension', 'dc', 'brokerage', 'spot', 'cma', 'insurance',
+  'upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx',
+  'fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha',
+  'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori',
+  'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston',
+  'bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh',
+  'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb',
+  'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju',
+  'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul',
+  'coop_shincom', 'coop_saemaul', 'coop_suhyup', 'coop_nh', 'coop_nfcf',
+  'ins_samsung_life', 'ins_hanwha_life', 'ins_kyobo', 'ins_shinhan_life', 'ins_nh_life', 'ins_kb_life',
+  'ins_aia', 'ins_metlife', 'ins_prudential', 'ins_im_life',
+  'ins_samsung_fire', 'ins_hyundai', 'ins_db_fire', 'ins_kb_fire', 'ins_meritz', 'ins_hanwha_fire', 'ins_lotte_fire',
+] as const
+
+export async function updateAssetAccountType(
+  id: string,
+  accountType: string | null,
+  brokerageId: string | null,
+): Promise<AssetActionError | void> {
+  const user = await requireUser()
+  if (!id) return { error: '자산 ID가 없습니다.' }
+  const validAccountType = accountType && (accountTypeValues as readonly string[]).includes(accountType)
+    ? accountType as typeof accountTypeValues[number]
+    : null
+  await db.update(assets).set({
+    accountType: validAccountType,
+    brokerageId: brokerageId ?? null,
+  }).where(and(eq(assets.id, id), eq(assets.userId, user.id)))
+  revalidatePath('/assets')
+  revalidatePath('/transactions')
+}
+
 export async function deleteAsset(id: string): Promise<AssetActionError | void> {
   const user = await requireUser()
   if (!id) return { error: '자산 ID가 없습니다.' }
