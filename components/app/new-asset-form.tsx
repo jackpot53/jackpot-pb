@@ -1095,11 +1095,11 @@ export function NewAssetForm({ onSubmit }: {
                       {/* 검색 결과 오버레이 */}
                       {suggestions.length > 0 && (
                         <div className="absolute left-0 right-0 top-full z-50 mt-1.5 max-h-72 overflow-y-auto rounded-xl border border-border bg-card shadow-lg shadow-black/10 p-1.5 flex flex-col gap-0.5">
-                          {suggestions.map((s) => {
+                          {suggestions.map((s, i) => {
                             const isSelected = value === s.name
                             return (
                               <button
-                                key={s.ticker || s.name}
+                                key={`${s.ticker || ''}-${s.name}-${i}`}
                                 type="button"
                                 onMouseDown={(e) => e.preventDefault()}
                                 onClick={() => selectSuggestion(s)}
@@ -1978,35 +1978,33 @@ export function NewAssetForm({ onSubmit }: {
                               <TrendingUp className="h-3.5 w-3.5 shrink-0" />예상 공시이율 (%)
                             </FormLabel>
                             <FormControl>
-                              <div className="flex gap-2 items-center">
-                                <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 3.5" className="flex-1" />
-                                <div className="flex gap-1 shrink-0">
-                                  {([
-                                    ['simple', '단리', Minus, 'text-orange-400'],
-                                    ['monthly', '월복리', TrendingUp, 'text-emerald-400'],
-                                    ['yearly', '연복리', Repeat, 'text-blue-400'],
-                                  ] as const).map(([type, label, Icon, iconColor]) => {
-                                    const active = form.watch('compoundType') === type
-                                    return (
-                                      <button
-                                        key={type}
-                                        type="button"
-                                        onClick={() => form.setValue('compoundType', active ? null : type)}
-                                        className={cn(
-                                          'rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap flex items-center gap-1',
-                                          active
-                                            ? 'bg-indigo-500/20 border-indigo-400/60 text-indigo-300'
-                                            : 'border-border bg-muted/50 text-muted-foreground hover:text-muted-foreground hover:bg-muted/50',
-                                        )}
-                                      >
-                                        <Icon className={cn('h-3 w-3 shrink-0', active ? 'text-indigo-300' : iconColor)} />
-                                        {label}
-                                      </button>
-                                    )
-                                  })}
-                                </div>
-                              </div>
+                              <Input {...field} value={field.value ?? ''} inputMode="decimal" placeholder="예: 3.5" />
                             </FormControl>
+                            <div className="flex gap-1">
+                              {([
+                                ['simple', '단리', Minus, 'text-orange-400'],
+                                ['monthly', '월복리', TrendingUp, 'text-emerald-400'],
+                                ['yearly', '연복리', Repeat, 'text-blue-400'],
+                              ] as const).map(([type, label, Icon, iconColor]) => {
+                                const active = form.watch('compoundType') === type
+                                return (
+                                  <button
+                                    key={type}
+                                    type="button"
+                                    onClick={() => form.setValue('compoundType', active ? null : type)}
+                                    className={cn(
+                                      'flex-1 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap flex items-center justify-center gap-1',
+                                      active
+                                        ? 'bg-indigo-500/20 border-indigo-400/60 text-indigo-300'
+                                        : 'border-border bg-muted/50 text-muted-foreground hover:text-muted-foreground hover:bg-muted/50',
+                                    )}
+                                  >
+                                    <Icon className={cn('h-3 w-3 shrink-0', active ? 'text-indigo-300' : iconColor)} />
+                                    {label}
+                                  </button>
+                                )
+                              })}
+                            </div>
                             <FormMessage />
                           </FormItem>
                         )}
