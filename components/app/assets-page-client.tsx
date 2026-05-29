@@ -194,6 +194,9 @@ const BROKERAGE_LABELS: Record<string, string> = {
   sec_kiwoom: '키움', sec_daishin: '대신', sec_hana: '하나',
   sec_meritz: '메리츠', sec_toss: '토스', sec_kakao: '카카오페이',
   sec_hyundai: '현대차', sec_kyobo: '교보', sec_ibk: 'IBK',
+  fund_mirae: '미래에셋', fund_samsung: '삼성', fund_kb: 'KB', fund_shinhan: '신한', fund_hanwha: '한화',
+  fund_nh: 'NH아문디', fund_korea: '한국투자', fund_kiwoom: '키움', fund_hana: '하나', fund_woori: '우리',
+  fund_ibk: 'IBK', fund_daishin: '대신', fund_timefolio: '타임폴리오', fund_truston: '트러스톤',
 }
 
 const OWNER_ICONS: Record<string, string> = {
@@ -833,7 +836,7 @@ export function AssetsPageClient({ performances, realizedProfitKrw = 0, sparklin
   }, [performances])
 
   const [active, setActive] = useState<string>('all')
-  const [activeAccount, setActiveAccount] = useState<'all' | 'personal' | 'pension'>('all')
+  const [activeAccount, setActiveAccount] = useState<'all' | 'personal' | 'pension' | 'direct'>('all')
   const [activeOwner, setActiveOwner] = useState<string>('all')
 
   const { grouped, types } = useMemo(() => {
@@ -848,8 +851,10 @@ export function AssetsPageClient({ performances, realizedProfitKrw = 0, sparklin
   const filteredPerformances = useMemo(() => {
     let result = performances
     if (active !== 'all') result = result.filter((a) => a.assetType === active)
+    const PENSION_TYPES = ['isa', 'irp', 'pension', 'dc']
     if (activeAccount === 'personal') result = result.filter((a) => a.accountType === 'brokerage')
-    else if (activeAccount === 'pension') result = result.filter((a) => !!a.accountType && a.accountType !== 'brokerage')
+    else if (activeAccount === 'pension') result = result.filter((a) => !!a.accountType && PENSION_TYPES.includes(a.accountType))
+    else if (activeAccount === 'direct') result = result.filter((a) => a.assetType !== 'fund' && (!a.accountType || (!PENSION_TYPES.includes(a.accountType) && a.accountType !== 'brokerage')))
     if (activeOwner !== 'all') result = result.filter((a) => a.owner === activeOwner)
     return result
   }, [performances, active, activeAccount, activeOwner])
@@ -908,8 +913,8 @@ function AssetFilter({
   grouped: Record<string, AssetPerformance[]>
   active: string
   setActive: (v: string) => void
-  activeAccount: 'all' | 'personal' | 'pension'
-  setActiveAccount: (v: 'all' | 'personal' | 'pension') => void
+  activeAccount: 'all' | 'personal' | 'pension' | 'direct'
+  setActiveAccount: (v: 'all' | 'personal' | 'pension' | 'direct') => void
   activeOwner: string
   setActiveOwner: (v: string) => void
   sparklines: Record<string, OhlcPoint[]>
@@ -921,11 +926,14 @@ function AssetFilter({
 
   const allAssets = useMemo(() => Object.values(grouped).flat(), [grouped])
 
+  const PENSION_TYPES = ['isa', 'irp', 'pension', 'dc']
   const isPersonal = (a: AssetPerformance) => a.accountType === 'brokerage'
-  const isPension  = (a: AssetPerformance) => !!a.accountType && a.accountType !== 'brokerage'
+  const isPension  = (a: AssetPerformance) => !!a.accountType && PENSION_TYPES.includes(a.accountType)
+  const isDirect   = (a: AssetPerformance) => !isPersonal(a) && !isPension(a) && a.assetType !== 'fund'
 
   const personalCount = useMemo(() => allAssets.filter(isPersonal).length, [allAssets])
   const pensionCount  = useMemo(() => allAssets.filter(isPension).length,  [allAssets])
+  const directCount   = useMemo(() => allAssets.filter(isDirect).length,   [allAssets])
 
   const ownerCounts = useMemo(() => {
     const map = new Map<string, number>()
@@ -945,7 +953,9 @@ function AssetFilter({
     if (activeAccount === 'all' && activeOwner === 'all') return grouped
     const accountPred = activeAccount === 'all'
       ? () => true
-      : activeAccount === 'personal' ? isPersonal : isPension
+      : activeAccount === 'personal' ? isPersonal
+      : activeAccount === 'pension' ? isPension
+      : isDirect
     const ownerPred = activeOwner === 'all'
       ? () => true
       : (a: AssetPerformance) => a.owner === activeOwner
@@ -958,7 +968,7 @@ function AssetFilter({
   }, [grouped, types, activeAccount, activeOwner])
 
   const showAll = types.length > 1
-  const showAccountFilter = personalCount > 0 && pensionCount > 0
+  const showAccountFilter = [personalCount, pensionCount, directCount].filter(Boolean).length >= 2
   const showOwnerFilter = ownersInData.length >= 2
   const visibleTypes = (active === 'all' ? types : types.filter((t) => t === active))
     .filter((t) => (filteredGrouped[t]?.length ?? 0) > 0)
@@ -970,7 +980,9 @@ function AssetFilter({
         {showOwnerFilter && (
           <Select value={activeOwner === 'all' ? '' : activeOwner} onValueChange={(v) => setActiveOwner(v || 'all')}>
             <SelectTrigger className="h-8 w-36 text-xs justify-center">
-              <SelectValue placeholder="전체 소유주" />
+              <SelectValue placeholder="전체 소유주">
+                {activeOwner === 'all' ? '전체 소유주' : `${OWNER_ICONS[activeOwner] ?? '👤'} ${activeOwner}`}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">전체 소유주</SelectItem>
@@ -983,21 +995,26 @@ function AssetFilter({
           </Select>
         )}
         {showAccountFilter && (
-          <Select value={activeAccount === 'all' ? '' : activeAccount} onValueChange={(v) => setActiveAccount((v || 'all') as 'all' | 'personal' | 'pension')}>
+          <Select value={activeAccount === 'all' ? '' : activeAccount} onValueChange={(v) => setActiveAccount((v || 'all') as 'all' | 'personal' | 'pension' | 'direct')}>
             <SelectTrigger className="h-8 w-36 text-xs justify-center">
-              <SelectValue placeholder="전체 계좌" />
+              <SelectValue placeholder="투자 방식">
+                {activeAccount === 'all' ? '투자 방식' : activeAccount === 'personal' ? '증권계좌' : activeAccount === 'pension' ? '연금계좌' : '직접보유'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">전체 계좌</SelectItem>
-              <SelectItem value="personal">개인포트폴리오</SelectItem>
-              <SelectItem value="pension">연금계좌</SelectItem>
+              <SelectItem value="">전체</SelectItem>
+              {personalCount > 0 && <SelectItem value="personal">증권계좌</SelectItem>}
+              {pensionCount > 0  && <SelectItem value="pension">연금계좌</SelectItem>}
+              {directCount > 0   && <SelectItem value="direct">직접보유</SelectItem>}
             </SelectContent>
           </Select>
         )}
         {showAll && (
           <Select value={active === 'all' ? '' : active} onValueChange={(v) => setActive(v || 'all')}>
             <SelectTrigger className="h-8 w-36 text-xs justify-center">
-              <SelectValue placeholder="전체 자산" />
+              <SelectValue placeholder="전체 자산">
+                {active === 'all' ? '전체 자산' : (ASSET_TYPE_LABELS_SHORT[active] ?? ASSET_TYPE_LABELS[active])}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">전체 자산</SelectItem>

@@ -95,7 +95,7 @@ const ACCOUNT_TYPE_BY_ASSET: Record<string, string[]> = {
   stock_us: ['isa', 'irp', 'pension', 'dc', 'brokerage'],
   etf_kr: ['isa', 'irp', 'pension', 'dc', 'brokerage'],
   etf_us: ['isa', 'irp', 'pension', 'dc', 'brokerage'],
-  fund: ['fund_mirae', 'fund_samsung', 'fund_kb', 'fund_shinhan', 'fund_hanwha', 'fund_nh', 'fund_korea', 'fund_kiwoom', 'fund_hana', 'fund_woori', 'fund_ibk', 'fund_daishin', 'fund_timefolio', 'fund_truston'],
+  fund: ['isa', 'irp', 'pension', 'dc', 'brokerage'],
   crypto: ['upbit', 'bithumb', 'coinone', 'korbit', 'binance', 'coinbase', 'kraken', 'okx'],
   savings: ['bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb', 'bank_busan', 'bank_daegu', 'bank_gwangju', 'bank_jeonbuk', 'bank_jeju', 'bank_sbi', 'bank_ok', 'bank_welcome', 'bank_pepper', 'bank_shincom', 'bank_saemaul'],
   cma: ['bank_kb', 'bank_shinhan', 'bank_woori', 'bank_hana', 'bank_nh', 'bank_kakao', 'bank_toss', 'bank_k', 'bank_ibk', 'bank_kdb'],
@@ -307,12 +307,13 @@ const assetSchema = z.object({
   if (!data.owner) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: '실소유주를 선택해주세요.', path: ['owner'] })
   }
-  const ACCOUNT_TYPE_REQUIRED = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'savings', 'insurance']
+  const ACCOUNT_TYPE_REQUIRED = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'savings', 'insurance']
   if (ACCOUNT_TYPE_REQUIRED.includes(data.assetType) && !data.accountType) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: '계좌 유형을 선택해주세요.', path: ['accountType'] })
   }
-  if ((STOCK_ETF_TYPES as readonly string[]).includes(data.assetType) && !data.brokerageId) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: '증권사를 선택해주세요.', path: ['brokerageId'] })
+  const BROKERAGE_REQUIRED = [...STOCK_ETF_TYPES, 'fund'] as readonly string[]
+  if (BROKERAGE_REQUIRED.includes(data.assetType) && !data.brokerageId) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: data.assetType === 'fund' ? '운용사를 선택해주세요.' : '증권사를 선택해주세요.', path: ['brokerageId'] })
   }
   if (data.assetType === 'crypto' && !data.withdrawalBankId) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: '실명확인 입출금계좌 은행을 선택해주세요.', path: ['withdrawalBankId'] })
@@ -468,7 +469,7 @@ export function NewAssetForm({ onSubmit }: {
       const current = form.getValues('accountType')
       if (current === 'spot') form.setValue('accountType', null)
     }
-    if (!STOCK_ETF_TYPES.includes(assetType)) {
+    if (!STOCK_ETF_TYPES.includes(assetType) && assetType !== 'fund') {
       form.setValue('brokerageId', null)
     }
     form.setValue('priceType', ['savings', 'real_estate', 'insurance', 'precious_metal', 'cma', 'contribution', 'bond'].includes(assetType) ? 'manual' : 'live')
@@ -786,18 +787,18 @@ export function NewAssetForm({ onSubmit }: {
           <div className="flex gap-3 items-start">
 
             {/* LEFT: 금융회사 */}
-            {STOCK_ETF_TYPES.includes(assetType) ? (
+            {(STOCK_ETF_TYPES.includes(assetType) || assetType === 'fund') ? (
               <FormField
                 control={form.control}
                 name="brokerageId"
                 render={({ field }) => (
                   <FormItem className="flex-1 min-w-0">
                     <FormLabel className="flex items-center gap-1.5 text-sm font-medium text-foreground pb-2.5 mb-3 border-b border-border">
-                      <Briefcase className="h-4 w-4" />증권사
+                      <Briefcase className="h-4 w-4" />{assetType === 'fund' ? '운용사' : '증권사'}
                     </FormLabel>
                     <FormControl>
                       <div className="rounded-xl border border-border bg-muted/50 p-2">
-                        {BROKERAGE_GROUPS.map((group) => (
+                        {(assetType === 'fund' ? FUND_COMPANY_GROUPS : BROKERAGE_GROUPS).map((group) => (
                           <div key={group.label} className="mb-1.5 last:mb-0">
                             <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{group.label}</p>
                             <div className="grid grid-cols-4 gap-1.5">
@@ -809,7 +810,7 @@ export function NewAssetForm({ onSubmit }: {
                                       active ? 'border-indigo-400 bg-indigo-500/10 text-indigo-300 shadow-sm' : 'border-border bg-muted/50 text-foreground hover:border-foreground/30 hover:text-foreground hover:bg-muted'
                                     )}>
                                     <DomainLogo value={val} size={26} />
-                                    <span className="text-[11px] font-medium leading-tight text-center">{BROKERAGE_LABELS[val]}</span>
+                                    <span className="text-[11px] font-medium leading-tight text-center">{assetType === 'fund' ? ACCOUNT_TYPE_LABELS[val] : BROKERAGE_LABELS[val]}</span>
                                   </button>
                                 )
                               })}
@@ -866,9 +867,9 @@ export function NewAssetForm({ onSubmit }: {
             )}
 
             {/* RIGHT: 계좌 유형 */}
-            {(STOCK_ETF_TYPES.includes(assetType) || assetType === 'crypto') && (
+            {(STOCK_ETF_TYPES.includes(assetType) || assetType === 'fund' || assetType === 'crypto') && (
             <div className="flex-1 min-w-0 flex flex-col gap-4">
-              {STOCK_ETF_TYPES.includes(assetType) && (
+              {(STOCK_ETF_TYPES.includes(assetType) || assetType === 'fund') && (
                 <FormField
                   control={form.control}
                   name="accountType"

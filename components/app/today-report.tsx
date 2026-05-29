@@ -309,7 +309,7 @@ export function TodayReport({ performances }: { performances: AssetPerformance[]
           <div className="border-t border-border grid grid-cols-1 sm:grid-cols-2">
             {/* 자산별 등락 */}
             <div className="px-4 sm:px-6 py-4 border-b sm:border-b-0 sm:border-r border-border">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-xs font-semibold text-muted-foreground mb-3">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none bg-muted border border-border text-xs font-semibold text-muted-foreground mb-3">
                 <BarChart2 className="h-3 w-3" />
                 <span className="font-bold">자산별 등락</span>
               </div>
@@ -360,7 +360,7 @@ export function TodayReport({ performances }: { performances: AssetPerformance[]
 
             {/* 주요 종목 */}
             <div className="px-4 sm:px-6 py-4">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border border-border text-xs font-semibold text-muted-foreground mb-3">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none bg-muted border border-border text-xs font-semibold text-muted-foreground mb-3">
                 <TrendingUp className="h-3 w-3" />
                 <span className="font-bold">주요 종목</span>
               </div>
@@ -376,20 +376,18 @@ export function TodayReport({ performances }: { performances: AssetPerformance[]
                         assetType={m.assetType}
                         size={36}
                       />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs truncate leading-tight font-bold">{m.name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {m.dailyChangeKrw >= 0 ? '+' : ''}{fmtKrw(m.dailyChangeKrw)}
-                        </p>
-                      </div>
-                      <span className={cn(
-                        'text-sm font-bold shrink-0',
+                      <p className="flex-1 min-w-0 text-xs truncate leading-tight font-bold">{m.name}</p>
+                      <div className={cn(
+                        'flex items-center gap-1.5 shrink-0 text-sm font-bold',
                         up && 'text-rose-600',
                         dn && 'text-blue-600',
                         !up && !dn && 'text-muted-foreground',
                       )}>
-                        {fmtPct(m.dailyChangeBps)}
-                      </span>
+                        <span className="text-xs font-medium opacity-80">
+                          {m.dailyChangeKrw >= 0 ? '+' : ''}{fmtKrw(m.dailyChangeKrw)}
+                        </span>
+                        <span>{fmtPct(m.dailyChangeBps)}</span>
+                      </div>
                     </div>
                   )
                 })}
