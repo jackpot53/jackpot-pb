@@ -367,11 +367,11 @@ export function TodayReport({ performances }: { performances: AssetPerformance[]
                 <span className="font-bold">주요 종목</span>
               </div>
               <div className="space-y-1.5">
-                {topMovers.map((m) => {
+                {topMovers.map((m, i) => {
                   const up = m.dailyChangeBps > 0
                   const dn = m.dailyChangeBps < 0
                   return (
-                    <div key={m.name} className="flex items-center gap-3 px-3 py-2 rounded-xl border border-border bg-muted/30 hover:bg-muted/60 transition-colors">
+                    <div key={`${m.ticker ?? m.name}-${i}`} className="flex items-center gap-3 px-3 py-2 rounded-xl border border-border bg-muted/30 hover:bg-muted/60 transition-colors">
                       <AssetLogo
                         ticker={m.ticker}
                         name={m.name}
