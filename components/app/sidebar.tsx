@@ -345,7 +345,7 @@ export function Sidebar() {
                 <span className="flex items-center gap-2 min-w-0">
                   <span className={cn(
                     'whitespace-nowrap text-sm font-light transition-colors duration-200',
-                    isActive ? 'text-sidebar-foreground font-medium' : 'text-sidebar-foreground/80 group-hover:text-sidebar-foreground'
+                    isActive ? 'text-foreground font-medium' : 'text-foreground'
                   )}>
                     {item.label}
                   </span>
@@ -377,7 +377,7 @@ export function Sidebar() {
                       <ChildIcon size={13} className={cn(childActive ? child.activeColor : child.color)} />
                       <span className={cn(
                         'whitespace-nowrap text-xs font-light transition-colors duration-200',
-                        childActive ? 'text-sidebar-foreground font-medium' : 'text-sidebar-foreground/80 group-hover:text-sidebar-foreground'
+                        childActive ? 'text-foreground font-medium' : 'text-foreground'
                       )}>
                         {child.label}
                       </span>
