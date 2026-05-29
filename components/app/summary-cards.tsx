@@ -231,7 +231,7 @@ export const SummaryCards = memo(function SummaryCards({ grouped, performances, 
       </div>
 
       {/* 3-카드 요약 */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {/* 총 자산 */}
         <div className="rounded-xl border border-border bg-card px-5 py-4 relative overflow-hidden">
           <FloatingLogos performances={performances} />
