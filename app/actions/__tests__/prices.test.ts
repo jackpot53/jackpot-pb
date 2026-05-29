@@ -7,7 +7,6 @@ vi.mock('@/utils/supabase/server', () => ({ createClient: vi.fn() }))
 vi.mock('@/lib/perf', () => ({ timed: <T,>(_label: string, fn: () => T): T => fn() }))
 vi.mock('@/lib/price/cache', () => ({ refreshFxIfStale: vi.fn().mockResolvedValue(undefined) }))
 vi.mock('@/lib/price/funetf', () => ({ fetchFunetfNav: vi.fn() }))
-vi.mock('@/lib/price/kis', () => ({ fetchKisQuote: vi.fn() }))
 vi.mock('@/lib/price/yahoo', () => ({ fetchYahooQuote: vi.fn() }))
 vi.mock('@/db/queries/price-cache', () => ({
   getPriceCacheByTickers: vi.fn(),
@@ -45,28 +44,22 @@ beforeEach(() => {
 })
 
 describe('refreshAllPricesInternal — fetcher routing', () => {
-  it('routes KR stocks/ETFs to KIS, never Yahoo', async () => {
-    const { fetchKisQuote } = await import('@/lib/price/kis')
+  it('routes KR stocks/ETFs to Yahoo', async () => {
     const { fetchYahooQuote } = await import('@/lib/price/yahoo')
-    const { getPriceCacheByTickers } = await import('@/db/queries/price-cache')
+    const { getPriceCacheByTickers, upsertPriceCache } = await import('@/db/queries/price-cache')
 
-    // Patch db mock to return our KR asset
+    let callCount = 0
     const dbMod = await import('@/db')
     vi.spyOn(dbMod.db, 'select').mockImplementation(((...args: unknown[]) => {
       void args
       return {
         from: vi.fn(() => {
-          // Return distinct payloads for the two distinct queries
-          // 1. maxCachedAt
-          // 2. assets list
-          // Sequence them via call counter
           callCount++
           if (callCount === 1) return Promise.resolve([{ maxCachedAt: null }])
           return { where: vi.fn().mockResolvedValue([{ ticker: '005930.KS', assetType: 'stock_kr' }]) }
         }),
       }
     }) as never)
-    let callCount = 0
 
     vi.mocked(getPriceCacheByTickers).mockResolvedValue(
       new Map([
@@ -76,19 +69,21 @@ describe('refreshAllPricesInternal — fetcher routing', () => {
         }],
       ]),
     )
-    vi.mocked(fetchKisQuote).mockResolvedValue({ price: 75000, currency: 'KRW', changePercent: 1.5 })
+    vi.mocked(fetchYahooQuote).mockResolvedValue({ price: 75000, currency: 'KRW', changePercent: 1.5 })
 
     const { refreshAllPricesInternal } = await import('../prices')
     await refreshAllPricesInternal()
 
-    expect(fetchKisQuote).toHaveBeenCalledWith('005930.KS', 'stock_kr')
-    expect(fetchYahooQuote).not.toHaveBeenCalled()
+    expect(fetchYahooQuote).toHaveBeenCalledWith('005930.KS')
+    expect(upsertPriceCache).toHaveBeenCalledWith(expect.objectContaining({
+      ticker: '005930.KS',
+      currency: 'KRW',
+    }))
   })
 
-  it('routes US stocks/ETFs to KIS, never Yahoo', async () => {
-    const { fetchKisQuote } = await import('@/lib/price/kis')
+  it('routes US stocks/ETFs to Yahoo', async () => {
     const { fetchYahooQuote } = await import('@/lib/price/yahoo')
-    const { getPriceCacheByTickers } = await import('@/db/queries/price-cache')
+    const { getPriceCacheByTickers, upsertPriceCache } = await import('@/db/queries/price-cache')
 
     let callCount = 0
     const dbMod = await import('@/db')
@@ -108,19 +103,21 @@ describe('refreshAllPricesInternal — fetcher routing', () => {
         }],
       ]),
     )
-    vi.mocked(fetchKisQuote).mockResolvedValue({ price: 185.43, currency: 'USD', changePercent: 0.5 })
+    vi.mocked(fetchYahooQuote).mockResolvedValue({ price: 185.43, currency: 'USD', changePercent: 0.5 })
 
     const { refreshAllPricesInternal } = await import('../prices')
     await refreshAllPricesInternal()
 
-    expect(fetchKisQuote).toHaveBeenCalledWith('AAPL', 'stock_us')
-    expect(fetchYahooQuote).not.toHaveBeenCalled()
+    expect(fetchYahooQuote).toHaveBeenCalledWith('AAPL')
+    expect(upsertPriceCache).toHaveBeenCalledWith(expect.objectContaining({
+      ticker: 'AAPL',
+      currency: 'USD',
+    }))
   })
 
-  it('routes crypto to Yahoo (KIS does not cover crypto)', async () => {
-    const { fetchKisQuote } = await import('@/lib/price/kis')
+  it('routes crypto to Yahoo', async () => {
     const { fetchYahooQuote } = await import('@/lib/price/yahoo')
-    const { getPriceCacheByTickers } = await import('@/db/queries/price-cache')
+    const { getPriceCacheByTickers, upsertPriceCache } = await import('@/db/queries/price-cache')
 
     let callCount = 0
     const dbMod = await import('@/db')
@@ -146,6 +143,83 @@ describe('refreshAllPricesInternal — fetcher routing', () => {
     await refreshAllPricesInternal()
 
     expect(fetchYahooQuote).toHaveBeenCalledWith('BTC-USD')
-    expect(fetchKisQuote).not.toHaveBeenCalled()
+    expect(upsertPriceCache).toHaveBeenCalledWith(expect.objectContaining({
+      ticker: 'BTC-USD',
+      currency: 'USD',
+    }))
+  })
+
+  it('skips refresh when dedup guard is active (recent cache)', async () => {
+    const { refreshFxIfStale } = await import('@/lib/price/cache')
+
+    const dbMod = await import('@/db')
+    vi.spyOn(dbMod.db, 'select').mockImplementation((() => ({
+      from: vi.fn(() => Promise.resolve([{ maxCachedAt: new Date(Date.now() - 1000) }])),
+    })) as never)
+
+    const { refreshAllPricesInternal } = await import('../prices')
+    await refreshAllPricesInternal()
+
+    // Should bail out before touching FX or assets
+    expect(refreshFxIfStale).not.toHaveBeenCalled()
+  })
+
+  it('skips stale ticker when all caches are fresh', async () => {
+    const { fetchYahooQuote } = await import('@/lib/price/yahoo')
+    const { getPriceCacheByTickers } = await import('@/db/queries/price-cache')
+
+    let callCount = 0
+    const dbMod = await import('@/db')
+    vi.spyOn(dbMod.db, 'select').mockImplementation((() => ({
+      from: vi.fn(() => {
+        callCount++
+        if (callCount === 1) return Promise.resolve([{ maxCachedAt: null }])
+        return { where: vi.fn().mockResolvedValue([{ ticker: 'AAPL', assetType: 'stock_us' }]) }
+      }),
+    })) as never)
+
+    // Cache is fresh (30 seconds ago — well within 5-min TTL)
+    vi.mocked(getPriceCacheByTickers).mockResolvedValue(
+      new Map([
+        ['AAPL', {
+          id: '1', ticker: 'AAPL', priceKrw: 250000, priceOriginal: 18500,
+          currency: 'USD', changeBps: 50, cachedAt: new Date(Date.now() - 30_000),
+        }],
+        ['USD_KRW', {
+          id: 'fx', ticker: 'USD_KRW', priceKrw: 13565000, priceOriginal: 13565000,
+          currency: 'KRW', changeBps: null, cachedAt: new Date(Date.now() - 30_000),
+        }],
+      ]),
+    )
+
+    const { refreshAllPricesInternal } = await import('../prices')
+    await refreshAllPricesInternal()
+
+    expect(fetchYahooQuote).not.toHaveBeenCalled()
+  })
+
+  it('routes fund assets to fetchFunetfNav', async () => {
+    const { fetchFunetfNav } = await import('@/lib/price/funetf')
+    const { fetchYahooQuote } = await import('@/lib/price/yahoo')
+    const { getPriceCacheByTickers } = await import('@/db/queries/price-cache')
+
+    let callCount = 0
+    const dbMod = await import('@/db')
+    vi.spyOn(dbMod.db, 'select').mockImplementation((() => ({
+      from: vi.fn(() => {
+        callCount++
+        if (callCount === 1) return Promise.resolve([{ maxCachedAt: null }])
+        return { where: vi.fn().mockResolvedValue([{ ticker: 'KR123456', assetType: 'fund' }]) }
+      }),
+    })) as never)
+
+    vi.mocked(getPriceCacheByTickers).mockResolvedValue(new Map())
+    vi.mocked(fetchFunetfNav).mockResolvedValue({ price: 12345, changePercent: 0.3 })
+
+    const { refreshAllPricesInternal } = await import('../prices')
+    await refreshAllPricesInternal()
+
+    expect(fetchFunetfNav).toHaveBeenCalledWith('KR123456')
+    expect(fetchYahooQuote).not.toHaveBeenCalled()
   })
 })
