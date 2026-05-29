@@ -101,7 +101,7 @@ async function searchNaverAc(q: string, target: 'kr' | 'us', assetType?: string)
       return items
         .filter((item) =>
           item.nationCode === 'KOR' &&
-          /^\d{6}$/.test(item.code) &&
+          /^[A-Z0-9]{6}$/i.test(item.code) &&
           (item.typeCode === 'KOSPI' || item.typeCode === 'KOSDAQ')
         )
         .map((item) => ({ name: item.name, ticker: item.code + krSuffix(item.typeCode) }))
@@ -167,7 +167,7 @@ async function krxEtfsRaw(q: string): Promise<{ name: string; ticker: string }[]
     let data: { block1?: KrxProductResult[] }
     try { data = JSON.parse(text) } catch { data = {} }
     return (data?.block1 ?? [])
-      .filter((item) => /^\d{6}$/.test(item.short_code))
+      .filter((item) => /^[A-Z0-9]{6}$/i.test(item.short_code))
       .map((item) => ({ name: item.codeName, ticker: item.short_code + '.KS' }))
   } catch {
     return []
