@@ -331,9 +331,9 @@ export function TransactionForm({
             <>
               {showBrokerageRow && (
                 <div className="flex flex-row items-center gap-4 rounded-xl border border-border bg-muted/20 px-4 py-2.5">
-                  <span className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40 text-sm font-medium">
+                  <div className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40 text-sm font-medium">
                     <Briefcase className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />{brokerageLabel}
-                  </span>
+                  </div>
                   <div className="flex-1">
                     <Select value={brokerageId} onValueChange={(v) => setBrokerageId(v ?? '')}>
                       <SelectTrigger className="border-0 bg-transparent shadow-none focus:ring-0 p-0 h-auto">
@@ -348,9 +348,9 @@ export function TransactionForm({
                 </div>
               )}
               <div className="flex flex-row items-center gap-4 rounded-xl border border-border bg-muted/20 px-4 py-2.5">
-                <span className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40 text-sm font-medium">
+                <div className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40 text-sm font-medium">
                   <Wallet className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />{accountLabel}
-                </span>
+                </div>
                 <div className="flex-1">
                   <Select value={accountType} onValueChange={(v) => setAccountType(v ?? '')}>
                     <SelectTrigger className="border-0 bg-transparent shadow-none focus:ring-0 p-0 h-auto">
