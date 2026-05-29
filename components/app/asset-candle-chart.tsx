@@ -12,7 +12,6 @@ import {
   type MouseEventParams,
 } from 'lightweight-charts'
 import type { OhlcPoint } from '@/lib/price/sparkline'
-import { useKisLivePrice } from '@/lib/ws/kis-ws-context'
 import { CHART_UP, CHART_DOWN, resolvePalette } from '@/lib/chart/theme'
 
 type Period = '일봉' | '주봉' | '월봉'
@@ -59,12 +58,11 @@ function toSeriesData(points: OhlcPoint[]): CandlestickData<Time>[] {
   }))
 }
 
-export function AssetCandleChart({ ticker, initialData, assetType }: AssetCandleChartProps) {
+export function AssetCandleChart({ ticker, initialData }: AssetCandleChartProps) {
   const [period, setPeriod] = useState<Period>('일봉')
   const [fetchedByPeriod, setFetchedByPeriod] = useState<Partial<Record<Period, OhlcPoint[]>>>({})
   const [loading, setLoading] = useState(false)
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
-  const liveTick = useKisLivePrice(ticker, assetType ?? null)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
@@ -78,18 +76,7 @@ export function AssetCandleChart({ ticker, initialData, assetType }: AssetCandle
     [period, initialData, fetchedByPeriod],
   )
 
-  // 일봉에서만 live tick overlay 적용.
-  const data = useMemo<OhlcPoint[]>(() => {
-    if (!liveTick || baseData.length === 0 || period !== '일봉') return baseData
-    const last = baseData[baseData.length - 1]
-    const merged: OhlcPoint = {
-      ...last,
-      close: liveTick.price,
-      high: Math.max(last.high, liveTick.price),
-      low: Math.min(last.low, liveTick.price),
-    }
-    return [...baseData.slice(0, -1), merged]
-  }, [baseData, liveTick, period])
+  const data = baseData
 
   // initialData가 비어있으면 일봉 데이터를 직접 fetch
   useEffect(() => {
