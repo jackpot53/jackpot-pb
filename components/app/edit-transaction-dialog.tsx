@@ -42,7 +42,7 @@ export function EditTransactionDialog({ tx }: { tx: TransactionWithAsset }) {
     <Dialog data-component="EditTransactionDialog" open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="ghost" size="sm" className="p-2" aria-label="거래 수정" />
+          <Button variant="ghost" size="sm" className="p-1" aria-label="거래 수정" />
         }
       >
         <Pencil className="h-4 w-4" />

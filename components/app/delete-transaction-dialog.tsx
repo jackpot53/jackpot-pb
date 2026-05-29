@@ -39,7 +39,7 @@ export function DeleteTransactionDialog({
     <Dialog data-component="DeleteTransactionDialog" open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="ghost" size="sm" className="p-2" aria-label="거래 삭제" />
+          <Button variant="ghost" size="sm" className="p-1" aria-label="거래 삭제" />
         }
       >
         <Trash2 className="h-4 w-4 text-destructive" />

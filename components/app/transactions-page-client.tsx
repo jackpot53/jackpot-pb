@@ -116,7 +116,7 @@ function TransactionCard({ tx, onDeleted }: { tx: TransactionWithAsset; onDelete
           </div>
         )}
       </div>
-      <div className="flex items-center gap-1 shrink-0">
+      <div className="flex items-center shrink-0">
         <SellTransactionDialog asset={{ id: tx.assetId, name: tx.assetName, ticker: tx.ticker, assetType: tx.assetType as AssetType, currency: tx.currency as Currency }} />
         <EditTransactionDialog tx={tx} />
         <DeleteTransactionDialog

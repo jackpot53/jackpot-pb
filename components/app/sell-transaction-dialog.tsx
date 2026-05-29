@@ -38,7 +38,7 @@ export function SellTransactionDialog({ asset }: Props) {
           <Button
             variant="ghost"
             size="sm"
-            className="p-2 text-blue-500/70 hover:text-blue-500 hover:bg-blue-500/10"
+            className="p-1 text-blue-500/70 hover:text-blue-500 hover:bg-blue-500/10"
             aria-label="매도"
           />
         }
