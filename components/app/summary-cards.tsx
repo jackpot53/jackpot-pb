@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useRef, useCallback, memo } from 'react'
+import { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react'
 import Link from 'next/link'
 import { TrendingUp, TrendingDown, Minus, PlusCircle, Wallet, CheckCircle2 } from 'lucide-react'
 
@@ -162,19 +162,21 @@ function FloatingLogos({ performances }: { performances: AssetPerformance[] }) {
 export const SummaryCards = memo(function SummaryCards({ grouped, performances, realizedProfitKrw = 0, showTypeStrip = true }: { grouped: Record<string, AssetPerformance[]>; performances: AssetPerformance[]; realizedProfitKrw?: number; showTypeStrip?: boolean }) {
   const types = Object.keys(grouped)
 
-  const valuedAssets = performances.filter((a) => a.currentValueKrw > 0)
-  const grandTotalValue = valuedAssets.reduce((s, a) => s + Number(a.currentValueKrw), 0)
-  const valuedCost = valuedAssets.reduce((s, a) => s + Number(a.totalCostKrw), 0)
-  const grandProfit = grandTotalValue - valuedCost
-  const grandReturnPct = valuedCost > 0 ? (grandProfit / valuedCost) * 100 : null
+  const { grandTotalValue, grandProfit, grandReturnPct, totalDailyChangeKrw } = useMemo(() => {
+    const valuedAssets = performances.filter((a) => a.currentValueKrw > 0)
+    const grandTotalValue = valuedAssets.reduce((s, a) => s + Number(a.currentValueKrw), 0)
+    const valuedCost = valuedAssets.reduce((s, a) => s + Number(a.totalCostKrw), 0)
+    const grandProfit = grandTotalValue - valuedCost
+    const grandReturnPct = valuedCost > 0 ? (grandProfit / valuedCost) * 100 : null
+    const totalDailyChangeKrw = performances
+      .filter((a) => a.dailyChangeBps !== null && a.currentValueKrw > 0)
+      .reduce((sum, a) => sum + a.currentValueKrw * (a.dailyChangeBps! / 10000), 0)
+    return { grandTotalValue, grandProfit, grandReturnPct, totalDailyChangeKrw }
+  }, [performances])
 
   const animatedValue = useCountUp(grandTotalValue, 1200)
   const animatedProfit = useCountUp(Math.abs(grandProfit), 1400)
   const animatedRealized = useCountUp(Math.abs(realizedProfitKrw), 1600)
-
-  const totalDailyChangeKrw = performances
-    .filter((a) => a.dailyChangeBps !== null && a.currentValueKrw > 0)
-    .reduce((sum, a) => sum + a.currentValueKrw * (a.dailyChangeBps! / 10000), 0)
 
   const fireworks = useCallback(() => {
     const burst = (x: number, y: number, delay: number) => setTimeout(() => {

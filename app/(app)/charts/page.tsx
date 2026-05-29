@@ -8,8 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { after } from 'next/server'
 import { refreshAllPricesInternal } from '@/app/actions/prices'
 import { loadPerformances } from '@/lib/server/load-performances'
-import { PortfolioRadialChart } from '@/components/app/portfolio-radial-chart'
-import type { AllocationItem } from '@/components/app/portfolio-radial-chart'
+import { PortfolioRadialChart, type AllocationItem } from '@/components/app/portfolio-radial-chart-wrapper'
 import { timed } from '@/lib/perf'
 
 const ASSET_TYPE_ORDER = [

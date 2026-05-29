@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useTransition, useRef, useCallback, memo } from 'react'
+import { useState, useEffect, useTransition, useRef, useCallback, memo, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Layers, LayoutGrid, TrendingUp, TrendingDown, BarChart2, Bitcoin, Building2, PiggyBank, BookOpen, ChevronDown, HelpCircle, ShieldCheck, Gem, CreditCard, RefreshCw, Wallet } from 'lucide-react'
 
@@ -792,13 +792,14 @@ export function AssetsPageClient({ performances, sparklines: initialSparklines, 
       .catch(() => {})
   }, [performances])
 
-  const grouped = ASSET_TYPE_ORDER.reduce<Record<string, AssetPerformance[]>>((acc, type) => {
-    const items = performances.filter((a) => a.assetType === type)
-    if (items.length > 0) acc[type] = items
-    return acc
-  }, {})
-
-  const types = Object.keys(grouped)
+  const { grouped, types } = useMemo(() => {
+    const grouped = ASSET_TYPE_ORDER.reduce<Record<string, AssetPerformance[]>>((acc, type) => {
+      const items = performances.filter((a) => a.assetType === type)
+      if (items.length > 0) acc[type] = items
+      return acc
+    }, {})
+    return { grouped, types: Object.keys(grouped) }
+  }, [performances])
 
   if (performances.length === 0) {
     return (

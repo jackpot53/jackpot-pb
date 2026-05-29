@@ -39,17 +39,12 @@ export const getAllSnapshots = cache(async (userId: string): Promise<SnapshotRow
  * Used by the assets page for per-type monthly/annual charts.
  */
 export const getAllSnapshotsWithBreakdowns = cache(async (userId: string): Promise<SnapshotWithBreakdowns[]> => {
-  let snapshotRows: SnapshotRow[] = []
-  try {
-    snapshotRows = await getAllSnapshots(userId)
-  } catch {
-    return []
-  }
+  type BreakdownRow = { snapshotDate: string; assetType: string; totalValueKrw: number; totalCostKrw: number }
 
-  // Gracefully handle missing table (migration not yet applied)
-  let breakdownRows: Array<{ snapshotDate: string; assetType: string; totalValueKrw: number; totalCostKrw: number }> = []
-  try {
-    breakdownRows = await db
+  // Both queries are independent — run in parallel for 1 fewer round-trip
+  const [snapshotRows, breakdownRows] = await Promise.all([
+    getAllSnapshots(userId).catch((): SnapshotRow[] | null => null),
+    db
       .select({
         snapshotDate: portfolioSnapshots.snapshotDate,
         assetType: portfolioSnapshotBreakdowns.assetType,
@@ -60,9 +55,11 @@ export const getAllSnapshotsWithBreakdowns = cache(async (userId: string): Promi
       .innerJoin(portfolioSnapshots, eq(portfolioSnapshotBreakdowns.snapshotId, portfolioSnapshots.id))
       .where(eq(portfolioSnapshots.userId, userId))
       .orderBy(asc(portfolioSnapshots.snapshotDate))
-  } catch {
-    // Table not yet created — per-type charts will have no data until migration is applied
-  }
+      // Gracefully handle missing table (migration not yet applied)
+      .catch((): BreakdownRow[] => []),
+  ])
+
+  if (snapshotRows === null) return []
 
   // Pivot breakdown rows by snapshotDate → assetType
   const byDateType = new Map<string, Record<string, { totalValueKrw: number; totalCostKrw: number }>>()

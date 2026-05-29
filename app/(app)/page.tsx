@@ -13,7 +13,7 @@ import {
 } from '@/lib/portfolio'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { AllocationPieChart, type AllocationSlice } from '@/components/app/allocation-pie-chart'
+import { AllocationPieChart, type AllocationSlice } from '@/components/app/allocation-pie-chart-wrapper'
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { DashboardGoalsSection } from '@/components/app/dashboard-goals-section'
 import { TodayReport } from '@/components/app/today-report'
