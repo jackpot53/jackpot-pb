@@ -297,7 +297,7 @@ export function Sidebar() {
         </svg>
       </div>
 
-      <nav className="flex-1 px-2 space-y-1.5 pt-2 overflow-y-auto">
+      <nav className="flex-1 px-2 pt-2 overflow-y-auto">
         <style>{`
           @keyframes pro-shimmer {
             0% { background-position: -200% center; }
@@ -332,7 +332,7 @@ export function Sidebar() {
               title={collapsed ? item.label : undefined}
               className={cn(
                 'group flex items-center gap-3 rounded-lg transition-all duration-200',
-                collapsed && !isMobileOpen ? 'justify-center p-2.5' : 'px-3 py-2.5',
+                collapsed && !isMobileOpen ? 'justify-center p-2' : 'px-3 py-1',
                 isActive
                   ? 'bg-sidebar-accent border border-sidebar-border'
                   : 'border border-transparent hover:bg-sidebar-accent/60 hover:border-sidebar-border/60'
@@ -344,7 +344,7 @@ export function Sidebar() {
               {showLabels && (
                 <span className="flex items-center gap-2 min-w-0">
                   <span className={cn(
-                    'whitespace-nowrap text-sm font-light transition-colors duration-200 font-[family-name:var(--font-sunflower)]',
+                    'whitespace-nowrap text-sm font-light transition-colors duration-200',
                     isActive ? 'text-sidebar-foreground font-medium' : 'text-sidebar-foreground/60 group-hover:text-sidebar-foreground'
                   )}>
                     {item.label}
@@ -376,7 +376,7 @@ export function Sidebar() {
                     >
                       <ChildIcon size={13} className={cn(childActive ? child.activeColor : child.color)} />
                       <span className={cn(
-                        'whitespace-nowrap text-xs font-light transition-colors duration-200 font-[family-name:var(--font-sunflower)]',
+                        'whitespace-nowrap text-xs font-light transition-colors duration-200',
                         childActive ? 'text-sidebar-foreground font-medium' : 'text-sidebar-foreground/55 group-hover:text-sidebar-foreground'
                       )}>
                         {child.label}

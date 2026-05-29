@@ -144,7 +144,7 @@ function OssSectionCard({ section }: { section: OssSection }) {
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       <div className={`h-1 ${section.stripe}`} />
       <div className="px-6 py-4">
-        <h2 className="flex items-center gap-2 font-semibold text-foreground font-[family-name:var(--font-sunflower)] pb-3 mb-3 border-b border-border">
+        <h2 className="flex items-center gap-2 font-semibold text-foreground pb-3 mb-3 border-b border-border">
           <Icon size={16} className={section.iconColor} />
           {section.title}
         </h2>
@@ -195,7 +195,7 @@ function ApiSectionCard() {
     <div className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="h-1 bg-amber-500" />
       <div className="px-6 py-4">
-        <h2 className="flex items-center gap-2 font-semibold text-foreground font-[family-name:var(--font-sunflower)] pb-3 mb-3 border-b border-border">
+        <h2 className="flex items-center gap-2 font-semibold text-foreground pb-3 mb-3 border-b border-border">
           <Globe size={16} className="text-amber-500" />
           외부 API & 데이터 소스
         </h2>
@@ -231,7 +231,7 @@ function ApiSectionCard() {
 
 export default function TechStackPage() {
   return (
-    <div className="space-y-6 [font-family:var(--font-sunflower)]">
+    <div className="space-y-6">
       <PageHeader
         icon={Package}
         title="기술스택 & 라이선스"

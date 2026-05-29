@@ -42,7 +42,7 @@ const FAQS = [
 
 export default function HelpPage() {
   return (
-    <div className="space-y-6 [font-family:var(--font-sunflower)]">
+    <div className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-4 sm:p-6 text-white min-h-[160px] flex items-center">
         <div className="flex items-center justify-between gap-4 w-full">
           <div className="space-y-1 min-w-0">
@@ -67,7 +67,7 @@ export default function HelpPage() {
             <div className={`h-1 ${faq.color}`} />
             <div className="px-6 py-4">
               <details className="group">
-                <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground font-[family-name:var(--font-sunflower)]">
+                <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground">
                   <span><span className="mr-2">{numberEmoji}</span>{faq.question}</span>
                   <span className="transition-transform group-open:rotate-180">▼</span>
                 </summary>
@@ -135,7 +135,7 @@ export default function HelpPage() {
           <div className="flex items-center gap-3">
             <Package className="h-5 w-5 text-slate-400" />
             <div>
-              <div className="font-semibold text-foreground font-[family-name:var(--font-sunflower)]">
+              <div className="font-semibold text-foreground">
                 기술스택 & 라이선스
               </div>
               <div className="text-sm text-foreground/70">

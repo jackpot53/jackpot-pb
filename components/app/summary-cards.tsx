@@ -220,7 +220,7 @@ export const SummaryCards = memo(function SummaryCards({ grouped, performances, 
     <div data-component="SummaryCards" className="space-y-3">
       <ThunderOverlay active={thunder} />
       {/* Hero */}
-      <div className="rounded-2xl bg-card border border-border px-8 py-6 relative overflow-hidden" style={{ fontFamily: 'var(--font-sunflower)' }}>
+      <div className="rounded-2xl bg-card border border-border px-8 py-6 relative overflow-hidden">
         <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-violet-500/10 blur-2xl" />
         <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-blue-500/10 blur-2xl" />
         <FloatingLogos performances={performances} />

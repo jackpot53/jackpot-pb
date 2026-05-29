@@ -1,41 +1,7 @@
 import type { Metadata } from 'next'
-import { Gaegu, Nanum_Pen_Script, Story_Script, Sunflower, Faster_One } from 'next/font/google'
 import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
 import { ComponentInspector } from '@/components/dev/component-inspector'
-
-const gaegu = Gaegu({
-  weight: ['400', '700'],
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-gaegu',
-})
-const nanumPenScript = Nanum_Pen_Script({
-  weight: '400',
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-nanum-pen',
-})
-const storyScript = Story_Script({
-  weight: '400',
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-story-script',
-  // Story Script는 Next.js 폰트 오버라이드 메트릭이 없어 자동 fallback 생성 경고가 뜸.
-  // 폰트 자체는 정상 로드되므로 경고만 꺼둔다.
-  adjustFontFallback: false,
-})
-const sunflower = Sunflower({
-  weight: ['300', '500', '700'],
-  display: 'swap',
-  variable: '--font-sunflower',
-})
-const fasterOne = Faster_One({
-  weight: '400',
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-faster-one',
-})
 
 export const metadata: Metadata = {
   title: 'jackpot',
@@ -48,10 +14,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html
-      lang="ko"
-      className={`${gaegu.variable} ${nanumPenScript.variable} ${storyScript.variable} ${sunflower.variable} ${fasterOne.variable}`}
-    >
+    <html lang="ko">
       <body suppressHydrationWarning>
         {children}
         <Toaster position="bottom-right" />
