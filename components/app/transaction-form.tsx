@@ -331,7 +331,7 @@ export function TransactionForm({
             <>
               {showBrokerageRow && (
                 <div className="flex flex-row items-center gap-4 rounded-xl border border-border bg-muted/20 px-4 py-2.5">
-                  <div className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40 text-sm font-medium">
+                  <div className="w-32 shrink-0 text-left text-muted-foreground pr-4 border-r border-black/40 text-sm font-medium">
                     <Briefcase className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />{brokerageLabel}
                   </div>
                   <div className="flex-1">
@@ -348,7 +348,7 @@ export function TransactionForm({
                 </div>
               )}
               <div className="flex flex-row items-center gap-4 rounded-xl border border-border bg-muted/20 px-4 py-2.5">
-                <div className="w-32 shrink-0 text-right text-muted-foreground pr-4 border-r border-black/40 text-sm font-medium">
+                <div className="w-32 shrink-0 text-left text-muted-foreground pr-4 border-r border-black/40 text-sm font-medium">
                   <Wallet className="inline mr-1.5 h-3.5 w-3.5 opacity-60" />{accountLabel}
                 </div>
                 <div className="flex-1">
