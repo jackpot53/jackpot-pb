@@ -6,6 +6,7 @@ import { getAuthUser } from '@/utils/supabase/server'
 import { AnimatedLogo } from '@/components/app/animated-logo'
 import { listGoals } from '@/db/queries/goals'
 import { getAllSnapshots } from '@/db/queries/portfolio-snapshots'
+import { getRealizedProfitKrw } from '@/db/queries/transactions'
 import { GoalProgressChart } from '@/components/app/goal-progress-chart-wrapper'
 import { GoalAchievementChart } from '@/components/app/goal-achievement-chart-wrapper'
 import { GoalListClient } from '@/components/app/goal-list-client'
@@ -142,10 +143,11 @@ function GoalsContentSkeleton() {
 }
 
 async function GoalsContent({ userId, pageStart }: { userId: string; pageStart: number }) {
-  const [goals, snapshots, { performances, priceMap }] = await timed('GoalsPage data', () => Promise.all([
+  const [goals, snapshots, { performances, priceMap }, realizedProfitKrw] = await timed('GoalsPage data', () => Promise.all([
     listGoals(userId),
     getAllSnapshots(userId),
     loadPerformances(userId),
+    getRealizedProfitKrw(userId),
   ]))
   perfLog('GoalsPage total', pageStart)
 
@@ -168,7 +170,7 @@ async function GoalsContent({ userId, pageStart }: { userId: string; pageStart: 
   return (
     <>
       {/* 포트폴리오 스탯 */}
-      <SummaryCards grouped={grouped} performances={performances} showTypeStrip={false} />
+      <SummaryCards grouped={grouped} performances={performances} realizedProfitKrw={realizedProfitKrw} showTypeStrip={false} />
 
       {/* 상단: 나의 목표 + 진행 현황 나란히 */}
       <div className="flex flex-col lg:flex-row gap-6 items-stretch">
