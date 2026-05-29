@@ -1,20 +1,14 @@
 'use client'
 import { useState, useEffect, useRef, useCallback, memo } from 'react'
-import dynamic from 'next/dynamic'
-import { TrendingUp, BarChart2, PiggyBank } from 'lucide-react'
+import Link from 'next/link'
+import { TrendingUp, TrendingDown, Minus, PlusCircle, Wallet, CheckCircle2 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { AssetLogo } from '@/components/app/asset-logo'
 import { formatKrw, formatReturn } from '@/lib/portfolio'
 import type { AssetPerformance } from '@/lib/portfolio'
-import type { CandlestickPoint } from '@/components/app/candlestick-chart'
 import { ASSET_TYPE_ACCENT } from '@/components/app/assets-page-client'
-
-const CandlestickChart = dynamic(
-  () => import('@/components/app/candlestick-chart').then(m => ({ default: m.CandlestickChart })),
-  { ssr: false },
-)
 
 function useCountUp(target: number, duration = 1200): number {
   const [value, setValue] = useState(0)
@@ -165,20 +159,18 @@ function FloatingLogos({ performances }: { performances: AssetPerformance[] }) {
   )
 }
 
-export const SummaryCards = memo(function SummaryCards({ grouped, performances, valueCandles, showTypeStrip = true }: { grouped: Record<string, AssetPerformance[]>; performances: AssetPerformance[]; valueCandles?: CandlestickPoint[]; showTypeStrip?: boolean }) {
+export const SummaryCards = memo(function SummaryCards({ grouped, performances, realizedProfitKrw = 0, showTypeStrip = true }: { grouped: Record<string, AssetPerformance[]>; performances: AssetPerformance[]; realizedProfitKrw?: number; showTypeStrip?: boolean }) {
   const types = Object.keys(grouped)
 
-  const grandTotalCost = performances.reduce((s, a) => s + Number(a.totalCostKrw), 0)
   const valuedAssets = performances.filter((a) => a.currentValueKrw > 0)
   const grandTotalValue = valuedAssets.reduce((s, a) => s + Number(a.currentValueKrw), 0)
   const valuedCost = valuedAssets.reduce((s, a) => s + Number(a.totalCostKrw), 0)
   const grandProfit = grandTotalValue - valuedCost
   const grandReturnPct = valuedCost > 0 ? (grandProfit / valuedCost) * 100 : null
-  const grandHasValue = grandTotalValue > 0
 
-  const animatedCost = useCountUp(grandTotalCost)
-  const animatedValue = useCountUp(grandTotalValue, 1400)
-  const animatedProfit = useCountUp(Math.abs(grandProfit), 1600)
+  const animatedValue = useCountUp(grandTotalValue, 1200)
+  const animatedProfit = useCountUp(Math.abs(grandProfit), 1400)
+  const animatedRealized = useCountUp(Math.abs(realizedProfitKrw), 1600)
 
   const totalDailyChangeKrw = performances
     .filter((a) => a.dailyChangeBps !== null && a.currentValueKrw > 0)
@@ -216,62 +208,84 @@ export const SummaryCards = memo(function SummaryCards({ grouped, performances, 
     }
   }, [totalDailyChangeKrw])
 
+  const profitColor = grandProfit >= 0 ? 'text-rose-600' : 'text-blue-600'
+  const realizedColor = realizedProfitKrw >= 0 ? 'text-rose-600' : 'text-blue-600'
+  const ProfitIcon = grandProfit > 0 ? TrendingUp : grandProfit < 0 ? TrendingDown : Minus
+  const RealizedIcon = realizedProfitKrw > 0 ? TrendingUp : realizedProfitKrw < 0 ? TrendingDown : Minus
+
   return (
     <div data-component="SummaryCards" className="space-y-3">
       <ThunderOverlay active={thunder} />
-      {/* Hero */}
-      <div className="rounded-2xl bg-card border border-border px-8 py-6 relative overflow-hidden">
-        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-violet-500/10 blur-2xl" />
-        <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-blue-500/10 blur-2xl" />
-        <FloatingLogos performances={performances} />
-        <div className="relative flex items-stretch gap-10 flex-wrap">
-          <div>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2">총 투자</p>
-            <p className="text-2xl font-bold tabular-nums">{grandTotalCost > 0 ? formatKrw(animatedCost) : '—'}</p>
-            <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs">
-              <PiggyBank className="h-3 w-3" />투자한 원금 합계
-            </span>
+      {/* 상단 헤더: 타이틀 + 자산 추가 */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-lg font-bold text-foreground">보유 자산</h1>
+        <Link
+          href="/assets/new"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors text-sm font-medium"
+        >
+          <PlusCircle className="h-3.5 w-3.5" />
+          자산 추가
+        </Link>
+      </div>
+
+      {/* 3-카드 요약 */}
+      <div className="grid grid-cols-3 gap-3">
+        {/* 총 자산 */}
+        <div className="rounded-xl border border-border bg-card px-5 py-4 relative overflow-hidden">
+          <FloatingLogos performances={performances} />
+          <div className="relative">
+            <div className="flex items-center gap-1.5 mb-3">
+              <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">총 자산</p>
+            </div>
+            <p className="text-2xl font-bold tabular-nums">
+              {grandTotalValue > 0 ? formatKrw(animatedValue) : '—'}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1.5">현재 시세 기준 평가금액</p>
           </div>
-          {grandHasValue && (
-            <>
-              <div className="w-px bg-border self-stretch" />
-              <div>
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2">평가금액</p>
-                <p className="text-2xl font-bold tabular-nums">{formatKrw(animatedValue)}</p>
-                <span className="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs">
-                  <BarChart2 className="h-3 w-3" />현재 시세 기준 총 자산
-                </span>
-              </div>
-              <div className="w-px bg-border self-stretch" />
-              <div className="text-right">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-2">평가손익</p>
-                <p className={`text-2xl font-bold tabular-nums ${grandProfit >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>
-                  {grandProfit >= 0 ? '+' : '-'}{formatKrw(animatedProfit)}
-                </p>
-                {grandReturnPct !== null && (
-                  <div className="flex items-center justify-end gap-2 mt-1">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-muted-foreground text-xs">
-                      <TrendingUp className="h-3 w-3" />원금 대비 수익금
-                    </span>
-                    <p className={`text-sm font-semibold ${grandProfit >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>
-                      {formatReturn(grandReturnPct)}
-                    </p>
-                  </div>
-                )}
-              </div>
-              {valueCandles && valueCandles.length > 0 && (
-                <>
-                  <div className="w-px bg-border self-stretch" />
-                  <div className="ml-auto flex flex-col justify-between min-w-0">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-1">총 자산 추이</p>
-                    <div className="w-[220px] h-[100px]">
-                      <CandlestickChart data={valueCandles} />
-                    </div>
-                  </div>
-                </>
-              )}
-            </>
+        </div>
+
+        {/* 평가손익 */}
+        <div className={cn(
+          'rounded-xl border bg-card px-5 py-4',
+          grandProfit > 0 ? 'border-rose-200' : grandProfit < 0 ? 'border-blue-200' : 'border-border'
+        )}>
+          <div className="flex items-center gap-1.5 mb-3">
+            <ProfitIcon className={cn('h-3.5 w-3.5', grandProfit !== 0 ? profitColor : 'text-muted-foreground')} />
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">평가손익</p>
+          </div>
+          <p className={cn('text-2xl font-bold tabular-nums', grandProfit !== 0 ? profitColor : 'text-foreground')}>
+            {grandTotalValue > 0
+              ? `${grandProfit >= 0 ? '+' : '-'}${formatKrw(animatedProfit)}`
+              : '—'}
+          </p>
+          {grandReturnPct !== null && grandTotalValue > 0 ? (
+            <p className={cn('text-xs font-semibold mt-1.5 tabular-nums', profitColor)}>
+              {formatReturn(grandReturnPct)}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground mt-1.5">원금 대비 미실현 손익</p>
           )}
+        </div>
+
+        {/* 확정손익 */}
+        <div className={cn(
+          'rounded-xl border bg-card px-5 py-4',
+          realizedProfitKrw > 0 ? 'border-rose-200' : realizedProfitKrw < 0 ? 'border-blue-200' : 'border-border'
+        )}>
+          <div className="flex items-center gap-1.5 mb-3">
+            <CheckCircle2 className={cn('h-3.5 w-3.5', realizedProfitKrw !== 0 ? realizedColor : 'text-muted-foreground')} />
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">확정손익</p>
+          </div>
+          <p className={cn('text-2xl font-bold tabular-nums', realizedProfitKrw !== 0 ? realizedColor : 'text-foreground')}>
+            {realizedProfitKrw !== 0
+              ? `${realizedProfitKrw >= 0 ? '+' : '-'}${formatKrw(animatedRealized)}`
+              : '—'}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1.5">
+            {realizedProfitKrw !== 0 ? <RealizedIcon className={cn('inline h-3 w-3 mr-0.5', realizedColor)} /> : null}
+            매도 거래 실현 손익
+          </p>
         </div>
       </div>
 
