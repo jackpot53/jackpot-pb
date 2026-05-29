@@ -309,10 +309,6 @@ export function TodayReport({ performances }: { performances: AssetPerformance[]
           <div className="border-t border-border grid grid-cols-1 sm:grid-cols-2">
             {/* 자산별 등락 */}
             <div className="px-4 sm:px-6 py-4 border-b sm:border-b-0 sm:border-r border-border">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none bg-muted border border-border text-xs font-semibold text-muted-foreground mb-3">
-                <BarChart2 className="h-3 w-3" />
-                <span className="font-bold">자산별 등락</span>
-              </div>
               <div className="space-y-1.5">
                 {typeStats.map((t) => {
                   const up = t.weightedChangeBps > 0
@@ -360,10 +356,6 @@ export function TodayReport({ performances }: { performances: AssetPerformance[]
 
             {/* 주요 종목 */}
             <div className="px-4 sm:px-6 py-4">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-none bg-muted border border-border text-xs font-semibold text-muted-foreground mb-3">
-                <TrendingUp className="h-3 w-3" />
-                <span className="font-bold">주요 종목</span>
-              </div>
               <div className="space-y-1.5">
                 {topMovers.map((m, i) => {
                   const up = m.dailyChangeBps > 0
