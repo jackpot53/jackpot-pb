@@ -340,7 +340,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
           )}
         </div>
       )}
-      {/* Row3: 현재가 · 오늘 등락률 (KIS WS live overlay when enabled) */}
+      {/* Row3: 현재가 · 오늘 등락률 */}
       {!isSavings && (asset.currentPriceKrw > 0 || dailyChangePct !== null) && (
         <div className="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-border/30 text-xs flex-wrap">
           {asset.currentPriceKrw > 0 ? (
