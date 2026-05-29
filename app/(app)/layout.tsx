@@ -4,7 +4,6 @@ import { Sidebar } from '@/components/app/sidebar'
 import { Header } from '@/components/app/header'
 import { BackgroundCanvas } from '@/components/app/background-canvas'
 import { MobileSidebarProvider } from '@/components/app/mobile-sidebar-context'
-import { KisWsProvider } from '@/lib/ws/kis-ws-context'
 
 export default async function AppLayout({
   children,
@@ -16,7 +15,6 @@ export default async function AppLayout({
 
   return (
     <MobileSidebarProvider>
-      <KisWsProvider>
       <div className="flex h-screen overflow-hidden">
       <Sidebar />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
@@ -40,7 +38,6 @@ export default async function AppLayout({
         </main>
       </div>
       </div>
-      </KisWsProvider>
     </MobileSidebarProvider>
   )
 }
