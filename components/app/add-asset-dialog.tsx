@@ -11,7 +11,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { AssetForm } from '@/components/app/asset-form'
+import dynamic from 'next/dynamic'
+const AssetForm = dynamic(
+  () => import('@/components/app/asset-form').then((m) => m.AssetForm),
+  { ssr: false, loading: () => <div className="w-full h-48 animate-pulse bg-muted/40 rounded-lg" /> },
+)
 import { createAsset } from '@/app/actions/assets'
 
 export function AddAssetDialog() {
