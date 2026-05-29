@@ -117,3 +117,35 @@ export async function refreshAllPrices(): Promise<void> {
   await requireUser()
   await refreshAllPricesInternal()
 }
+
+/**
+ * Fetches and caches the price for a single ticker.
+ * Used when creating a new asset so the price is available immediately on redirect.
+ * Silently swallows errors — caller should not depend on success.
+ */
+export async function refreshSinglePriceInternal(ticker: string, assetType: string): Promise<void> {
+  await refreshFxIfStale()
+  const cacheMap = await getPriceCacheByTickers(['USD_KRW'])
+  const fxRate = cacheMap.get('USD_KRW')?.priceKrw ? cacheMap.get('USD_KRW')!.priceKrw / 10000 : null
+
+  if (assetType === 'fund') {
+    const result = await fetchFunetfNav(ticker)
+    if (!result || result.price <= 0) return
+    const changeBps = result.changePercent !== null ? Math.round(result.changePercent * 100) : null
+    await upsertPriceCache({ ticker, priceKrw: result.price, priceOriginal: result.price, currency: 'KRW', changeBps })
+  } else if (KR_ASSET_TYPES.includes(assetType)) {
+    const result = await fetchYahooQuote(ticker)
+    if (!result || result.price <= 0) return
+    const priceKrw = Math.round(result.price)
+    const changeBps = result.changePercent !== null ? Math.round(result.changePercent * 100) : null
+    await upsertPriceCache({ ticker, priceKrw, priceOriginal: priceKrw, currency: 'KRW', changeBps })
+  } else {
+    const result = await fetchYahooQuote(ticker)
+    if (!result || result.price <= 0) return
+    if (!fxRate) return
+    const priceUsdCents = Math.round(result.price * 100)
+    const priceKrw = Math.round(result.price * fxRate)
+    const changeBps = result.changePercent !== null ? Math.round(result.changePercent * 100) : null
+    await upsertPriceCache({ ticker, priceKrw, priceOriginal: priceUsdCents, currency: 'USD', changeBps })
+  }
+}

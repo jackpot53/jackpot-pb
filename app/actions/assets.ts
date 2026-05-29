@@ -14,6 +14,7 @@ import { eq, sql, and } from 'drizzle-orm'
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { upsertHoldings } from '@/lib/holdings'
+import { refreshSinglePriceInternal } from '@/app/actions/prices'
 
 const TRADEABLE_TYPES = ['stock_kr', 'stock_us', 'etf_kr', 'etf_us', 'crypto', 'fund', 'real_estate'] as const
 
@@ -306,6 +307,11 @@ export async function createAsset(data: AssetFormValues): Promise<AssetActionErr
       notes: null,
     })
     await upsertHoldings(newAsset.id, user.id)
+  }
+
+  // Fetch price for the new ticker before redirect so it renders immediately
+  if (ticker && rest.priceType === 'live') {
+    await refreshSinglePriceInternal(ticker, rest.assetType).catch(() => {})
   }
 
   revalidatePath('/assets')
