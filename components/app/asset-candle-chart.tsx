@@ -19,7 +19,7 @@ import { CHART_UP, CHART_DOWN, resolvePalette } from '@/lib/chart/theme'
 import { MA_COLORS, MA_PERIODS } from '@/lib/chart/ma-colors'
 import { sma } from '@/lib/robo-advisor/indicators/sma'
 
-type Period = '일봉' | '주봉' | '월봉'
+export type Period = '일봉' | '주봉' | '월봉'
 
 const PERIODS: Period[] = ['일봉', '주봉', '월봉']
 const PERIOD_PARAMS: Record<Period, { interval: string; range: string }> = {
@@ -34,6 +34,7 @@ interface AssetCandleChartProps {
   assetType?: string
   avgPrice?: number | null
   periodRanges?: Partial<Record<Period, string>>
+  onPeriodChange?: (period: Period) => void
 }
 
 interface TooltipState {
@@ -65,7 +66,7 @@ function toSeriesData(points: OhlcPoint[]): CandlestickData<Time>[] {
   }))
 }
 
-export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges }: AssetCandleChartProps) {
+export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, onPeriodChange }: AssetCandleChartProps) {
   const [period, setPeriod] = useState<Period>('일봉')
   const [fetchedByPeriod, setFetchedByPeriod] = useState<Partial<Record<Period, OhlcPoint[]>>>({})
   const [loading, setLoading] = useState(false)
@@ -118,6 +119,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges }
   const selectPeriod = useCallback(
     (next: Period) => {
       setPeriod(next)
+      onPeriodChange?.(next)
       if (next === '일봉' || fetchedByPeriod[next]) return
       const { interval, range } = effectiveParams[next]
       setLoading(true)
@@ -132,7 +134,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges }
         .catch(() => {})
         .finally(() => setLoading(false))
     },
-    [fetchedByPeriod, ticker, effectiveParams],
+    [fetchedByPeriod, ticker, effectiveParams, onPeriodChange],
   )
 
   // avgPriceRef를 prop과 동기화 (차트 생성 effect 클로저에서 최신 값 읽기용)

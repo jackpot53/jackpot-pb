@@ -14,8 +14,9 @@ import { cn } from '@/lib/utils'
 import type { UniverseStockWithSignals, BacktestStats } from '@/db/queries/robo-advisor'
 import { RoboAdvisorDetailDialog } from '@/components/app/robo-advisor-detail-dialog'
 import { RoboAdvisorTickerSearch, type TickerSuggestion } from '@/components/app/robo-advisor-ticker-search'
-import { AssetCandleChart } from '@/components/app/asset-candle-chart'
+import { AssetCandleChart, type Period } from '@/components/app/asset-candle-chart'
 import type { OhlcPoint } from '@/lib/price/sparkline'
+import { InvestorFlowChart } from '@/components/app/investor-flow-chart'
 
 interface Props {
   universe: UniverseStockWithSignals[]
@@ -185,6 +186,7 @@ export function RoboAdvisorPageClient({ universe, statsMap }: Props) {
   const [selectedTicker, setSelectedTicker] = useState<TickerSuggestion | null>(null)
   const [tickerOhlc, setTickerOhlc] = useState<OhlcPoint[] | null>(null)
   const [tickerChartLoading, setTickerChartLoading] = useState(false)
+  const [chartPeriod, setChartPeriod] = useState<Period>('일봉')
 
   const handleTickerSelect = useCallback((s: TickerSuggestion) => {
     setSelectedTicker(s)
@@ -326,12 +328,23 @@ export function RoboAdvisorPageClient({ universe, statsMap }: Props) {
                   ticker={selectedTicker.ticker}
                   initialData={tickerOhlc}
                   periodRanges={{ '일봉': '3y', '주봉': '3y', '월봉': '5y' }}
+                  onPeriodChange={setChartPeriod}
                 />
               ) : !tickerChartLoading ? (
                 <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
                   차트 데이터를 불러오지 못했습니다
                 </div>
               ) : null}
+            </div>
+
+            {/* 투자자별 매매동향 */}
+            <div className="mt-4 border-t border-border pt-4">
+              <p className="text-xs text-muted-foreground mb-2">투자자별 매매동향 (순매수량, 단위: 주)</p>
+              <InvestorFlowChart
+                ticker={selectedTicker.ticker}
+                period={chartPeriod}
+                range="1y"
+              />
             </div>
           </div>
         )}
