@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import {
   createChart,
   LineSeries,
@@ -29,7 +29,7 @@ function fmtVol(v: number): string {
   return v.toLocaleString('ko-KR')
 }
 
-export const VolumePanel = memo(function VolumePanel({ data, height = 180 }: Props) {
+export function VolumePanel({ data, height = 180 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const histSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
@@ -201,4 +201,4 @@ export const VolumePanel = memo(function VolumePanel({ data, height = 180 }: Pro
       </div>
     </div>
   )
-})
+}

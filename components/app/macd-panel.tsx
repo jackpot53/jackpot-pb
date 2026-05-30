@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import {
   createChart,
   LineSeries,
@@ -23,7 +23,7 @@ interface Props {
   height?: number
 }
 
-export const MacdPanel = memo(function MacdPanel({ data, height = 180 }: Props) {
+export function MacdPanel({ data, height = 180 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const histSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
@@ -213,4 +213,4 @@ export const MacdPanel = memo(function MacdPanel({ data, height = 180 }: Props) 
       </div>
     </div>
   )
-})
+}
