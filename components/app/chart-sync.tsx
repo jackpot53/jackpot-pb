@@ -19,7 +19,7 @@ export interface DateRange {
 
 interface ChartSyncApi {
   /** lightweight-charts 인스턴스를 등록하고, 해제 함수를 반환한다 */
-  registerChart: (chart: IChartApi) => () => void
+  registerChart: (chart: IChartApi, opts?: { master?: boolean }) => () => void
   /** 캔들(마스터) 데이터의 날짜 배열을 등록 — logical range ↔ 날짜 변환 기준 */
   setMasterDates: (dates: string[]) => void
   /** 현재 공유 중인 보이는 구간(없으면 null) */
@@ -48,6 +48,11 @@ interface ChartSyncApi {
    * 공유 구간이 없으면 fitContent()를 호출한다.
    */
   applyRangeToChart: (chart: IChartApi) => void
+  /**
+   * 마스터 데이터의 마지막 바(최신 거래일)를 우측 끝에 앵커하고 전 차트에 동기 전파한다.
+   * fitContent()와 달리 currentRangeRef를 즉시 갱신하므로 서브 패널 레이스를 방지한다.
+   */
+  anchorToEnd: () => void
 }
 
 const ChartSyncContext = createContext<ChartSyncApi | null>(null)
@@ -60,6 +65,7 @@ export function useChartSync(): ChartSyncApi {
 
 export function ChartSyncProvider({ children }: { children: ReactNode }) {
   const chartsRef = useRef<Set<IChartApi>>(new Set())
+  const masterChartRef = useRef<IChartApi | null>(null)
   const datesRef = useRef<string[]>([])
   const currentRangeRef = useRef<LogicalRange | null>(null)
   // 동기화 적용 중 재진입(피드백 루프) 방지
@@ -92,11 +98,16 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
       dateSubsRef.current.forEach((cb) => cb(dr))
     }
 
-    const registerChart: ChartSyncApi['registerChart'] = (chart) => {
+    const registerChart: ChartSyncApi['registerChart'] = (chart, opts) => {
       chartsRef.current.add(chart)
+      if (opts?.master) masterChartRef.current = chart
 
       const handler = (range: LogicalRange | null) => {
         if (isApplyingRef.current) return
+        // 서브 패널은 range를 seeding·전파하지 않는다 — 마스터만 공유 range를 소유한다.
+        // lightweight-charts의 visibleLogicalRangeChange는 rAF 다음 프레임에 비동기로 발생하므로
+        // 동기 isApplyingRef 가드만으로는 서브 패널의 fitContent() 레이스를 막을 수 없다.
+        if (chart !== masterChartRef.current) return
         currentRangeRef.current = range
         if (!range) return
         isApplyingRef.current = true
@@ -127,6 +138,7 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
       return () => {
         chart.timeScale().unsubscribeVisibleLogicalRangeChange(handler)
         chartsRef.current.delete(chart)
+        if (masterChartRef.current === chart) masterChartRef.current = null
       }
     }
 
@@ -246,7 +258,15 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    return { registerChart, setMasterDates, getCurrentLogicalRange, resetRange, subscribeDateRange, applyMonthsPreset, pan, setMasterAxisWidth, subscribeMasterAxisWidth, applyRangeToChart }
+    const anchorToEnd: ChartSyncApi['anchorToEnd'] = () => {
+      const len = datesRef.current.length
+      if (len === 0) return
+      // applyLogicalRange는 currentRangeRef를 동기 갱신 후 전 차트에 전파 —
+      // 서브 패널들이 뒤이어 applyRangeToChart를 호출해도 올바른 공유 range를 즉시 읽는다.
+      applyLogicalRange({ from: 0 as Logical, to: (len - 1 + RIGHT_MARGIN) as Logical })
+    }
+
+    return { registerChart, setMasterDates, getCurrentLogicalRange, resetRange, subscribeDateRange, applyMonthsPreset, pan, setMasterAxisWidth, subscribeMasterAxisWidth, applyRangeToChart, anchorToEnd }
   }, [])
 
   return <ChartSyncContext.Provider value={api}>{children}</ChartSyncContext.Provider>

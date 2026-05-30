@@ -228,7 +228,7 @@ setPeriod(next)
     seriesRef.current = series
     maSeriesRef.current = maMap
 
-    const unregister = syncRef.current.registerChart(chart)
+    const unregister = syncRef.current.registerChart(chart, { master: true })
 
     // 서브 패널이 더 넓은 레이블을 가질 때 메인 차트도 확장해 축 정렬 유지
     const unsubAxisWidth = syncRef.current.subscribeMasterAxisWidth((w) => {
@@ -344,8 +344,8 @@ setPeriod(next)
 
     const shared = syncRef.current.getCurrentLogicalRange()
     if (shared) chart.timeScale().setVisibleLogicalRange(shared)
-    else chart.timeScale().fitContent()
-    // fitContent 렌더링 후 매수가 라벨 y좌표 및 축 너비 갱신
+    else syncRef.current.anchorToEnd()
+    // 렌더링 후 매수가 라벨 y좌표 및 축 너비 갱신
     const rafId = requestAnimationFrame(() => {
       if (!chartRef.current) return
       const p = avgPriceRef.current
@@ -356,9 +356,8 @@ setPeriod(next)
       const w = chart.priceScale('right').width()
       if (w > 0) syncRef.current.setMasterAxisWidth(w)
     })
-    return () => cancelAnimationFrame(rafId)
-
     onDataChange?.(baseData)
+    return () => cancelAnimationFrame(rafId)
   }, [baseData, maVisible, onDataChange])
 
   // Live tick → 마지막 캔들만 patch (일봉)
