@@ -341,7 +341,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
             </button>
           )}
         </div>
-        <div className="border-t border-foreground/20" />
+        <div className="border-t-2 border-foreground/20" />
 
         {/* row2: 수량 · 매수가 · 투자금 (savings/insurance 전용 필드 치환) */}
         {hasHolding && (
