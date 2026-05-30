@@ -341,7 +341,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
             </button>
           )}
         </div>
-        <div className="border-t-2 border-black/70" />
+        <div className="border-t-2 border-black/40" />
 
         {/* row2: 수량 · 매수가 · 투자금 (savings/insurance 전용 필드 치환) */}
         {hasHolding && (
@@ -403,7 +403,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
 
         {/* row3: 현재가 · 오늘 등락률 */}
         {!isSavings && (asset.currentPriceKrw > 0 || dailyChangePct !== null) && (
-          <div className="flex items-center gap-2 pt-1.5 border-t border-black/70 text-xs flex-wrap">
+          <div className="flex items-center gap-2 pt-1.5 border-t border-black/40 text-xs flex-wrap">
             {asset.currentPriceKrw > 0 ? (
               <span className="tabular-nums font-bold inline-flex items-center gap-2">
                 <span className="font-normal text-muted-foreground">현재가</span>
@@ -473,7 +473,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
 
         {/* row4: 평가금 · 수익금 · 수익률 */}
         {(hasValue || hasCost) && (
-          <div className="pt-2 border-t border-black/70 flex items-center gap-2 tabular-nums flex-wrap">
+          <div className="pt-2 border-t border-black/40 flex items-center gap-2 tabular-nums flex-wrap">
             <span className="text-xs text-muted-foreground">평가금</span>
             <span className="text-xs font-semibold text-foreground">
               {hasValue ? formatKrwCompact(asset.currentValueKrw) : '—'}
