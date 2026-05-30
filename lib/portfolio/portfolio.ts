@@ -461,21 +461,24 @@ export function formatKrw(n: number): string {
   }).format(n)
 }
 
-/** 카드 등 좁은 공간용 — 1만↑ N,NNN.N만(천원 정밀도), 10억↑ N,NNN억, ₩ 기호 없음 */
+/** 카드 등 좁은 공간용 — 억·만·천 단위 조합, ₩ 기호 없음
+ *  예) 123,456,789 → "1억 2,345만 6천" / 12,345,678 → "1,234만 5천" / 1,234 → "1,234"
+ */
 export function formatKrwCompact(n: number): string {
-  const abs = Math.abs(n)
+  const abs = Math.round(Math.abs(n))
   const sign = n < 0 ? '-' : ''
-  if (abs >= 10_0000_0000) {
-    const eok = abs / 1_0000_0000
-    const formatted = eok < 100 ? eok.toFixed(1).replace(/\.0$/, '') : Math.round(eok).toLocaleString('ko-KR')
-    return `${sign}${formatted}억`
-  }
-  if (abs >= 1_0000) {
-    const man = abs / 1_0000
-    const formatted = man.toFixed(1).replace(/\.0$/, '')
-    return `${sign}${Number(formatted).toLocaleString('ko-KR')}만`
-  }
-  return `${sign}${Math.round(abs).toLocaleString('ko-KR')}`
+  if (abs < 1_0000) return `${sign}${abs.toLocaleString('ko-KR')}`
+
+  const eok  = Math.floor(abs / 1_0000_0000)
+  const man  = Math.floor((abs % 1_0000_0000) / 1_0000)
+  const chon = Math.floor((abs % 1_0000) / 1_000)
+
+  const parts: string[] = []
+  if (eok  > 0) parts.push(`${eok.toLocaleString('ko-KR')}억`)
+  if (man  > 0) parts.push(`${man.toLocaleString('ko-KR')}만`)
+  if (chon > 0) parts.push(`${chon}천`)
+
+  return `${sign}${parts.join(' ')}`
 }
 
 /** Formats USD float as '$N,NNN.NN' (en-US locale, 2 decimals) */
