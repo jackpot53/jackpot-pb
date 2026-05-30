@@ -11,6 +11,7 @@ import {
   type IChartApi,
   type ISeriesApi,
   type LineData,
+  type MouseEventParams,
   type Time,
   type WhitespaceData,
 } from 'lightweight-charts'
@@ -106,6 +107,11 @@ function toCumulative(data: FlowFilled[]): FlowFilled[] {
   })
 }
 
+interface CumulativeTip {
+  x: number; y: number; date: string
+  institution: number | null; foreign: number | null; individual: number | null
+}
+
 function CumulativeFlowChart({ data, height = 140 }: { data: FlowFilled[]; height?: number }) {
   const sync = useChartSync()
   const syncRef = useRef(sync)
@@ -116,6 +122,8 @@ function CumulativeFlowChart({ data, height = 140 }: { data: FlowFilled[]; heigh
   const instSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
   const frgnSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
   const indvSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const [tooltip, setTooltip] = useState<CumulativeTip | null>(null)
+  const [containerWidth, setContainerWidth] = useState(0)
 
   useEffect(() => {
     const container = containerRef.current
@@ -145,8 +153,26 @@ function CumulativeFlowChart({ data, height = 140 }: { data: FlowFilled[]; heigh
     frgnSeriesRef.current = frgnSeries
     indvSeriesRef.current = indvSeries
 
+    const ro = new ResizeObserver(([entry]) => {
+      if (entry) setContainerWidth(Math.floor(entry.contentRect.width))
+    })
+    ro.observe(container)
+
+    const onMove = (param: MouseEventParams<Time>) => {
+      if (!param.time || !param.point) { setTooltip(null); return }
+      const date = typeof param.time === 'string' ? param.time : ''
+      const instVal = (param.seriesData.get(instSeries) as LineData<Time> | undefined)?.value ?? null
+      const frgnVal = (param.seriesData.get(frgnSeries) as LineData<Time> | undefined)?.value ?? null
+      const indvVal = (param.seriesData.get(indvSeries) as LineData<Time> | undefined)?.value ?? null
+      if (instVal === null && frgnVal === null && indvVal === null) { setTooltip(null); return }
+      setTooltip({ x: param.point.x, y: param.point.y, date, institution: instVal, foreign: frgnVal, individual: indvVal })
+    }
+    chart.subscribeCrosshairMove(onMove)
+
     const unregister = syncRef.current.registerChart(chart)
     return () => {
+      ro.disconnect()
+      chart.unsubscribeCrosshairMove(onMove)
       unregister()
       chart.remove()
       chartRef.current = null
@@ -187,7 +213,32 @@ function CumulativeFlowChart({ data, height = 140 }: { data: FlowFilled[]; heigh
           </span>
         ))}
       </div>
-      <div ref={containerRef} style={{ height }} className="w-full" />
+      <div style={{ position: 'relative' }}>
+        <div ref={containerRef} style={{ height }} className="w-full" />
+        {tooltip && (
+          <div
+            className="pointer-events-none absolute z-10 rounded-lg border border-border bg-popover text-popover-foreground px-2.5 py-1.5 shadow-md text-[11px]"
+            style={{
+              left: tooltip.x > containerWidth * 0.6 ? tooltip.x - 150 : tooltip.x + 10,
+              top: Math.max(4, tooltip.y - 24),
+            }}
+          >
+            <p className="text-muted-foreground mb-1 font-medium text-[10px]">{tooltip.date}</p>
+            <div className="space-y-0.5">
+              {(['institution', 'foreign', 'individual'] as const).map(k => {
+                const v = tooltip[k]
+                if (v === null) return null
+                return (
+                  <div key={k} className="flex items-center gap-1.5 tabular-nums">
+                    <span className="inline-block w-2.5 h-[1.5px] shrink-0" style={{ background: FLOW_COLORS[k] }} />
+                    <span className={v >= 0 ? 'text-red-500' : 'text-blue-500'}>{v >= 0 ? '+' : ''}{fmtFlow(v)}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -207,6 +258,8 @@ function FlowChart({
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; date: string; value: number } | null>(null)
+  const [containerWidth, setContainerWidth] = useState(0)
 
   useEffect(() => {
     const container = containerRef.current
@@ -231,8 +284,24 @@ function FlowChart({
     chartRef.current = chart
     seriesRef.current = series
 
+    const ro = new ResizeObserver(([entry]) => {
+      if (entry) setContainerWidth(Math.floor(entry.contentRect.width))
+    })
+    ro.observe(container)
+
+    const onMove = (param: MouseEventParams<Time>) => {
+      if (!param.time || !param.point) { setTooltip(null); return }
+      const bar = param.seriesData.get(series) as HistogramData<Time> | undefined
+      if (!bar || !('value' in bar)) { setTooltip(null); return }
+      const date = typeof param.time === 'string' ? param.time : ''
+      setTooltip({ x: param.point.x, y: param.point.y, date, value: bar.value })
+    }
+    chart.subscribeCrosshairMove(onMove)
+
     const unregister = syncRef.current.registerChart(chart)
     return () => {
+      ro.disconnect()
+      chart.unsubscribeCrosshairMove(onMove)
       unregister()
       chart.remove()
       chartRef.current = null
@@ -259,7 +328,23 @@ function FlowChart({
   return (
     <div>
       <p className="text-[10px] text-muted-foreground mb-0.5">{label}</p>
-      <div ref={containerRef} style={{ height }} className="w-full" />
+      <div style={{ position: 'relative' }}>
+        <div ref={containerRef} style={{ height }} className="w-full" />
+        {tooltip && (
+          <div
+            className="pointer-events-none absolute z-10 rounded-lg border border-border bg-popover text-popover-foreground px-2.5 py-1.5 shadow-md text-[11px]"
+            style={{
+              left: tooltip.x > containerWidth * 0.6 ? tooltip.x - 120 : tooltip.x + 10,
+              top: Math.max(4, tooltip.y - 30),
+            }}
+          >
+            <p className="text-muted-foreground mb-0.5 font-medium text-[10px]">{tooltip.date}</p>
+            <span className={`font-semibold tabular-nums ${tooltip.value >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+              {tooltip.value >= 0 ? '+' : ''}{fmtFlow(tooltip.value)}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
