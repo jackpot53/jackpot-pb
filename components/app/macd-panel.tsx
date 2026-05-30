@@ -13,6 +13,9 @@ import {
   type ISeriesApi,
   type ISeriesMarkersPluginApi,
   type SeriesMarker,
+  type WhitespaceData,
+  type HistogramData,
+  type LineData,
 } from 'lightweight-charts'
 import type { OhlcPoint } from '@/lib/price/sparkline'
 import { macd } from '@/lib/robo-advisor/indicators/macd'
@@ -150,18 +153,23 @@ export function MacdPanel({ data, height = 180 }: Props) {
       return
     }
 
-    const histData: { time: Time; value: number; color: string }[] = []
-    const macdData: { time: Time; value: number }[] = []
-    const signalData: { time: Time; value: number }[] = []
+    // whitespace({ time }) — value 없이 시간만 등록해 캔들 차트와 논리 인덱스를 맞춤
+    const histData: (HistogramData | WhitespaceData)[] = []
+    const macdData: (LineData | WhitespaceData)[] = []
+    const signalData: (LineData | WhitespaceData)[] = []
 
     for (let i = 0; i < data.length; i++) {
       const m = macdResult[i]
       const t = data[i].date as Time
       if (m.histogram !== null) {
         histData.push({ time: t, value: m.histogram, color: m.histogram >= 0 ? CHART_UP : CHART_DOWN })
+      } else {
+        histData.push({ time: t })
       }
       if (m.macd !== null) macdData.push({ time: t, value: m.macd })
+      else macdData.push({ time: t })
       if (m.signal !== null) signalData.push({ time: t, value: m.signal })
+      else signalData.push({ time: t })
     }
 
     histSeries.setData(histData)
