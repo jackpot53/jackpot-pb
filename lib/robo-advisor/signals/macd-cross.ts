@@ -32,3 +32,51 @@ export function detectMacdCross(ohlc: OhlcPoint[]): boolean {
 
   return crossedUp && histogramPositive
 }
+
+export type MacdCrossEvent = { date: string; type: 'golden' | 'dead' }
+
+/** 전체 데이터에서 골든/데드 크로스 발생 시점을 모두 반환. */
+export function detectMacdCrosses(ohlc: OhlcPoint[]): MacdCrossEvent[] {
+  if (ohlc.length < 40) return []
+
+  const closes = ohlc.map((p) => p.close)
+  const macdArr = macd(closes)
+  const crosses: MacdCrossEvent[] = []
+
+  for (let i = 1; i < macdArr.length; i++) {
+    const prev = macdArr[i - 1]
+    const curr = macdArr[i]
+    if (prev.macd === null || prev.signal === null || curr.macd === null || curr.signal === null) continue
+    if (prev.macd <= prev.signal && curr.macd > curr.signal) {
+      crosses.push({ date: ohlc[i].date, type: 'golden' })
+    } else if (prev.macd >= prev.signal && curr.macd < curr.signal) {
+      crosses.push({ date: ohlc[i].date, type: 'dead' })
+    }
+  }
+
+  return crosses
+}
+
+/** 가장 최근 MACD 크로스 한 건. daysAgo는 마지막 데이터 기준 영업일 수. */
+export function lastMacdCross(
+  ohlc: OhlcPoint[],
+): { type: 'golden' | 'dead'; date: string; daysAgo: number } | null {
+  if (ohlc.length < 40) return null
+
+  const closes = ohlc.map((p) => p.close)
+  const macdArr = macd(closes)
+  let last: { type: 'golden' | 'dead'; date: string; daysAgo: number } | null = null
+
+  for (let i = 1; i < macdArr.length; i++) {
+    const prev = macdArr[i - 1]
+    const curr = macdArr[i]
+    if (prev.macd === null || prev.signal === null || curr.macd === null || curr.signal === null) continue
+    if (prev.macd <= prev.signal && curr.macd > curr.signal) {
+      last = { type: 'golden', date: ohlc[i].date, daysAgo: ohlc.length - 1 - i }
+    } else if (prev.macd >= prev.signal && curr.macd < curr.signal) {
+      last = { type: 'dead', date: ohlc[i].date, daysAgo: ohlc.length - 1 - i }
+    }
+  }
+
+  return last
+}

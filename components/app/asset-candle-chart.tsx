@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   createChart,
   CandlestickSeries,
+  HistogramSeries,
   LineSeries,
   LineStyle,
   CrosshairMode,
@@ -35,6 +36,8 @@ interface AssetCandleChartProps {
   avgPrice?: number | null
   periodRanges?: Partial<Record<Period, string>>
   onPeriodChange?: (period: Period) => void
+  showVolume?: boolean
+  onDataChange?: (data: OhlcPoint[]) => void
 }
 
 interface TooltipState {
@@ -66,7 +69,7 @@ function toSeriesData(points: OhlcPoint[]): CandlestickData<Time>[] {
   }))
 }
 
-export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, onPeriodChange }: AssetCandleChartProps) {
+export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, onPeriodChange, showVolume, onDataChange }: AssetCandleChartProps) {
   const [period, setPeriod] = useState<Period>('일봉')
   const [fetchedByPeriod, setFetchedByPeriod] = useState<Partial<Record<Period, OhlcPoint[]>>>({})
   const [loading, setLoading] = useState(false)
@@ -88,6 +91,8 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
   const chartRef = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
   const maSeriesRef = useRef<Map<number, ISeriesApi<'Line'>>>(new Map())
+  const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
+  const showVolumeRef = useRef(showVolume ?? false)
   const avgPriceLineRef = useRef<IPriceLine | null>(null)
   const avgPriceRef = useRef<number | null | undefined>(avgPrice)
   const [avgPriceLabelY, setAvgPriceLabelY] = useState<number | null>(null)
@@ -161,7 +166,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
       },
       rightPriceScale: {
         borderVisible: false,
-        scaleMargins: { top: 0.1, bottom: 0.1 },
+        scaleMargins: showVolumeRef.current ? { top: 0.05, bottom: 0.25 } : { top: 0.1, bottom: 0.1 },
       },
       timeScale: {
         borderVisible: false,
@@ -199,6 +204,18 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
         crosshairMarkerVisible: false,
       })
       maMap.set(p, maSeries)
+    }
+
+    if (showVolumeRef.current) {
+      const volSeries = chart.addSeries(HistogramSeries, {
+        priceScaleId: 'volume',
+        priceLineVisible: false,
+        lastValueVisible: false,
+      })
+      chart.priceScale('volume').applyOptions({
+        scaleMargins: { top: 0.78, bottom: 0 },
+      })
+      volumeSeriesRef.current = volSeries
     }
 
     chartRef.current = chart
@@ -259,11 +276,12 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
       chartRef.current = null
       seriesRef.current = null
       maSeriesRef.current = new Map()
+      volumeSeriesRef.current = null
       avgPriceLineRef.current = null
     }
   }, [])
 
-  // 데이터/기간 교체 시 캔들 + 이평선 업데이트
+  // 데이터/기간 교체 시 캔들 + 이평선 + 거래량 업데이트
   useEffect(() => {
     const series = seriesRef.current
     const chart = chartRef.current
@@ -287,6 +305,18 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
       maSeries.applyOptions({ visible: maVisible[p] })
     }
 
+    const volSeries = volumeSeriesRef.current
+    if (volSeries) {
+      const volData = baseData
+        .filter((p) => p.volume != null)
+        .map((p) => ({
+          time: p.date as Time,
+          value: p.volume!,
+          color: p.close >= p.open ? CHART_UP : CHART_DOWN,
+        }))
+      volSeries.setData(volData)
+    }
+
     chart.timeScale().fitContent()
     // fitContent 렌더링 후 매수가 라벨 y좌표 갱신
     requestAnimationFrame(() => {
@@ -295,7 +325,9 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
       const coord = series.priceToCoordinate(p)
       setAvgPriceLabelY(typeof coord === 'number' ? coord : null)
     })
-  }, [baseData, maVisible])
+
+    onDataChange?.(baseData)
+  }, [baseData, maVisible, onDataChange])
 
   // Live tick → 마지막 캔들만 patch (일봉)
   useEffect(() => {

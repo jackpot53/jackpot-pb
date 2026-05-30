@@ -4,6 +4,7 @@ export interface OhlcPoint {
   high: number
   low: number
   close: number
+  volume?: number | null
 }
 
 export async function fetchSparklineData(
@@ -32,6 +33,7 @@ export async function fetchSparklineData(
     const highs: (number | null)[] = quote.high ?? []
     const lows: (number | null)[] = quote.low ?? []
     const closes: (number | null)[] = quote.close ?? []
+    const volumes: (number | null)[] = quote.volume ?? []
 
     const points: OhlcPoint[] = []
     const len = Math.min(timestamps.length, opens.length, highs.length, lows.length, closes.length)
@@ -46,7 +48,8 @@ export async function fetchSparklineData(
       ) {
         const d = new Date(ts * 1000)
         const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-        points.push({ date, open: o, high: h, low: l, close: c })
+        const vol = volumes[i]
+        points.push({ date, open: o, high: h, low: l, close: c, volume: typeof vol === 'number' && vol > 0 ? vol : null })
       }
     }
 

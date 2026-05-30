@@ -17,6 +17,7 @@ import { RoboAdvisorTickerSearch, type TickerSuggestion } from '@/components/app
 import { AssetCandleChart, type Period } from '@/components/app/asset-candle-chart'
 import type { OhlcPoint } from '@/lib/price/sparkline'
 import { InvestorFlowChart } from '@/components/app/investor-flow-chart'
+import { MacdPanel } from '@/components/app/macd-panel'
 
 interface Props {
   universe: UniverseStockWithSignals[]
@@ -187,11 +188,17 @@ export function RoboAdvisorPageClient({ universe, statsMap }: Props) {
   const [tickerOhlc, setTickerOhlc] = useState<OhlcPoint[] | null>(null)
   const [tickerChartLoading, setTickerChartLoading] = useState(false)
   const [chartPeriod, setChartPeriod] = useState<Period>('일봉')
+  const [chartDataForMacd, setChartDataForMacd] = useState<OhlcPoint[]>([])
 
   const handleTickerSelect = useCallback((s: TickerSuggestion) => {
     setSelectedTicker(s)
     setTickerOhlc(null)
+    setChartDataForMacd([])
   }, [])
+
+  useEffect(() => {
+    setChartDataForMacd(tickerOhlc ?? [])
+  }, [tickerOhlc])
 
   useEffect(() => {
     if (!selectedTicker) return
@@ -329,6 +336,8 @@ export function RoboAdvisorPageClient({ universe, statsMap }: Props) {
                   initialData={tickerOhlc}
                   periodRanges={{ '일봉': '3y', '주봉': '3y', '월봉': '5y' }}
                   onPeriodChange={setChartPeriod}
+                  showVolume
+                  onDataChange={setChartDataForMacd}
                 />
               ) : !tickerChartLoading ? (
                 <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
@@ -345,6 +354,11 @@ export function RoboAdvisorPageClient({ universe, statsMap }: Props) {
                 period={chartPeriod}
                 range="1y"
               />
+            </div>
+
+            {/* MACD 시그널 패널 */}
+            <div className="mt-4 border-t border-border pt-4">
+              <MacdPanel data={chartDataForMacd} />
             </div>
           </div>
         )}
