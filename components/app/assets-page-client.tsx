@@ -277,12 +277,12 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
     ? asset.dailyChangeBps / 100
     : null
 
-  const accountBadge = mergedCount > 1 ? (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs font-semibold bg-muted text-muted-foreground ring-1 ring-border">
+  const accountBadge = (asset.assetType === 'insurance' || asset.assetType === 'real_estate') ? null : mergedCount > 1 ? (
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-none text-xs font-normal bg-white text-black ring-1 ring-black">
       {mergedCount}계좌
     </span>
   ) : asset.accountType && ACCOUNT_TYPE_LABELS[asset.accountType] ? (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs font-semibold bg-muted text-muted-foreground ring-1 ring-border">
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-none text-xs font-normal bg-white text-black ring-1 ring-black">
       {ACCOUNT_TYPE_LABELS[asset.accountType]}
     </span>
   ) : null
@@ -319,9 +319,32 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
 
   const hasChartToggle = (showSparkline && asset.ticker) || lineData !== undefined
 
+  const leftStripeColor = (() => {
+    if (dailyChangePct === null) return 'bg-border'
+    if (dailyChangePct >= 3)  return 'bg-red-500'
+    if (dailyChangePct >= 1)  return 'bg-red-400'
+    if (dailyChangePct > 0)   return 'bg-red-300'
+    if (dailyChangePct === 0) return 'bg-border'
+    if (dailyChangePct <= -3) return 'bg-blue-500'
+    if (dailyChangePct <= -1) return 'bg-blue-400'
+    return 'bg-blue-300'
+  })()
+
+  const dividerColor = (() => {
+    if (dailyChangePct === null) return 'border-black'
+    if (dailyChangePct >= 3)  return 'border-red-500'
+    if (dailyChangePct >= 1)  return 'border-red-400'
+    if (dailyChangePct > 0)   return 'border-red-300'
+    if (dailyChangePct === 0) return 'border-black'
+    if (dailyChangePct <= -3) return 'border-blue-500'
+    if (dailyChangePct <= -1) return 'border-blue-400'
+    return 'border-blue-300'
+  })()
+
   return (
-    <div className={cn("relative rounded-sm border border-black hover:shadow-md transition-all", ASSET_TYPE_ACCENT[asset.assetType] ?? 'bg-card')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      <div className="flex flex-col gap-2 px-4 py-3.5">
+    <div className="relative rounded-sm border border-black bg-white hover:shadow-md transition-all overflow-hidden flex" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <div className={cn("w-1 shrink-0", leftStripeColor)} />
+      <div className="flex flex-col gap-2 px-4 py-3.5 flex-1 min-w-0">
         {/* row1: 로고 + 종목명 + 계좌유형 배지 + 차트 토글 */}
         <div className="flex items-center gap-2 min-w-0">
           <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={32} />
@@ -341,11 +364,65 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
             </button>
           )}
         </div>
-        <div className="border-t-2 border-black" />
+        <div className={cn("border-t-2", dividerColor)} />
+
+        {/* row3: 현재가 · 오늘 등락률 */}
+        {!isSavings && (asset.currentPriceKrw > 0 || dailyChangePct !== null) && (
+          <div className="flex items-center gap-2 text-xs -mx-4 px-4 py-1.5 bg-black/[0.03]">
+            <span className="relative flex h-1.5 w-1.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            </span>
+            {asset.currentPriceKrw > 0 ? (
+              <span className="tabular-nums inline-flex items-center gap-2">
+                <span className="text-muted-foreground">현재가</span>
+                <span className={`font-bold ${dailyChangePct === null ? 'text-foreground' : dailyChangePct > 0 ? 'text-red-500' : dailyChangePct < 0 ? 'text-blue-500' : 'text-foreground'}`}>
+                  {(asset.assetType === 'stock_us' || asset.assetType === 'etf_us') && asset.currentPriceUsd != null
+                    ? formatUsd(asset.currentPriceUsd)
+                    : formatKrwCompact(asset.currentPriceKrw)}
+                </span>
+                {dailyChangePct !== null && (
+                  <span className={`tabular-nums font-bold ${(dailyChangePct ?? 0) >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                    {(dailyChangePct ?? 0) >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
+                  </span>
+                )}
+              </span>
+            ) : dailyChangePct !== null && (
+              <span className={`tabular-nums font-bold ${dailyChangePct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                <span className="font-normal text-muted-foreground">오늘</span>{' '}
+                {dailyChangePct >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* row4: 평가금 · 수익금 · 수익률 */}
+        {(hasValue || hasCost) && (
+          <div className="flex items-center gap-2 tabular-nums flex-wrap text-xs pt-1.5 border-t border-black/25">
+            <span className="text-muted-foreground">평가금</span>
+            <span className="font-semibold text-foreground">
+              {hasValue ? formatKrwCompact(asset.currentValueKrw) : '—'}
+              {isUsdPurchase && asset.currentPriceUsd != null && hasHolding && hasValue && (
+                <span className="text-muted-foreground ml-1">({formatUsd(asset.currentPriceUsd * asset.totalQuantity / 1e8)})</span>
+              )}
+            </span>
+            {hasValue && hasCost && (
+              <>
+                <span className="text-black">·</span>
+                <span className={`font-bold ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                  {profit >= 0 ? '+' : ''}{formatKrwCompact(profit)}
+                </span>
+                <span className={`font-semibold ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                  ({formatReturn(asset.returnPct)})
+                </span>
+              </>
+            )}
+          </div>
+        )}
 
         {/* row2: 수량 · 매수가 · 투자금 (savings/insurance 전용 필드 치환) */}
         {hasHolding && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap pt-1.5 border-t border-black/25">
             {!hideQty && (
               <span className="tabular-nums"><span className="text-muted-foreground">수량</span> <span className="font-medium text-foreground/90">{formatQty(asset.totalQuantity, isCrypto)}</span></span>
             )}
@@ -401,35 +478,9 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
           </div>
         )}
 
-        {/* row3: 현재가 · 오늘 등락률 */}
-        {!isSavings && (asset.currentPriceKrw > 0 || dailyChangePct !== null) && (
-          <div className="flex items-center gap-2 pt-1.5 border-t border-black/25 text-xs flex-wrap">
-            {asset.currentPriceKrw > 0 ? (
-              <span className="tabular-nums font-bold inline-flex items-center gap-2">
-                <span className="font-normal text-muted-foreground">현재가</span>
-                <span className="text-foreground">
-                  {(asset.assetType === 'stock_us' || asset.assetType === 'etf_us') && asset.currentPriceUsd != null
-                    ? formatUsd(asset.currentPriceUsd)
-                    : formatKrwCompact(asset.currentPriceKrw)}
-                </span>
-                {dailyChangePct !== null && (
-                  <span className={`tabular-nums font-bold ml-1 ${(dailyChangePct ?? 0) >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                    {(dailyChangePct ?? 0) >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
-                  </span>
-                )}
-              </span>
-            ) : dailyChangePct !== null && (
-              <span className={`tabular-nums font-bold ${dailyChangePct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                <span className="font-normal text-muted-foreground">오늘</span>{' '}
-                {dailyChangePct >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
-              </span>
-            )}
-          </div>
-        )}
-
         {/* FX 행: 미국 자산일 때만 row3 아래 조건부 */}
         {isUsAsset && (
-          <div className="flex items-center gap-1.5 text-xs flex-wrap">
+          <div className="flex items-center gap-1.5 text-xs flex-wrap pt-1.5 border-t border-black/25">
             <span className={`font-semibold shrink-0 ${isKrwPurchase ? 'text-amber-400' : 'text-sky-400'}`}>
               {isKrwPurchase ? '원화매수' : '달러매수'}
             </span>
@@ -471,29 +522,6 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
           </div>
         )}
 
-        {/* row4: 평가금 · 수익금 · 수익률 */}
-        {(hasValue || hasCost) && (
-          <div className="pt-2 border-t border-black/25 flex items-center gap-2 tabular-nums flex-wrap">
-            <span className="text-xs text-muted-foreground">평가금</span>
-            <span className="text-xs font-semibold text-foreground">
-              {hasValue ? formatKrwCompact(asset.currentValueKrw) : '—'}
-              {isUsdPurchase && asset.currentPriceUsd != null && hasHolding && hasValue && (
-                <span className="text-xs text-muted-foreground ml-1">({formatUsd(asset.currentPriceUsd * asset.totalQuantity / 1e8)})</span>
-              )}
-            </span>
-            {hasValue && hasCost && (
-              <>
-                <span className="text-black text-xs">·</span>
-                <span className={`text-xs font-bold ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                  {profit >= 0 ? '+' : ''}{formatKrwCompact(profit)}
-                </span>
-                <span className={`text-xs font-semibold ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                  ({formatReturn(asset.returnPct)})
-                </span>
-              </>
-            )}
-          </div>
-        )}
       </div>
 
       {/* 차트 collapse */}
