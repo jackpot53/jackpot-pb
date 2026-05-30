@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import { X, CandlestickChart } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { RoboAdvisorTickerSearch, type TickerSuggestion } from '@/components/app/robo-advisor-ticker-search'
 import { ChartSyncProvider } from './chart-sync'
 import type { Period } from '@/components/app/asset-candle-chart'
@@ -109,89 +110,101 @@ export function RoboAdvisorPageClient() {
         {selectedTicker && (
           <ChartSyncProvider>
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-3">
                 <span className="text-sm font-semibold">{selectedTicker.name}</span>
                 <span className="text-xs text-muted-foreground tabular-nums">{selectedTicker.ticker}</span>
               </div>
-              <div className="h-[400px] rounded-lg border border-border overflow-hidden">
-                {tickerChartLoading ? (
-                  <Skeleton className="h-full w-full rounded-lg" />
-                ) : tickerOhlc && tickerOhlc.length > 0 ? (
-                  <AssetCandleChart
-                    ticker={selectedTicker.ticker}
-                    initialData={tickerOhlc}
-                    periodRanges={PERIOD_RANGES}
-                    onPeriodChange={setChartPeriod}
-                    onDataChange={setChartDataForMacd}
-                  />
-                ) : !tickerChartLoading ? (
-                  <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
-                    차트 데이터를 불러오지 못했습니다
+
+              <Tabs defaultValue="signal">
+                <TabsList className="mb-3">
+                  <TabsTrigger value="signal">시그널 지표</TabsTrigger>
+                  <TabsTrigger value="health">건강성 지표</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="signal" className="space-y-2">
+                  <div className="h-[400px] rounded-lg border border-border overflow-hidden">
+                    {tickerChartLoading ? (
+                      <Skeleton className="h-full w-full rounded-lg" />
+                    ) : tickerOhlc && tickerOhlc.length > 0 ? (
+                      <AssetCandleChart
+                        ticker={selectedTicker.ticker}
+                        initialData={tickerOhlc}
+                        periodRanges={PERIOD_RANGES}
+                        onPeriodChange={setChartPeriod}
+                        onDataChange={setChartDataForMacd}
+                      />
+                    ) : !tickerChartLoading ? (
+                      <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                        차트 데이터를 불러오지 못했습니다
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
-              </div>
 
-              <div className="mt-2 rounded-lg border border-border p-3">
-                <VolumePanel data={chartDataForMacd} />
-              </div>
+                  <div className="rounded-lg border border-border p-3">
+                    <VolumePanel data={chartDataForMacd} />
+                  </div>
 
-              <div className="mt-2 rounded-lg border border-border p-3">
-                <TradingValuePanel data={chartDataForMacd} />
-              </div>
+                  <div className="rounded-lg border border-border p-3">
+                    <TradingValuePanel data={chartDataForMacd} />
+                  </div>
 
-              <div className="mt-2 rounded-lg border border-border p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <p className="text-xs font-medium text-foreground">분기 실적</p>
-                  <span className="text-[10px] text-muted-foreground">(매출·영업이익·순이익 + 추정)</span>
-                </div>
-                <FinancialsChart ticker={selectedTicker.ticker} />
-              </div>
+                  <div className="rounded-lg border border-border p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="text-xs font-medium text-foreground">투자자별 매매동향</p>
+                      <span className="text-[10px] text-muted-foreground">(순매수량, 단위: 주)</span>
+                    </div>
+                    <div className="mt-2">
+                      <InvestorFlowChart
+                        ticker={selectedTicker.ticker}
+                        period={chartPeriod}
+                        range={chartPeriod === '월봉' ? '5y' : '3y'}
+                      />
+                    </div>
+                  </div>
 
-              <div className="mt-2 rounded-lg border border-border p-3">
-                <div className="flex items-center gap-2">
-                  <p className="text-xs font-medium text-foreground">투자자별 매매동향</p>
-                  <span className="text-[10px] text-muted-foreground">(순매수량, 단위: 주)</span>
-                </div>
-                <div className="mt-2">
-                  <InvestorFlowChart
-                    ticker={selectedTicker.ticker}
-                    period={chartPeriod}
-                    range={chartPeriod === '월봉' ? '5y' : '3y'}
-                  />
-                </div>
-              </div>
+                  <div className="rounded-lg border border-border p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="text-xs font-medium text-foreground">공매도 위험신호</p>
+                      <span className="text-[10px] text-muted-foreground">(거래대금 · 비중 %)</span>
+                    </div>
+                    <ShortSellingPanel
+                      ticker={selectedTicker.ticker}
+                      period={chartPeriod}
+                      range={chartPeriod === '월봉' ? '5y' : '3y'}
+                    />
+                  </div>
 
-              <div className="mt-2 rounded-lg border border-border p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <p className="text-xs font-medium text-foreground">공매도 위험신호</p>
-                  <span className="text-[10px] text-muted-foreground">(거래대금 · 비중 %)</span>
-                </div>
-                <ShortSellingPanel
-                  ticker={selectedTicker.ticker}
-                  period={chartPeriod}
-                  range={chartPeriod === '월봉' ? '5y' : '3y'}
-                />
-              </div>
+                  <div className="rounded-lg border border-border p-3">
+                    <MacdPanel data={chartDataForMacd} />
+                  </div>
 
-              <div className="mt-2 rounded-lg border border-border p-3">
-                <MacdPanel data={chartDataForMacd} />
-              </div>
+                  <div className="rounded-lg border border-border p-3">
+                    <VolumeOscillatorPanel data={chartDataForMacd} />
+                  </div>
 
-              <div className="mt-2 rounded-lg border border-border p-3">
-                <VolumeOscillatorPanel data={chartDataForMacd} />
-              </div>
+                  <div className="rounded-lg border border-border p-3">
+                    <RsiPanel data={chartDataForMacd} />
+                  </div>
 
-              <div className="mt-2 rounded-lg border border-border p-3">
-                <RsiPanel data={chartDataForMacd} />
-              </div>
+                  <div className="rounded-lg border border-border p-3">
+                    <StochasticPanel data={chartDataForMacd} />
+                  </div>
 
-              <div className="mt-2 rounded-lg border border-border p-3">
-                <StochasticPanel data={chartDataForMacd} />
-              </div>
+                  <div className="rounded-lg border border-border p-3">
+                    <CciPanel data={chartDataForMacd} />
+                  </div>
+                </TabsContent>
 
-              <div className="mt-2 rounded-lg border border-border p-3">
-                <CciPanel data={chartDataForMacd} />
-              </div>
+                <TabsContent value="health" className="space-y-2">
+                  <div className="rounded-lg border border-border p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="text-xs font-medium text-foreground">분기 실적</p>
+                      <span className="text-[10px] text-muted-foreground">(매출·영업이익·순이익 + 추정)</span>
+                    </div>
+                    <FinancialsChart ticker={selectedTicker.ticker} />
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
           </ChartSyncProvider>
         )}
