@@ -343,8 +343,8 @@ export function Sidebar() {
               {showLabels && (
                 <span className="flex items-center gap-2 min-w-0">
                   <span className={cn(
-                    'whitespace-nowrap text-sm font-light transition-colors duration-200',
-                    isActive ? 'text-foreground font-medium' : 'text-foreground'
+                    'whitespace-nowrap text-sm transition-colors duration-200',
+                    isActive ? 'text-foreground font-medium' : 'text-foreground font-normal'
                   )}>
                     {item.label}
                   </span>
@@ -378,8 +378,8 @@ export function Sidebar() {
                         </span>
                       )}
                       <span className={cn(
-                        'whitespace-nowrap text-xs font-light transition-colors duration-200',
-                        childActive ? 'text-foreground font-medium' : 'text-foreground'
+                        'whitespace-nowrap text-xs transition-colors duration-200',
+                        childActive ? 'text-foreground font-medium' : 'text-foreground font-normal'
                       )}>
                         {child.label}
                       </span>
@@ -416,8 +416,8 @@ export function Sidebar() {
               </div>
               {showLabels && (
                 <span className={cn(
-                  'whitespace-nowrap text-sm font-light transition-colors duration-200',
-                  isActive ? 'text-foreground font-medium' : 'text-foreground'
+                  'whitespace-nowrap text-sm transition-colors duration-200',
+                  isActive ? 'text-foreground font-medium' : 'text-foreground font-normal'
                 )}>
                   {item.label}
                 </span>
