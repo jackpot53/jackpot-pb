@@ -9,7 +9,6 @@ import {
   ArrowLeftRight,
   LineChart,
   Target,
-  Bot,
   TrendingUp,
   ChevronLeft,
   ChevronRight,
@@ -30,7 +29,8 @@ interface NavItem {
   color: string
   activeColor: string
   pro?: boolean
-  children?: Omit<NavItem, 'children' | 'pro'>[]
+  badge?: string
+  children?: Omit<NavItem, 'children' | 'pro' | 'icon' | 'color' | 'activeColor'>[]
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -41,17 +41,12 @@ const NAV_ITEMS: NavItem[] = [
   { label: '머니 대시',    href: '/charts',         icon: LineChart,     color: 'text-violet-400',  activeColor: 'text-violet-300'  },
   { label: '업데이트 정보',href: '/updates',        icon: History,       color: 'text-teal-400',    activeColor: 'text-teal-300'    },
   { label: '도움말',       href: '/help',           icon: HelpCircle,    color: 'text-zinc-400',    activeColor: 'text-zinc-300'    },
+  { label: '시장시그널',  href: '/robo-advisor/market', icon: Activity,  color: 'text-amber-400',   activeColor: 'text-amber-300',  pro: true },
+  { label: '섹터시그널',  href: '/robo-advisor/sector', icon: Layers,    color: 'text-rose-400',    activeColor: 'text-rose-300'    },
   {
-    label: '로보어드바이저',
-    href: '/robo-advisor',
-    icon: Bot,
-    color: 'text-orange-400',
-    activeColor: 'text-orange-300',
-    pro: true,
+    label: '종목시그널',  href: '/robo-advisor/stock',  icon: BarChart3, color: 'text-orange-400',  activeColor: 'text-orange-300',
     children: [
-      { label: '시장시그널', href: '/robo-advisor/market', icon: Activity,   color: 'text-amber-400', activeColor: 'text-amber-300' },
-      { label: '섹터시그널', href: '/robo-advisor/sector', icon: Layers,     color: 'text-rose-400',  activeColor: 'text-rose-300'  },
-      { label: '종목시그널', href: '/robo-advisor/stock',  icon: BarChart3,  color: 'text-orange-400',activeColor: 'text-orange-300'},
+      { label: 'MACD', badge: '보조', href: '/robo-advisor/stock/macd' },
     ],
   },
   { label: '모의투자',     href: '/paper-trading',  icon: TrendingUp,    color: 'text-cyan-400',    activeColor: 'text-cyan-300',   pro: true },
@@ -311,7 +306,7 @@ export function Sidebar() {
             (item.href !== '/' && pathname.startsWith(item.href))
           return (
             <div key={item.href}>
-              {item.href === '/robo-advisor' && (
+              {item.href === '/robo-advisor/market' && (
                 <div className="flex items-center gap-2 px-1 py-2">
                   <div className="flex-1 h-px rounded-full" style={{
                     background: 'linear-gradient(90deg, transparent, #f59e0b, #fbbf24, #f59e0b, transparent)',
@@ -360,7 +355,6 @@ export function Sidebar() {
             {showLabels && item.children && (
               <div className="mt-1 ml-5 pl-3 border-l border-sidebar-border/50 space-y-1">
                 {item.children.map((child) => {
-                  const ChildIcon = child.icon
                   const childActive = pathname === child.href || pathname.startsWith(`${child.href}/`)
                   return (
                     <Link
@@ -368,13 +362,17 @@ export function Sidebar() {
                       href={child.href}
                       onClick={closeMobile}
                       className={cn(
-                        'group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition-all duration-200',
+                        'group flex items-center gap-2 rounded-lg px-2.5 py-1.5 transition-all duration-200',
                         childActive
                           ? 'bg-sidebar-accent/70 border border-sidebar-border'
                           : 'border border-transparent hover:bg-sidebar-accent/50 hover:border-sidebar-border/60'
                       )}
                     >
-                      <ChildIcon size={13} className={cn(childActive ? child.activeColor : child.color)} />
+                      {child.badge && (
+                        <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wide bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                          {child.badge}
+                        </span>
+                      )}
                       <span className={cn(
                         'whitespace-nowrap text-xs font-light transition-colors duration-200',
                         childActive ? 'text-foreground font-medium' : 'text-foreground'
