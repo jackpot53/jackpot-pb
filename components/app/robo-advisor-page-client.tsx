@@ -33,6 +33,18 @@ const VolumeOscillatorPanel = dynamic(
   () => import('@/components/app/volume-oscillator-panel').then(m => ({ default: m.VolumeOscillatorPanel })),
   { ssr: false, loading: () => <Skeleton className="h-[180px] w-full rounded-xl" /> },
 )
+const RsiPanel = dynamic(
+  () => import('@/components/app/rsi-panel').then(m => ({ default: m.RsiPanel })),
+  { ssr: false, loading: () => <Skeleton className="h-[180px] w-full rounded-xl" /> },
+)
+const StochasticPanel = dynamic(
+  () => import('@/components/app/stochastic-panel').then(m => ({ default: m.StochasticPanel })),
+  { ssr: false, loading: () => <Skeleton className="h-[180px] w-full rounded-xl" /> },
+)
+const CciPanel = dynamic(
+  () => import('@/components/app/cci-panel').then(m => ({ default: m.CciPanel })),
+  { ssr: false, loading: () => <Skeleton className="h-[180px] w-full rounded-xl" /> },
+)
 
 const PERIOD_RANGES: Record<string, string> = { '일봉': '3y', '주봉': '3y', '월봉': '5y' }
 
@@ -139,6 +151,18 @@ export function RoboAdvisorPageClient() {
 
               <div className="mt-2 rounded-lg border border-border p-3">
                 <VolumeOscillatorPanel data={chartDataForMacd} />
+              </div>
+
+              <div className="mt-2 rounded-lg border border-border p-3">
+                <RsiPanel data={chartDataForMacd} />
+              </div>
+
+              <div className="mt-2 rounded-lg border border-border p-3">
+                <StochasticPanel data={chartDataForMacd} />
+              </div>
+
+              <div className="mt-2 rounded-lg border border-border p-3">
+                <CciPanel data={chartDataForMacd} />
               </div>
             </div>
           </ChartSyncProvider>

@@ -14,6 +14,7 @@ export type { AdxPoint } from './adx'
 export { atr, atrLast } from './atr'
 export { avgVolume, avgVolumeLast, volumeRatio } from './volume'
 export { volumeOscillator, volumeOscillatorLast } from './volume-oscillator'
+export { cci, cciLast } from './cci'
 export { ichimoku, ichimokuLast } from './ichimoku'
 export type { IchimokuPoint, IchimokuParams } from './ichimoku'
 
@@ -29,6 +30,7 @@ import { adxLast } from './adx'
 import type { AdxPoint } from './adx'
 import { atrLast } from './atr'
 import { volumeRatio } from './volume'
+import { cciLast } from './cci'
 
 export interface AllIndicators {
   sma5: number | null
@@ -42,6 +44,7 @@ export interface AllIndicators {
   adx: AdxPoint
   atr14: number | null
   volumeRatio20: number | null
+  cci20: number | null
 }
 
 /**
@@ -67,5 +70,6 @@ export function computeAllIndicators(ohlc: OhlcPoint[]): AllIndicators {
     adx: adxLast(highs, lows, closes),
     atr14: atrLast(highs, lows, closes),
     volumeRatio20: volumeRatio(volumes, 20),
+    cci20: cciLast(highs, lows, closes, 20),
   }
 }
