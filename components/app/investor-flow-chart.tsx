@@ -78,6 +78,14 @@ function FlowChart({
   const syncRef = useRef(sync)
   syncRef.current = sync
 
+  const [axisWidth, setAxisWidth] = useState(CHART_RIGHT_AXIS_WIDTH)
+
+  useEffect(() => sync.subscribeMasterAxisWidth(setAxisWidth), [sync])
+
+  useEffect(() => {
+    chartRef.current?.priceScale('right').applyOptions({ minimumWidth: axisWidth })
+  }, [axisWidth])
+
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)

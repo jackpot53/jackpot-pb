@@ -38,6 +38,10 @@ interface ChartSyncApi {
    * 데이터 경계에서 클램프된다.
    */
   pan: (fraction: number) => void
+  /** 캔들 차트의 실제 우측 축 너비를 발행 — 서브 패널이 이 값으로 minimumWidth를 맞춘다 */
+  setMasterAxisWidth: (width: number) => void
+  /** 우측 축 너비 변경을 구독 */
+  subscribeMasterAxisWidth: (cb: (width: number) => void) => () => void
 }
 
 const ChartSyncContext = createContext<ChartSyncApi | null>(null)
@@ -57,6 +61,9 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
   const dateSubsRef = useRef<Set<(r: DateRange | null) => void>>(new Set())
   // 좌이동 하드 경계 — 최신 날짜 기준 3년 이전 인덱스 (setMasterDates 시 갱신)
   const minFromRef = useRef<number>(0)
+  // 캔들 차트 우측 축 실제 너비
+  const masterAxisWidthRef = useRef<number>(CHART_RIGHT_AXIS_WIDTH)
+  const axisWidthSubsRef = useRef<Set<(w: number) => void>>(new Set())
 
   const api = useMemo<ChartSyncApi>(() => {
     const clampIndex = (i: number) => {
@@ -207,7 +214,19 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
       applyLogicalRange({ from: from as Logical, to: to as Logical })
     }
 
-    return { registerChart, setMasterDates, getCurrentLogicalRange, resetRange, subscribeDateRange, applyMonthsPreset, pan }
+    const setMasterAxisWidth: ChartSyncApi['setMasterAxisWidth'] = (width) => {
+      if (width <= 0 || width === masterAxisWidthRef.current) return
+      masterAxisWidthRef.current = width
+      axisWidthSubsRef.current.forEach((cb) => cb(width))
+    }
+
+    const subscribeMasterAxisWidth: ChartSyncApi['subscribeMasterAxisWidth'] = (cb) => {
+      axisWidthSubsRef.current.add(cb)
+      cb(masterAxisWidthRef.current)
+      return () => axisWidthSubsRef.current.delete(cb)
+    }
+
+    return { registerChart, setMasterDates, getCurrentLogicalRange, resetRange, subscribeDateRange, applyMonthsPreset, pan, setMasterAxisWidth, subscribeMasterAxisWidth }
   }, [])
 
   return <ChartSyncContext.Provider value={api}>{children}</ChartSyncContext.Provider>

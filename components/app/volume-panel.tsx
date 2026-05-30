@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useChartSync, CHART_RIGHT_AXIS_WIDTH, HIDDEN_TIME_SCALE } from './chart-sync'
 import {
   createChart,
@@ -34,6 +34,14 @@ export function VolumePanel({ data, height = 180 }: Props) {
   const sync = useChartSync()
   const syncRef = useRef(sync)
   syncRef.current = sync
+
+  const [axisWidth, setAxisWidth] = useState(CHART_RIGHT_AXIS_WIDTH)
+
+  useEffect(() => sync.subscribeMasterAxisWidth(setAxisWidth), [sync])
+
+  useEffect(() => {
+    chartRef.current?.priceScale('right').applyOptions({ minimumWidth: axisWidth })
+  }, [axisWidth])
 
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)

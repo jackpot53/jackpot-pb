@@ -279,12 +279,21 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
       const coord = series.priceToCoordinate(p)
       setAvgPriceLabelY(typeof coord === 'number' ? coord : null)
     }
+
+    // 우측 축 실제 너비를 서브 패널에 전파
+    const refreshAxisWidth = () => {
+      const w = chart.priceScale('right').width()
+      if (w > 0) syncRef.current.setMasterAxisWidth(w)
+    }
+
     chart.timeScale().subscribeVisibleLogicalRangeChange(refreshAvgLabel)
+    chart.timeScale().subscribeVisibleLogicalRangeChange(refreshAxisWidth)
 
     return () => {
       ro.disconnect()
       chart.unsubscribeCrosshairMove(onMove)
       chart.timeScale().unsubscribeVisibleLogicalRangeChange(refreshAvgLabel)
+      chart.timeScale().unsubscribeVisibleLogicalRangeChange(refreshAxisWidth)
       unregister()
       chart.remove()
       chartRef.current = null
@@ -335,12 +344,15 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
     const shared = syncRef.current.getCurrentLogicalRange()
     if (shared) chart.timeScale().setVisibleLogicalRange(shared)
     else chart.timeScale().fitContent()
-    // fitContent 렌더링 후 매수가 라벨 y좌표 갱신
+    // fitContent 렌더링 후 매수가 라벨 y좌표 및 축 너비 갱신
     requestAnimationFrame(() => {
       const p = avgPriceRef.current
-      if (!p || p <= 0) return
-      const coord = series.priceToCoordinate(p)
-      setAvgPriceLabelY(typeof coord === 'number' ? coord : null)
+      if (p && p > 0) {
+        const coord = series.priceToCoordinate(p)
+        setAvgPriceLabelY(typeof coord === 'number' ? coord : null)
+      }
+      const w = chart.priceScale('right').width()
+      if (w > 0) syncRef.current.setMasterAxisWidth(w)
     })
 
     onDataChange?.(baseData)
