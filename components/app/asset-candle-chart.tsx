@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   createChart,
+  createSeriesMarkers,
   CandlestickSeries,
   HistogramSeries,
   LineSeries,
@@ -10,6 +11,8 @@ import {
   CrosshairMode,
   type IChartApi,
   type ISeriesApi,
+  type ISeriesMarkersPluginApi,
+  type SeriesMarker,
   type IPriceLine,
   type CandlestickData,
   type Time,
@@ -20,6 +23,7 @@ import { useChartSync, CHART_RIGHT_AXIS_WIDTH } from './chart-sync'
 import { CHART_UP, CHART_DOWN, resolvePalette } from '@/lib/chart/theme'
 import { MA_COLORS, MA_PERIODS } from '@/lib/chart/ma-colors'
 import { sma } from '@/lib/robo-advisor/indicators/sma'
+import { detectMaCrossesFromSma, lastMaCrossFromSma } from '@/lib/robo-advisor/signals/ma-cross'
 
 export type Period = '일봉' | '주봉' | '월봉'
 
@@ -82,6 +86,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
   const [maVisible, setMaVisible] = useState<Record<number, boolean>>(
     Object.fromEntries(MA_PERIODS.map((p) => [p, true])),
   )
+  const [signalsVisible, setSignalsVisible] = useState(true)
 const effectiveParams = useMemo<Record<Period, { interval: string; range: string }>>(
     () => ({
       '일봉': { ...PERIOD_PARAMS['일봉'], ...(periodRanges?.['일봉'] ? { range: periodRanges['일봉'] } : {}) },
@@ -96,6 +101,7 @@ const effectiveParams = useMemo<Record<Period, { interval: string; range: string
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null)
   const maSeriesRef = useRef<Map<number, ISeriesApi<'Line'>>>(new Map())
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
+  const markersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null)
   const showVolumeRef = useRef(showVolume ?? false)
   const avgPriceLineRef = useRef<IPriceLine | null>(null)
   const avgPriceRef = useRef<number | null | undefined>(avgPrice)
@@ -226,6 +232,7 @@ setPeriod(next)
     chartRef.current = chart
     seriesRef.current = series
     maSeriesRef.current = maMap
+    markersRef.current = createSeriesMarkers(series) as ISeriesMarkersPluginApi<Time>
 
     const unregister = syncRef.current.registerChart(chart, { master: true })
 
@@ -297,6 +304,7 @@ setPeriod(next)
       seriesRef.current = null
       maSeriesRef.current = new Map()
       volumeSeriesRef.current = null
+      markersRef.current = null
       avgPriceLineRef.current = null
     }
   }, [])
@@ -310,6 +318,10 @@ setPeriod(next)
     series.setData(toSeriesData(baseData))
 
     const closes = baseData.map((p) => p.close)
+    const dates = baseData.map((p) => p.date)
+
+    // 이평선 그릴 때 계산한 sma 결과를 마커에서 재사용 — 별도 계산 불필요
+    const smaByPeriod = new Map<number, (number | null)[]>()
     for (const p of MA_PERIODS) {
       const maSeries = maSeriesRef.current.get(p)
       if (!maSeries) continue
@@ -319,11 +331,40 @@ setPeriod(next)
         continue
       }
       const values = sma(closes, p)
+      smaByPeriod.set(p, values)
       const lineData = values
         .map((v, i) => v == null ? null : { time: baseData[i].date as Time, value: v })
         .filter((d): d is { time: Time; value: number } => d !== null)
       maSeries.setData(lineData)
       maSeries.applyOptions({ visible: maVisible[p] })
+    }
+
+    // 이평선 크로스 마커
+    const markers = markersRef.current
+    if (markers) {
+      if (!signalsVisible) {
+        markers.setMarkers([])
+      } else {
+        const sma5 = smaByPeriod.get(5) ?? sma(closes, 5)
+        const sma20 = smaByPeriod.get(20) ?? sma(closes, 20)
+        const sma60 = smaByPeriod.get(60) ?? sma(closes, 60)
+
+        const crosses5_20 = detectMaCrossesFromSma(sma5, sma20, dates, '5/20')
+        const crosses20_60 = detectMaCrossesFromSma(sma20, sma60, dates, '20/60')
+        const allCrosses = [...crosses5_20, ...crosses20_60].sort((a, b) =>
+          a.date < b.date ? -1 : a.date > b.date ? 1 : 0,
+        )
+
+        const crossMarkers: SeriesMarker<Time>[] = allCrosses.map((c) => ({
+          time: c.date as Time,
+          position: c.type === 'golden' ? ('belowBar' as const) : ('aboveBar' as const),
+          shape: c.type === 'golden' ? ('arrowUp' as const) : ('arrowDown' as const),
+          color: c.type === 'golden' ? CHART_UP : CHART_DOWN,
+          text: c.pair === '5/20' ? '5·20' : '20·60',
+          size: 1,
+        }))
+        markers.setMarkers(crossMarkers)
+      }
     }
 
     const volSeries = volumeSeriesRef.current
@@ -354,7 +395,7 @@ setPeriod(next)
     })
     onDataChange?.(baseData)
     return () => cancelAnimationFrame(rafId)
-  }, [baseData, maVisible, onDataChange])
+  }, [baseData, maVisible, signalsVisible, onDataChange])
 
   // Live tick → 마지막 캔들만 patch (일봉)
   useEffect(() => {
@@ -394,6 +435,20 @@ setPeriod(next)
     setAvgPriceLabelY(typeof coord === 'number' ? coord : null)
   }, [avgPrice])
 
+  // 이평선 크로스 최근 신호 — 배지용
+  const maCrossSignals = useMemo(() => {
+    const closes = baseData.map((p) => p.close)
+    const dates = baseData.map((p) => p.date)
+    if (closes.length < 20) return { pair5_20: null, pair20_60: null }
+    const sma5 = sma(closes, 5)
+    const sma20 = sma(closes, 20)
+    const sma60 = sma(closes, 60)
+    return {
+      pair5_20: lastMaCrossFromSma(sma5, sma20, dates, '5/20'),
+      pair20_60: closes.length >= 60 ? lastMaCrossFromSma(sma20, sma60, dates, '20/60') : null,
+    }
+  }, [baseData])
+
   const changePct = tooltip
     ? ((tooltip.point.close - tooltip.point.open) / tooltip.point.open) * 100
     : null
@@ -419,7 +474,7 @@ setPeriod(next)
           {loading && <span className="text-xs text-muted-foreground ml-1">…</span>}
         </div>
 
-        {/* 이평선 범례 */}
+        {/* 이평선 범례 + 신호 토글 */}
         <div className="flex items-center gap-0.5">
           {MA_PERIODS.map((p) => {
             const insufficient = baseData.length > 0 && baseData.length < p
@@ -445,8 +500,46 @@ setPeriod(next)
               </button>
             )
           })}
+          <button
+            onClick={() => setSignalsVisible((v) => !v)}
+            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] transition-opacity ml-1 ${
+              signalsVisible ? 'opacity-100 hover:opacity-80' : 'opacity-35 hover:opacity-60'
+            }`}
+          >
+            신호
+          </button>
         </div>
       </div>
+
+      {/* 이평선 크로스 신호 배지 */}
+      {signalsVisible && (maCrossSignals.pair5_20 || maCrossSignals.pair20_60) && (
+        <div className="flex items-center gap-1.5 px-2 pb-0.5">
+          {maCrossSignals.pair5_20 && (
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                maCrossSignals.pair5_20.type === 'golden'
+                  ? 'bg-red-50 border border-red-200 text-red-600'
+                  : 'bg-blue-50 border border-blue-200 text-blue-600'
+              }`}
+            >
+              5·20 · {maCrossSignals.pair5_20.daysAgo}일 전{' '}
+              {maCrossSignals.pair5_20.type === 'golden' ? '골든(매수)' : '데드(매도)'}
+            </span>
+          )}
+          {maCrossSignals.pair20_60 && (
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                maCrossSignals.pair20_60.type === 'golden'
+                  ? 'bg-red-50 border border-red-200 text-red-600'
+                  : 'bg-blue-50 border border-blue-200 text-blue-600'
+              }`}
+            >
+              20·60 · {maCrossSignals.pair20_60.daysAgo}일 전{' '}
+              {maCrossSignals.pair20_60.type === 'golden' ? '골든(매수)' : '데드(매도)'}
+            </span>
+          )}
+        </div>
+      )}
 
 
       <div className="relative flex-1 min-h-0">
