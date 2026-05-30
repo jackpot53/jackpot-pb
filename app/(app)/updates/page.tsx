@@ -1,5 +1,5 @@
 import { getUpdates } from '@/db/queries/updates'
-import { createClient } from '@/utils/supabase/server'
+import { getAuthUser } from '@/utils/supabase/server'
 import { UpdateAdminSection } from '@/components/app/update-admin-toggle'
 import { UpdatesFeed } from '@/components/app/updates-feed'
 import { AnimatedLogo } from '@/components/app/animated-logo'
@@ -7,10 +7,9 @@ import { AnimatedLogo } from '@/components/app/animated-logo'
 const ADMIN_EMAIL = 'shuaihan77@gmail.com'
 
 export default async function UpdatesPage() {
-  const supabase = await createClient()
-  const [items, { data: { user } }] = await Promise.all([
+  const [items, user] = await Promise.all([
     getUpdates(),
-    supabase.auth.getUser(),
+    getAuthUser(),
   ])
   const isAdmin = user?.email === ADMIN_EMAIL
 

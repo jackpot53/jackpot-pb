@@ -156,6 +156,22 @@ function generateInsight(portfolioChangeBps: number, typeStats: TypeStat[], tota
   )
 }
 
+function Ticker({ m }: { m: TopMover }) {
+  const mu = m.dailyChangeBps > 0
+  const md = m.dailyChangeBps < 0
+  return (
+    <span className={cn(
+      'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold border mx-0.5 align-middle',
+      mu && 'bg-rose-50 text-rose-600 border-rose-200',
+      md && 'bg-blue-50 text-blue-600 border-blue-200',
+      !mu && !md && 'bg-muted text-muted-foreground border-border',
+    )}>
+      {m.name}
+      <span className="opacity-70">{fmtPct(m.dailyChangeBps)}</span>
+    </span>
+  )
+}
+
 function generateNarrative(
   portfolioChangeBps: number,
   totalDailyChangeKrw: number,
@@ -170,23 +186,6 @@ function generateNarrative(
   const losers  = topMovers.filter((m) => m.dailyChangeBps < 0)
 
   const totalAbsChange = Math.abs(totalDailyChangeKrw)
-
-  function Ticker({ m }: { m: TopMover }) {
-    const mu = m.dailyChangeBps > 0
-    const md = m.dailyChangeBps < 0
-    return (
-      <span className={cn(
-        'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-bold border mx-0.5 align-middle',
-        mu && 'bg-rose-50 text-rose-600 border-rose-200',
-        md && 'bg-blue-50 text-blue-600 border-blue-200',
-        !mu && !md && 'bg-muted text-muted-foreground border-border',
-      )}>
-        {m.name}
-        <span className="opacity-70">{fmtPct(m.dailyChangeBps)}</span>
-      </span>
-    )
-  }
-
   const sentences: React.ReactNode[] = []
 
   // 주도 상승 종목

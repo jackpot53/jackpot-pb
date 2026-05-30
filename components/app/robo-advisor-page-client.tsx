@@ -1,13 +1,27 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import { X, CandlestickChart } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RoboAdvisorTickerSearch, type TickerSuggestion } from '@/components/app/robo-advisor-ticker-search'
-import { AssetCandleChart, type Period } from '@/components/app/asset-candle-chart'
+import type { Period } from '@/components/app/asset-candle-chart'
 import type { OhlcPoint } from '@/lib/price/sparkline'
-import { InvestorFlowChart } from '@/components/app/investor-flow-chart'
-import { MacdPanel } from '@/components/app/macd-panel'
+
+const AssetCandleChart = dynamic(
+  () => import('@/components/app/asset-candle-chart').then(m => ({ default: m.AssetCandleChart })),
+  { ssr: false, loading: () => <Skeleton className="h-full w-full rounded-lg" /> },
+)
+const InvestorFlowChart = dynamic(
+  () => import('@/components/app/investor-flow-chart').then(m => ({ default: m.InvestorFlowChart })),
+  { ssr: false, loading: () => <Skeleton className="h-24 w-full rounded-lg" /> },
+)
+const MacdPanel = dynamic(
+  () => import('@/components/app/macd-panel').then(m => ({ default: m.MacdPanel })),
+  { ssr: false, loading: () => <Skeleton className="h-[180px] w-full rounded-xl" /> },
+)
+
+const PERIOD_RANGES: Record<string, string> = { '일봉': '3y', '주봉': '3y', '월봉': '5y' }
 
 export function RoboAdvisorPageClient() {
   const [selectedTicker, setSelectedTicker] = useState<TickerSuggestion | null>(null)
@@ -76,7 +90,7 @@ export function RoboAdvisorPageClient() {
                 <AssetCandleChart
                   ticker={selectedTicker.ticker}
                   initialData={tickerOhlc}
-                  periodRanges={{ '일봉': '3y', '주봉': '3y', '월봉': '5y' }}
+                  periodRanges={PERIOD_RANGES}
                   onPeriodChange={setChartPeriod}
                   showVolume
                   onDataChange={setChartDataForMacd}
