@@ -345,7 +345,8 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
     if (shared) chart.timeScale().setVisibleLogicalRange(shared)
     else chart.timeScale().fitContent()
     // fitContent 렌더링 후 매수가 라벨 y좌표 및 축 너비 갱신
-    requestAnimationFrame(() => {
+    const rafId = requestAnimationFrame(() => {
+      if (!chartRef.current) return
       const p = avgPriceRef.current
       if (p && p > 0) {
         const coord = series.priceToCoordinate(p)
@@ -354,6 +355,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
       const w = chart.priceScale('right').width()
       if (w > 0) syncRef.current.setMasterAxisWidth(w)
     })
+    return () => cancelAnimationFrame(rafId)
 
     onDataChange?.(baseData)
   }, [baseData, maVisible, onDataChange])
