@@ -48,7 +48,14 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
   useEffect(() => sync.subscribeMasterAxisWidth(setAxisWidth), [sync])
 
   useEffect(() => {
-    chartRef.current?.priceScale('tv').applyOptions({ minimumWidth: axisWidth })
+    const chart = chartRef.current
+    if (!chart) return
+    chart.priceScale('tv').applyOptions({ minimumWidth: axisWidth })
+    const rafId = requestAnimationFrame(() => {
+      const w = chart.priceScale('tv').width()
+      if (w > 0) syncRef.current.setMasterAxisWidth(w)
+    })
+    return () => cancelAnimationFrame(rafId)
   }, [axisWidth])
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -239,9 +246,7 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
     }))
     markers.setMarkers(signalMarkers)
 
-    const shared = syncRef.current.getCurrentLogicalRange()
-    if (shared) chart.timeScale().setVisibleLogicalRange(shared)
-    else chart.timeScale().fitContent()
+    syncRef.current.applyRangeToChart(chart)
   }, [data, flowEvents])
 
   const signalInfo = useMemo(

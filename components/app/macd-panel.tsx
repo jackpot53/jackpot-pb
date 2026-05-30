@@ -34,7 +34,14 @@ export function MacdPanel({ data, height = 180 }: Props) {
   useEffect(() => sync.subscribeMasterAxisWidth(setAxisWidth), [sync])
 
   useEffect(() => {
-    chartRef.current?.priceScale('right').applyOptions({ minimumWidth: axisWidth })
+    const chart = chartRef.current
+    if (!chart) return
+    chart.priceScale('right').applyOptions({ minimumWidth: axisWidth })
+    const rafId = requestAnimationFrame(() => {
+      const w = chart.priceScale('right').width()
+      if (w > 0) syncRef.current.setMasterAxisWidth(w)
+    })
+    return () => cancelAnimationFrame(rafId)
   }, [axisWidth])
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -173,9 +180,7 @@ export function MacdPanel({ data, height = 180 }: Props) {
     }))
     markers.setMarkers(crossMarkers)
 
-    const shared = syncRef.current.getCurrentLogicalRange()
-    if (shared) chart.timeScale().setVisibleLogicalRange(shared)
-    else chart.timeScale().fitContent()
+    syncRef.current.applyRangeToChart(chart)
   }, [data, macdResult])
 
   const signalInfo = useMemo(() => {

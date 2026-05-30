@@ -235,6 +235,11 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
 
     const unregister = syncRef.current.registerChart(chart)
 
+    // 서브 패널이 더 넓은 레이블을 가질 때 메인 차트도 확장해 축 정렬 유지
+    const unsubAxisWidth = syncRef.current.subscribeMasterAxisWidth((w) => {
+      if (w > 0) chart.priceScale('right').applyOptions({ minimumWidth: w })
+    })
+
     setContainerWidth(container.clientWidth)
     const ro = new ResizeObserver(([entry]) => {
       if (entry) setContainerWidth(Math.floor(entry.contentRect.width))
@@ -294,6 +299,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
       chart.unsubscribeCrosshairMove(onMove)
       chart.timeScale().unsubscribeVisibleLogicalRangeChange(refreshAvgLabel)
       chart.timeScale().unsubscribeVisibleLogicalRangeChange(refreshAxisWidth)
+      unsubAxisWidth()
       unregister()
       chart.remove()
       chartRef.current = null

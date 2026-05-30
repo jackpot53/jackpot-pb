@@ -42,6 +42,12 @@ interface ChartSyncApi {
   setMasterAxisWidth: (width: number) => void
   /** 우측 축 너비 변경을 구독 */
   subscribeMasterAxisWidth: (cb: (width: number) => void) => () => void
+  /**
+   * 보조 차트 데이터 업데이트 시 사용 — 공유 구간을 해당 차트에만 적용하되
+   * isApplyingRef 가드로 보호해 역방향 피드백 루프를 차단한다.
+   * 공유 구간이 없으면 fitContent()를 호출한다.
+   */
+  applyRangeToChart: (chart: IChartApi) => void
 }
 
 const ChartSyncContext = createContext<ChartSyncApi | null>(null)
@@ -146,6 +152,7 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
 
     const resetRange = () => {
       currentRangeRef.current = null
+      masterAxisWidthRef.current = 0  // 종목/기간 전환 시 너비 재협상
       notifyDateSubs(null)
     }
 
@@ -215,7 +222,8 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
     }
 
     const setMasterAxisWidth: ChartSyncApi['setMasterAxisWidth'] = (width) => {
-      if (width <= 0 || width === masterAxisWidthRef.current) return
+      // 모든 패널의 너비를 수집해 최댓값만 전파 — 서브 패널이 더 넓은 레이블을 가질 때도 정렬 유지
+      if (width <= 0 || width <= masterAxisWidthRef.current) return
       masterAxisWidthRef.current = width
       axisWidthSubsRef.current.forEach((cb) => cb(width))
     }
@@ -226,7 +234,18 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
       return () => axisWidthSubsRef.current.delete(cb)
     }
 
-    return { registerChart, setMasterDates, getCurrentLogicalRange, resetRange, subscribeDateRange, applyMonthsPreset, pan, setMasterAxisWidth, subscribeMasterAxisWidth }
+    const applyRangeToChart: ChartSyncApi['applyRangeToChart'] = (chart) => {
+      const shared = currentRangeRef.current
+      isApplyingRef.current = true
+      try {
+        if (shared) chart.timeScale().setVisibleLogicalRange(shared)
+        else chart.timeScale().fitContent()
+      } finally {
+        isApplyingRef.current = false
+      }
+    }
+
+    return { registerChart, setMasterDates, getCurrentLogicalRange, resetRange, subscribeDateRange, applyMonthsPreset, pan, setMasterAxisWidth, subscribeMasterAxisWidth, applyRangeToChart }
   }, [])
 
   return <ChartSyncContext.Provider value={api}>{children}</ChartSyncContext.Provider>
