@@ -453,7 +453,8 @@ setPeriod(next)
       </div>
 
 
-      <div ref={containerRef} className="relative flex-1 min-h-0">
+      <div className="relative flex-1 min-h-0">
+        <div ref={containerRef} className="absolute top-0 right-2 bottom-2 left-2">
         {avgPriceLabelY != null && (
           <div
             className="pointer-events-none absolute z-10 text-[10px] font-medium text-slate-500 leading-none"
@@ -493,6 +494,7 @@ setPeriod(next)
             )}
           </div>
         )}
+        </div>
       </div>
     </div>
   )
