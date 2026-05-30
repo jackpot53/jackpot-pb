@@ -14,8 +14,8 @@ import {
   type SeriesMarker,
 } from 'lightweight-charts'
 import type { OhlcPoint } from '@/lib/price/sparkline'
-import { macd } from '@/lib/robo-advisor/indicators/macd'
-import { detectMacdCrossesFromMacd, lastMacdCrossFromMacd } from '@/lib/robo-advisor/signals/macd-cross'
+import { avgVolume } from '@/lib/robo-advisor/indicators/volume'
+import { detectVolumeBreakouts, lastBreakoutFromEvents } from '@/lib/robo-advisor/signals/volume-breakout'
 import { CHART_UP, CHART_DOWN, resolvePalette } from '@/lib/chart/theme'
 
 interface Props {
@@ -23,12 +23,17 @@ interface Props {
   height?: number
 }
 
-export const MacdPanel = memo(function MacdPanel({ data, height = 180 }: Props) {
+function fmtVol(v: number): string {
+  if (v >= 100_000_000) return `${(v / 100_000_000).toFixed(1)}억`
+  if (v >= 10_000) return `${(v / 10_000).toFixed(0)}만`
+  return v.toLocaleString('ko-KR')
+}
+
+export const VolumePanel = memo(function VolumePanel({ data, height = 180 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const histSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
-  const macdSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
-  const signalSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const avgSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
   const markersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null)
 
   useEffect(() => {
@@ -56,6 +61,9 @@ export const MacdPanel = memo(function MacdPanel({ data, height = 180 }: Props) 
         borderVisible: false,
         timeVisible: false,
       },
+      localization: {
+        priceFormatter: fmtVol,
+      },
       handleScroll: false,
       handleScale: false,
     })
@@ -65,15 +73,7 @@ export const MacdPanel = memo(function MacdPanel({ data, height = 180 }: Props) 
       lastValueVisible: false,
     })
 
-    const macdSeries = chart.addSeries(LineSeries, {
-      color: '#3b82f6',
-      lineWidth: 1,
-      priceLineVisible: false,
-      lastValueVisible: false,
-      crosshairMarkerVisible: false,
-    })
-
-    const signalSeries = chart.addSeries(LineSeries, {
+    const avgSeries = chart.addSeries(LineSeries, {
       color: '#f59e0b',
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
@@ -82,117 +82,105 @@ export const MacdPanel = memo(function MacdPanel({ data, height = 180 }: Props) 
       crosshairMarkerVisible: false,
     })
 
-    macdSeries.createPriceLine({
-      price: 0,
-      lineStyle: LineStyle.Dashed,
-      lineWidth: 1,
-      color: palette.mutedText,
-      axisLabelVisible: false,
-      title: '',
-    })
-
-    markersRef.current = createSeriesMarkers(macdSeries) as ISeriesMarkersPluginApi<Time>
+    markersRef.current = createSeriesMarkers(avgSeries) as ISeriesMarkersPluginApi<Time>
     histSeriesRef.current = histSeries
-    macdSeriesRef.current = macdSeries
-    signalSeriesRef.current = signalSeries
+    avgSeriesRef.current = avgSeries
     chartRef.current = chart
 
     return () => {
       chart.remove()
       chartRef.current = null
       histSeriesRef.current = null
-      macdSeriesRef.current = null
-      signalSeriesRef.current = null
+      avgSeriesRef.current = null
       markersRef.current = null
     }
   }, [])
 
-  // macd()를 한 번만 계산해 차트 데이터와 시그널 배지 모두 재사용
-  const macdResult = useMemo(
-    () => (data.length >= 40 ? macd(data.map((p) => p.close)) : null),
+  // detectVolumeBreakouts()를 한 번만 계산해 차트 마커와 시그널 배지 모두 재사용
+  const breakoutEvents = useMemo(
+    () => (data.length >= 22 ? detectVolumeBreakouts(data) : []),
     [data],
   )
 
   useEffect(() => {
     const chart = chartRef.current
     const histSeries = histSeriesRef.current
-    const macdSeries = macdSeriesRef.current
-    const signalSeries = signalSeriesRef.current
+    const avgSeries = avgSeriesRef.current
     const markers = markersRef.current
-    if (!chart || !histSeries || !macdSeries || !signalSeries || !markers) return
+    if (!chart || !histSeries || !avgSeries || !markers) return
 
-    if (!macdResult) {
+    if (data.length < 22) {
       histSeries.setData([])
-      macdSeries.setData([])
-      signalSeries.setData([])
+      avgSeries.setData([])
       markers.setMarkers([])
       return
     }
 
+    const volumes = data.map((p) => p.volume ?? null)
+    const avgVols = avgVolume(volumes, 20)
+
     const histData: { time: Time; value: number; color: string }[] = []
-    const macdData: { time: Time; value: number }[] = []
-    const signalData: { time: Time; value: number }[] = []
+    const avgData: { time: Time; value: number }[] = []
 
     for (let i = 0; i < data.length; i++) {
-      const m = macdResult[i]
+      const vol = volumes[i]
       const t = data[i].date as Time
-      if (m.histogram !== null) {
-        histData.push({ time: t, value: m.histogram, color: m.histogram >= 0 ? CHART_UP : CHART_DOWN })
+      if (vol !== null) {
+        histData.push({
+          time: t,
+          value: vol,
+          color: data[i].close >= data[i].open ? CHART_UP : CHART_DOWN,
+        })
       }
-      if (m.macd !== null) macdData.push({ time: t, value: m.macd })
-      if (m.signal !== null) signalData.push({ time: t, value: m.signal })
+      const avg = avgVols[i]
+      if (avg !== null) {
+        avgData.push({ time: t, value: avg })
+      }
     }
 
     histSeries.setData(histData)
-    macdSeries.setData(macdData)
-    signalSeries.setData(signalData)
+    avgSeries.setData(avgData)
 
-    const dates = data.map((p) => p.date)
-    const crosses = detectMacdCrossesFromMacd(macdResult, dates)
-    const crossMarkers: SeriesMarker<Time>[] = crosses.map((c) => ({
-      time: c.date as Time,
-      position: c.type === 'golden' ? ('belowBar' as const) : ('aboveBar' as const),
-      shape: c.type === 'golden' ? ('arrowUp' as const) : ('arrowDown' as const),
-      color: c.type === 'golden' ? CHART_UP : CHART_DOWN,
-      text: c.type === 'golden' ? 'G' : 'D',
+    const signalMarkers: SeriesMarker<Time>[] = breakoutEvents.map((e) => ({
+      time: e.date as Time,
+      position: e.type === 'buy' ? ('belowBar' as const) : ('aboveBar' as const),
+      shape: e.type === 'buy' ? ('arrowUp' as const) : ('arrowDown' as const),
+      color: e.type === 'buy' ? CHART_UP : CHART_DOWN,
+      text: e.type === 'buy' ? 'B' : 'S',
       size: 1,
     }))
-    markers.setMarkers(crossMarkers)
+    markers.setMarkers(signalMarkers)
 
     chart.timeScale().fitContent()
-  }, [data, macdResult])
+  }, [data, breakoutEvents])
 
-  const signalInfo = useMemo(() => {
-    if (!macdResult) return null
-    return lastMacdCrossFromMacd(macdResult, data.map((p) => p.date))
-  }, [data, macdResult])
+  const signalInfo = useMemo(
+    () => lastBreakoutFromEvents(breakoutEvents, data),
+    [breakoutEvents, data],
+  )
 
   const badgeText = signalInfo
-    ? `${signalInfo.daysAgo}일 전 ${signalInfo.type === 'golden' ? '골든 크로스 (매수)' : '데드 크로스 (매도)'}`
-    : '최근 크로스 없음'
+    ? `${signalInfo.daysAgo}일 전 ${signalInfo.type === 'buy' ? '매수' : '매도'} 시그널 (${signalInfo.ratio.toFixed(1)}x)`
+    : '최근 시그널 없음'
 
   const badgeClass = signalInfo
-    ? signalInfo.type === 'golden'
+    ? signalInfo.type === 'buy'
       ? 'bg-red-50 border border-red-200 text-red-600'
       : 'bg-blue-50 border border-blue-200 text-blue-600'
     : 'bg-muted border border-border text-muted-foreground'
 
-  const noData = data.length < 40
+  const noData = data.length < 22
 
   return (
-    <div data-component="MacdPanel" className="rounded-xl border border-border bg-card p-3 space-y-2">
+    <div data-component="VolumePanel" className="rounded-xl border border-border bg-card p-3 space-y-2">
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
-          <p className="text-xs font-medium text-foreground">MACD (12, 26, 9)</p>
+          <p className="text-xs font-medium text-foreground">거래량</p>
           {!noData && (
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1">
-                <span className="inline-block w-4 h-[1.5px] bg-blue-500" />
-                MACD
-              </span>
-              <span className="flex items-center gap-1">
                 <span className="inline-block w-4 h-[1.5px] bg-amber-500 border-dashed border-b border-amber-500" />
-                Signal
+                20일 평균
               </span>
             </div>
           )}
@@ -207,7 +195,7 @@ export const MacdPanel = memo(function MacdPanel({ data, height = 180 }: Props) 
         <div ref={containerRef} className="w-full h-full rounded-md overflow-hidden" />
         {noData && (
           <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
-            MACD 계산을 위한 데이터가 부족합니다 (최소 40일 필요)
+            거래량 데이터가 부족합니다 (최소 22일 필요)
           </div>
         )}
       </div>

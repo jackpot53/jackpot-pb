@@ -42,7 +42,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: '시장시그널',  href: '/robo-advisor/market', icon: Activity,  color: 'text-amber-400',   activeColor: 'text-amber-300',  pro: true },
   { label: '섹터시그널',  href: '/robo-advisor/sector', icon: Layers,    color: 'text-rose-400',    activeColor: 'text-rose-300'    },
   {
-    label: '종목시그널',  href: '/robo-advisor/stock',  icon: BarChart3, color: 'text-orange-400',  activeColor: 'text-orange-300',
+    label: '알고리즘시그널',  href: '/robo-advisor/stock',  icon: BarChart3, color: 'text-orange-400',  activeColor: 'text-orange-300',
     children: [
       { label: 'MACD', badge: '보조', href: '/robo-advisor/stock/macd' },
     ],

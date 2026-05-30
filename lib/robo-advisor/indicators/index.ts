@@ -50,11 +50,7 @@ export function computeAllIndicators(ohlc: OhlcPoint[]): AllIndicators {
   const highs = ohlc.map((p) => p.high)
   const lows = ohlc.map((p) => p.low)
 
-  // price_history 스키마에는 volume 컬럼이 있으나 OhlcPoint에는 없음
-  // volume이 있는 경우를 위해 타입 확장 허용
-  const volumes: (number | null)[] = ohlc.map(
-    (p) => ((p as unknown as Record<string, unknown>)['volume'] as number | null | undefined) ?? null,
-  )
+  const volumes: (number | null)[] = ohlc.map((p) => p.volume ?? null)
 
   return {
     sma5: smaLast(closes, 5),

@@ -20,6 +20,10 @@ const MacdPanel = dynamic(
   () => import('@/components/app/macd-panel').then(m => ({ default: m.MacdPanel })),
   { ssr: false, loading: () => <Skeleton className="h-[180px] w-full rounded-xl" /> },
 )
+const VolumePanel = dynamic(
+  () => import('@/components/app/volume-panel').then(m => ({ default: m.VolumePanel })),
+  { ssr: false, loading: () => <Skeleton className="h-[180px] w-full rounded-xl" /> },
+)
 
 const PERIOD_RANGES: Record<string, string> = { '일봉': '3y', '주봉': '3y', '월봉': '5y' }
 
@@ -35,10 +39,6 @@ export function RoboAdvisorPageClient() {
     setTickerOhlc(null)
     setChartDataForMacd([])
   }, [])
-
-  useEffect(() => {
-    setChartDataForMacd(tickerOhlc ?? [])
-  }, [tickerOhlc])
 
   useEffect(() => {
     if (!selectedTicker) return
@@ -100,6 +100,10 @@ export function RoboAdvisorPageClient() {
                   차트 데이터를 불러오지 못했습니다
                 </div>
               ) : null}
+            </div>
+
+            <div className="mt-4 border-t border-border pt-4">
+              <VolumePanel data={chartDataForMacd} />
             </div>
 
             <div className="mt-4 border-t border-border pt-4">
