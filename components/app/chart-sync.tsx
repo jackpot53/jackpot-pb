@@ -198,7 +198,8 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
         applyLogicalRange({ from: 0 as Logical, to })
         return
       }
-      const cutoff = new Date(dates[len - 1])
+      // 데이터 마지막 날이 아닌 오늘 기준으로 역산 — 캐시된 데이터에서도 정확한 범위 보장
+      const cutoff = new Date()
       cutoff.setMonth(cutoff.getMonth() - months)
       let from = 0
       for (let i = len - 1; i >= 0; i--) {
