@@ -320,7 +320,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
   const hasChartToggle = (showSparkline && asset.ticker) || lineData !== undefined
 
   return (
-    <div className={cn("relative rounded-xl border border-black hover:shadow-md transition-all", ASSET_TYPE_ACCENT[asset.assetType] ?? 'bg-card')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div className={cn("relative rounded-none border border-black hover:shadow-md transition-all", ASSET_TYPE_ACCENT[asset.assetType] ?? 'bg-card')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <div className="flex flex-col gap-2 px-4 py-3.5">
         {/* row1: 로고 + 종목명 + 계좌유형 배지 + 차트 토글 */}
         <div className="flex items-center gap-2 min-w-0">
