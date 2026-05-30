@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useChartSync } from './chart-sync'
 import { ChevronDown } from 'lucide-react'
 import {
   createChart,
@@ -39,6 +40,10 @@ function fmtKrw(v: number): string {
 }
 
 export function TradingValuePanel({ data, height = 180 }: Props) {
+  const sync = useChartSync()
+  const syncRef = useRef(sync)
+  syncRef.current = sync
+
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
@@ -73,8 +78,6 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
       localization: {
         priceFormatter: fmtKrw,
       },
-      handleScroll: false,
-      handleScale: false,
     })
 
     // 히스토그램 + 20일 평균: 상단 65%
@@ -131,7 +134,10 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
     flowRollingSeriesRef.current = flowRollingSeries
     chartRef.current = chart
 
+    const unregister = syncRef.current.registerChart(chart)
+
     return () => {
+      unregister()
       chart.remove()
       chartRef.current = null
       histSeriesRef.current = null
@@ -196,6 +202,9 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
     const cFlow = cumulativeValueFlow(data)
     const cFlowRolling = cumulativeValueFlowRolling(data)
 
+    // lightweight-charts 값 한계(~90조)를 초과하지 않도록 억 단위로 스케일 다운
+    const FLOW_SCALE = 100_000_000
+
     const flowData: { time: Time; value: number }[] = []
     const flowRollingData: { time: Time; value: number }[] = []
 
@@ -203,8 +212,8 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
       const t = data[i].date as Time
       const f = cFlow[i]
       const fr = cFlowRolling[i]
-      if (f !== null) flowData.push({ time: t, value: f })
-      if (fr !== null) flowRollingData.push({ time: t, value: fr })
+      if (f !== null) flowData.push({ time: t, value: f / FLOW_SCALE })
+      if (fr !== null) flowRollingData.push({ time: t, value: fr / FLOW_SCALE })
     }
 
     flowLine.setData(flowData)
@@ -220,7 +229,9 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
     }))
     markers.setMarkers(signalMarkers)
 
-    chart.timeScale().fitContent()
+    const shared = syncRef.current.getCurrentLogicalRange()
+    if (shared) chart.timeScale().setVisibleLogicalRange(shared)
+    else chart.timeScale().fitContent()
   }, [data, flowEvents])
 
   const signalInfo = useMemo(
