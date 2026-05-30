@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useChartSync, CHART_RIGHT_AXIS_WIDTH, HIDDEN_TIME_SCALE } from './chart-sync'
+import { useChartSync, HIDDEN_TIME_SCALE } from './chart-sync'
 import {
   createChart,
   HistogramSeries,
@@ -95,26 +95,11 @@ function CumulativeFlowChart({
   const sync = useChartSync()
   const syncRef = useRef(sync)
 
-  const [axisWidth, setAxisWidth] = useState(CHART_RIGHT_AXIS_WIDTH)
-
-  useEffect(() => sync.subscribeMasterAxisWidth(setAxisWidth), [sync])
-
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const instSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
   const frgnSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
   const indvSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
-
-  useEffect(() => {
-    const chart = chartRef.current
-    if (!chart) return
-    chart.priceScale('right').applyOptions({ minimumWidth: axisWidth })
-    const rafId = requestAnimationFrame(() => {
-      const w = chart.priceScale('right').width()
-      if (w > 0) syncRef.current.setMasterAxisWidth(w)
-    })
-    return () => cancelAnimationFrame(rafId)
-  }, [axisWidth])
 
   // 차트 초기화 (마운트 시 1회)
   useEffect(() => {
@@ -136,13 +121,9 @@ function CumulativeFlowChart({
         vertLines: { visible: false },
         horzLines: { color: palette.grid, style: 2 },
       },
-      rightPriceScale: {
-        borderVisible: false,
-        minimumWidth: CHART_RIGHT_AXIS_WIDTH,
-      },
+      rightPriceScale: { visible: false },
       leftPriceScale: { visible: false },
       timeScale: HIDDEN_TIME_SCALE,
-      localization: { priceFormatter: fmtFlow },
     })
 
     const commonOpts = {
@@ -164,11 +145,6 @@ function CumulativeFlowChart({
       color: palette.mutedText,
       axisLabelVisible: false,
       title: '',
-    })
-
-    chart.priceScale('right').applyOptions({
-      scaleMargins: { top: 0.1, bottom: 0.1 },
-      borderVisible: false,
     })
 
     chartRef.current = chart
@@ -204,12 +180,6 @@ function CumulativeFlowChart({
     indvSeries.setData(toLine('individual'))
 
     syncRef.current.applyRangeToChart(chart)
-
-    const rafId = requestAnimationFrame(() => {
-      const w = chart.priceScale('right').width()
-      if (w > 0) syncRef.current.setMasterAxisWidth(w)
-    })
-    return () => cancelAnimationFrame(rafId)
   }, [data])
 
   return (
