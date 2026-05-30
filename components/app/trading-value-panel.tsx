@@ -245,6 +245,12 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
     markers.setMarkers(signalMarkers)
 
     syncRef.current.applyRangeToChart(chart)
+
+    const rafId = requestAnimationFrame(() => {
+      const w = chart.priceScale('right').width()
+      if (w > 0) syncRef.current.setMasterAxisWidth(w)
+    })
+    return () => cancelAnimationFrame(rafId)
   }, [data, flowEvents])
 
   const signalInfo = useMemo(

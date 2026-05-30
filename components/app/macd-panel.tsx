@@ -181,6 +181,12 @@ export function MacdPanel({ data, height = 180 }: Props) {
     markers.setMarkers(crossMarkers)
 
     syncRef.current.applyRangeToChart(chart)
+
+    const rafId = requestAnimationFrame(() => {
+      const w = chart.priceScale('right').width()
+      if (w > 0) syncRef.current.setMasterAxisWidth(w)
+    })
+    return () => cancelAnimationFrame(rafId)
   }, [data, macdResult])
 
   const signalInfo = useMemo(() => {
