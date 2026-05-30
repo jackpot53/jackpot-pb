@@ -13,6 +13,7 @@ export { adx, adxLast } from './adx'
 export type { AdxPoint } from './adx'
 export { atr, atrLast } from './atr'
 export { avgVolume, avgVolumeLast, volumeRatio } from './volume'
+export { volumeOscillator, volumeOscillatorLast } from './volume-oscillator'
 
 import { smaLast } from './sma'
 import { rsiLast } from './rsi'
