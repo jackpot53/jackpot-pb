@@ -342,7 +342,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
   })()
 
   return (
-    <div className="relative rounded-sm border border-black bg-white hover:shadow-md transition-all overflow-hidden flex" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div className="relative rounded-sm border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden flex" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <div className={cn("w-1 shrink-0", leftStripeColor)} />
       <div className="flex flex-col gap-2 px-4 py-3.5 flex-1 min-w-0">
         {/* row1: 로고 + 종목명 + 계좌유형 배지 + 차트 토글 */}
