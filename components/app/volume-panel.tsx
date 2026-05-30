@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useChartSync } from './chart-sync'
+import { useChartSync, CHART_RIGHT_AXIS_WIDTH } from './chart-sync'
 import { ChevronDown } from 'lucide-react'
 import {
   createChart,
@@ -60,7 +60,10 @@ export function VolumePanel({ data, height = 180 }: Props) {
         vertLines: { visible: false },
         horzLines: { color: palette.grid, style: 2 },
       },
-      rightPriceScale: { visible: false },
+      rightPriceScale: {
+        borderVisible: false,
+        minimumWidth: CHART_RIGHT_AXIS_WIDTH,
+      },
       timeScale: {
         borderVisible: false,
         timeVisible: false,
@@ -71,13 +74,13 @@ export function VolumePanel({ data, height = 180 }: Props) {
     })
 
     const histSeries = chart.addSeries(HistogramSeries, {
-      priceScaleId: 'volume',
+      priceScaleId: 'right',
       priceLineVisible: false,
       lastValueVisible: false,
     })
 
     const avgSeries = chart.addSeries(LineSeries, {
-      priceScaleId: 'volume',
+      priceScaleId: 'right',
       color: '#f59e0b',
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
@@ -86,7 +89,7 @@ export function VolumePanel({ data, height = 180 }: Props) {
       crosshairMarkerVisible: false,
     })
 
-    chart.priceScale('volume').applyOptions({
+    chart.priceScale('right').applyOptions({
       scaleMargins: { top: 0.1, bottom: 0.05 },
       borderVisible: false,
     })

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useChartSync } from './chart-sync'
+import { useChartSync, CHART_RIGHT_AXIS_WIDTH } from './chart-sync'
 import {
   createChart,
   HistogramSeries,
@@ -100,7 +100,10 @@ function FlowChart({
         vertLines: { visible: false },
         horzLines: { color: palette.grid, style: 2 },
       },
-      rightPriceScale: { visible: false },
+      rightPriceScale: {
+        borderVisible: false,
+        minimumWidth: CHART_RIGHT_AXIS_WIDTH,
+      },
       leftPriceScale: { visible: false },
       timeScale: {
         borderVisible: false,
@@ -111,12 +114,12 @@ function FlowChart({
 
     const series = chart.addSeries(HistogramSeries, {
       base: 0,
-      priceScaleId: 'flow',
+      priceScaleId: 'right',
       priceLineVisible: false,
       lastValueVisible: false,
     })
 
-    chart.priceScale('flow').applyOptions({
+    chart.priceScale('right').applyOptions({
       scaleMargins: { top: 0.1, bottom: 0.1 },
       borderVisible: false,
     })

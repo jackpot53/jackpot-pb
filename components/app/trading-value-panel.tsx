@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useChartSync } from './chart-sync'
+import { useChartSync, CHART_RIGHT_AXIS_WIDTH } from './chart-sync'
 import { ChevronDown } from 'lucide-react'
 import {
   createChart,
@@ -70,7 +70,10 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
         vertLines: { visible: false },
         horzLines: { color: palette.grid, style: 2 },
       },
-      rightPriceScale: { visible: false },
+      rightPriceScale: {
+        borderVisible: false,
+        minimumWidth: CHART_RIGHT_AXIS_WIDTH,
+      },
       timeScale: {
         borderVisible: false,
         timeVisible: false,

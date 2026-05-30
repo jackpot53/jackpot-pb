@@ -3,6 +3,8 @@
 import { createContext, useContext, useMemo, useRef, type ReactNode } from 'react'
 import type { IChartApi, LogicalRange } from 'lightweight-charts'
 
+export const CHART_RIGHT_AXIS_WIDTH = 56
+
 export interface DateRange {
   from: string
   to: string

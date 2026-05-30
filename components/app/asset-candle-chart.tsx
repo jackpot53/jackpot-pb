@@ -16,7 +16,7 @@ import {
   type MouseEventParams,
 } from 'lightweight-charts'
 import type { OhlcPoint } from '@/lib/price/sparkline'
-import { useChartSync } from './chart-sync'
+import { useChartSync, CHART_RIGHT_AXIS_WIDTH } from './chart-sync'
 import { CHART_UP, CHART_DOWN, resolvePalette } from '@/lib/chart/theme'
 import { MA_COLORS, MA_PERIODS } from '@/lib/chart/ma-colors'
 import { sma } from '@/lib/robo-advisor/indicators/sma'
@@ -172,6 +172,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
       },
       rightPriceScale: {
         borderVisible: false,
+        minimumWidth: CHART_RIGHT_AXIS_WIDTH,
         scaleMargins: showVolumeRef.current ? { top: 0.05, bottom: 0.25 } : { top: 0.1, bottom: 0.1 },
       },
       timeScale: {
