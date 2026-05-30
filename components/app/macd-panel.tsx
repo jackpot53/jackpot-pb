@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import {
   createChart,
   LineSeries,
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function MacdPanel({ data, height = 180 }: Props) {
+  const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const histSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
@@ -180,11 +182,15 @@ export function MacdPanel({ data, height = 180 }: Props) {
   const noData = data.length < 40
 
   return (
-    <div data-component="MacdPanel" className="rounded-xl border border-border bg-card p-3 space-y-2">
-      <div className="flex items-center justify-between px-1">
+    <div data-component="MacdPanel" className="rounded-xl border border-border bg-card p-3">
+      <button
+        onClick={() => setIsOpen((o) => !o)}
+        className="flex items-center justify-between w-full px-1"
+      >
         <div className="flex items-center gap-2">
+          <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform duration-200 ${isOpen ? '' : '-rotate-90'}`} />
           <p className="text-xs font-medium text-foreground">MACD (12, 26, 9)</p>
-          {!noData && (
+          {isOpen && !noData && (
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1">
                 <span className="inline-block w-4 h-[1.5px] bg-blue-500" />
@@ -202,15 +208,17 @@ export function MacdPanel({ data, height = 180 }: Props) {
             {badgeText}
           </span>
         )}
-      </div>
-      <div className="relative" style={{ height: `${height}px` }}>
-        <div ref={containerRef} className="w-full h-full rounded-md overflow-hidden" />
-        {noData && (
-          <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
-            MACD 계산을 위한 데이터가 부족합니다 (최소 40일 필요)
-          </div>
-        )}
-      </div>
+      </button>
+      {isOpen && (
+        <div className="mt-2 relative" style={{ height: `${height}px` }}>
+          <div ref={containerRef} className="w-full h-full rounded-md overflow-hidden" />
+          {noData && (
+            <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+              MACD 계산을 위한 데이터가 부족합니다 (최소 40일 필요)
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

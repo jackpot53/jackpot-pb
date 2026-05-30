@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
-import { X, CandlestickChart } from 'lucide-react'
+import { X, CandlestickChart, ChevronDown } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RoboAdvisorTickerSearch, type TickerSuggestion } from '@/components/app/robo-advisor-ticker-search'
 import type { Period } from '@/components/app/asset-candle-chart'
@@ -37,6 +37,7 @@ export function RoboAdvisorPageClient() {
   const [tickerChartLoading, setTickerChartLoading] = useState(false)
   const [chartPeriod, setChartPeriod] = useState<Period>('일봉')
   const [chartDataForMacd, setChartDataForMacd] = useState<OhlcPoint[]>([])
+  const [investorFlowOpen, setInvestorFlowOpen] = useState(false)
 
   const handleTickerSelect = useCallback((s: TickerSuggestion) => {
     setSelectedTicker(s)
@@ -115,12 +116,25 @@ export function RoboAdvisorPageClient() {
             </div>
 
             <div className="mt-4 border-t border-border pt-4">
-              <p className="text-xs text-muted-foreground mb-2">투자자별 매매동향 (순매수량, 단위: 주)</p>
-              <InvestorFlowChart
-                ticker={selectedTicker.ticker}
-                period={chartPeriod}
-                range="1y"
-              />
+            <div className="rounded-xl border border-border bg-card p-3">
+              <button
+                onClick={() => setInvestorFlowOpen((o) => !o)}
+                className="flex items-center gap-2 w-full px-1"
+              >
+                <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform duration-200 ${investorFlowOpen ? '' : '-rotate-90'}`} />
+                <p className="text-xs font-medium text-foreground">투자자별 매매동향</p>
+                <span className="text-[10px] text-muted-foreground">(순매수량, 단위: 주)</span>
+              </button>
+              {investorFlowOpen && (
+                <div className="mt-2">
+                  <InvestorFlowChart
+                    ticker={selectedTicker.ticker}
+                    period={chartPeriod}
+                    range="1y"
+                  />
+                </div>
+              )}
+            </div>
             </div>
 
             <div className="mt-4 border-t border-border pt-4">
