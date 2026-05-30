@@ -272,16 +272,14 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
           </span>
         )}
       </button>
-      {isOpen && (
-        <div className="mt-2 relative" style={{ height: `${height}px` }}>
-          <div ref={containerRef} className="w-full h-full rounded-md overflow-hidden" />
-          {noData && (
-            <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
-              거래대금 데이터가 부족합니다 (최소 22일 필요)
-            </div>
-          )}
-        </div>
-      )}
+      <div className="mt-2 relative overflow-hidden" style={{ height: isOpen ? `${height}px` : 0 }}>
+        <div ref={containerRef} className="w-full h-full rounded-md overflow-hidden" />
+        {isOpen && noData && (
+          <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+            거래대금 데이터가 부족합니다 (최소 22일 필요)
+          </div>
+        )}
+      </div>
     </div>
   )
 }
