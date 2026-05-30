@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { X, CandlestickChart, ChevronDown } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RoboAdvisorTickerSearch, type TickerSuggestion } from '@/components/app/robo-advisor-ticker-search'
+import { ChartSyncProvider } from './chart-sync'
 import type { Period } from '@/components/app/asset-candle-chart'
 import type { OhlcPoint } from '@/lib/price/sparkline'
 
@@ -83,64 +84,66 @@ export function RoboAdvisorPageClient() {
           selectedTicker={selectedTicker?.ticker ?? null}
         />
         {selectedTicker && (
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-sm font-semibold">{selectedTicker.name}</span>
-              <span className="text-xs text-muted-foreground tabular-nums">{selectedTicker.ticker}</span>
-            </div>
-            <div className="h-[400px]">
-              {tickerChartLoading ? (
-                <Skeleton className="h-full w-full rounded-lg" />
-              ) : tickerOhlc && tickerOhlc.length > 0 ? (
-                <AssetCandleChart
-                  ticker={selectedTicker.ticker}
-                  initialData={tickerOhlc}
-                  periodRanges={PERIOD_RANGES}
-                  onPeriodChange={setChartPeriod}
-                  showVolume
-                  onDataChange={setChartDataForMacd}
-                />
-              ) : !tickerChartLoading ? (
-                <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
-                  차트 데이터를 불러오지 못했습니다
-                </div>
-              ) : null}
-            </div>
-
-            <div className="mt-4 border-t border-border pt-4">
-              <VolumePanel data={chartDataForMacd} />
-            </div>
-
-            <div className="mt-4 border-t border-border pt-4">
-              <TradingValuePanel data={chartDataForMacd} />
-            </div>
-
-            <div className="mt-4 border-t border-border pt-4">
-            <div className="rounded-xl border border-border bg-card p-3">
-              <button
-                onClick={() => setInvestorFlowOpen((o) => !o)}
-                className="flex items-center gap-2 w-full px-1"
-              >
-                <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform duration-200 ${investorFlowOpen ? '' : '-rotate-90'}`} />
-                <p className="text-xs font-medium text-foreground">투자자별 매매동향</p>
-                <span className="text-[10px] text-muted-foreground">(순매수량, 단위: 주)</span>
-              </button>
-              {investorFlowOpen && (
-                <div className="mt-2">
-                  <InvestorFlowChart
+          <ChartSyncProvider>
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-sm font-semibold">{selectedTicker.name}</span>
+                <span className="text-xs text-muted-foreground tabular-nums">{selectedTicker.ticker}</span>
+              </div>
+              <div className="h-[400px]">
+                {tickerChartLoading ? (
+                  <Skeleton className="h-full w-full rounded-lg" />
+                ) : tickerOhlc && tickerOhlc.length > 0 ? (
+                  <AssetCandleChart
                     ticker={selectedTicker.ticker}
-                    period={chartPeriod}
-                    range="1y"
+                    initialData={tickerOhlc}
+                    periodRanges={PERIOD_RANGES}
+                    onPeriodChange={setChartPeriod}
+                    showVolume
+                    onDataChange={setChartDataForMacd}
                   />
-                </div>
-              )}
-            </div>
-            </div>
+                ) : !tickerChartLoading ? (
+                  <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                    차트 데이터를 불러오지 못했습니다
+                  </div>
+                ) : null}
+              </div>
 
-            <div className="mt-4 border-t border-border pt-4">
-              <MacdPanel data={chartDataForMacd} />
+              <div className="mt-4 border-t border-border pt-4">
+                <VolumePanel data={chartDataForMacd} />
+              </div>
+
+              <div className="mt-4 border-t border-border pt-4">
+                <TradingValuePanel data={chartDataForMacd} />
+              </div>
+
+              <div className="mt-4 border-t border-border pt-4">
+              <div className="rounded-xl border border-border bg-card p-3">
+                <button
+                  onClick={() => setInvestorFlowOpen((o) => !o)}
+                  className="flex items-center gap-2 w-full px-1"
+                >
+                  <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform duration-200 ${investorFlowOpen ? '' : '-rotate-90'}`} />
+                  <p className="text-xs font-medium text-foreground">투자자별 매매동향</p>
+                  <span className="text-[10px] text-muted-foreground">(순매수량, 단위: 주)</span>
+                </button>
+                {investorFlowOpen && (
+                  <div className="mt-2">
+                    <InvestorFlowChart
+                      ticker={selectedTicker.ticker}
+                      period={chartPeriod}
+                      range="1y"
+                    />
+                  </div>
+                )}
+              </div>
+              </div>
+
+              <div className="mt-4 border-t border-border pt-4">
+                <MacdPanel data={chartDataForMacd} />
+              </div>
             </div>
-          </div>
+          </ChartSyncProvider>
         )}
       </div>
     </div>

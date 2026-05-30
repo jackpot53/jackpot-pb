@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useChartSync } from './chart-sync'
 import { ChevronDown } from 'lucide-react'
 import {
   createChart,
@@ -25,6 +26,10 @@ interface Props {
 }
 
 export function MacdPanel({ data, height = 180 }: Props) {
+  const sync = useChartSync()
+  const syncRef = useRef(sync)
+  syncRef.current = sync
+
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
@@ -58,8 +63,6 @@ export function MacdPanel({ data, height = 180 }: Props) {
         borderVisible: false,
         timeVisible: false,
       },
-      handleScroll: false,
-      handleScale: false,
     })
 
     const histSeries = chart.addSeries(HistogramSeries, {
@@ -99,7 +102,10 @@ export function MacdPanel({ data, height = 180 }: Props) {
     signalSeriesRef.current = signalSeries
     chartRef.current = chart
 
+    const unregister = syncRef.current.registerChart(chart)
+
     return () => {
+      unregister()
       chart.remove()
       chartRef.current = null
       histSeriesRef.current = null
@@ -161,7 +167,9 @@ export function MacdPanel({ data, height = 180 }: Props) {
     }))
     markers.setMarkers(crossMarkers)
 
-    chart.timeScale().fitContent()
+    const shared = syncRef.current.getCurrentLogicalRange()
+    if (shared) chart.timeScale().setVisibleLogicalRange(shared)
+    else chart.timeScale().fitContent()
   }, [data, macdResult])
 
   const signalInfo = useMemo(() => {

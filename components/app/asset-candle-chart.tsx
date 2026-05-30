@@ -16,6 +16,7 @@ import {
   type MouseEventParams,
 } from 'lightweight-charts'
 import type { OhlcPoint } from '@/lib/price/sparkline'
+import { useChartSync } from './chart-sync'
 import { CHART_UP, CHART_DOWN, resolvePalette } from '@/lib/chart/theme'
 import { MA_COLORS, MA_PERIODS } from '@/lib/chart/ma-colors'
 import { sma } from '@/lib/robo-advisor/indicators/sma'
@@ -70,6 +71,10 @@ function toSeriesData(points: OhlcPoint[]): CandlestickData<Time>[] {
 }
 
 export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, onPeriodChange, showVolume, onDataChange }: AssetCandleChartProps) {
+  const sync = useChartSync()
+  const syncRef = useRef(sync)
+  syncRef.current = sync
+
   const [period, setPeriod] = useState<Period>('일봉')
   const [fetchedByPeriod, setFetchedByPeriod] = useState<Partial<Record<Period, OhlcPoint[]>>>({})
   const [loading, setLoading] = useState(false)
@@ -123,6 +128,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
   // 주/월봉 전환 시 호출 — 사용자 액션에서 직접 트리거.
   const selectPeriod = useCallback(
     (next: Period) => {
+      syncRef.current.resetRange()
       setPeriod(next)
       onPeriodChange?.(next)
       if (next === '일봉' || fetchedByPeriod[next]) return
@@ -180,8 +186,6 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
       localization: {
         priceFormatter: fmtAxisPrice,
       },
-      handleScroll: false,
-      handleScale: false,
     })
 
     const series = chart.addSeries(CandlestickSeries, {
@@ -221,6 +225,8 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
     chartRef.current = chart
     seriesRef.current = series
     maSeriesRef.current = maMap
+
+    const unregister = syncRef.current.registerChart(chart)
 
     setContainerWidth(container.clientWidth)
     const ro = new ResizeObserver(([entry]) => {
@@ -272,6 +278,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
       ro.disconnect()
       chart.unsubscribeCrosshairMove(onMove)
       chart.timeScale().unsubscribeVisibleLogicalRangeChange(refreshAvgLabel)
+      unregister()
       chart.remove()
       chartRef.current = null
       seriesRef.current = null
@@ -286,6 +293,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
     const series = seriesRef.current
     const chart = chartRef.current
     if (!series || !chart || baseData.length === 0) return
+    syncRef.current.setMasterDates(baseData.map((p) => p.date))
     series.setData(toSeriesData(baseData))
 
     const closes = baseData.map((p) => p.close)
@@ -317,7 +325,9 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
       volSeries.setData(volData)
     }
 
-    chart.timeScale().fitContent()
+    const shared = syncRef.current.getCurrentLogicalRange()
+    if (shared) chart.timeScale().setVisibleLogicalRange(shared)
+    else chart.timeScale().fitContent()
     // fitContent 렌더링 후 매수가 라벨 y좌표 갱신
     requestAnimationFrame(() => {
       const p = avgPriceRef.current

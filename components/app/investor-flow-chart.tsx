@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useChartSync } from './chart-sync'
+import type { DateRange } from './chart-sync'
 import {
   BarChart, Bar, Cell, XAxis, YAxis, ReferenceLine,
   Tooltip, ResponsiveContainer,
@@ -136,6 +138,11 @@ function FlowBar({
 }
 
 export function InvestorFlowChart({ ticker, period, range = '1y' }: Props) {
+  const sync = useChartSync()
+  const [dateRange, setDateRange] = useState<DateRange | null>(null)
+
+  useEffect(() => sync.subscribeDateRange(setDateRange), [sync])
+
   const [raw, setRaw] = useState<InvestorFlowPoint[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [unsupported, setUnsupported] = useState(false)
@@ -162,6 +169,11 @@ export function InvestorFlowChart({ ticker, period, range = '1y' }: Props) {
     if (period === '월봉') return aggregateByMonth(raw)
     return raw
   }, [raw, period])
+
+  // 캔들 차트와 동기화된 날짜 범위로 필터링 (date 필드는 'YYYY-MM-DD' 형식으로 비교 가능)
+  const visibleData = dateRange
+    ? data.filter((d) => d.date >= dateRange.from && d.date <= dateRange.to)
+    : data
 
   const tickFmt = period === '월봉' ? formatMonth : formatDate
 
@@ -196,9 +208,9 @@ export function InvestorFlowChart({ ticker, period, range = '1y' }: Props) {
 
   return (
     <div className="space-y-1">
-      <FlowBar data={data} label="개인" dataKey="individual" showXAxis={false} tickFormatter={tickFmt} />
-      <FlowBar data={data} label="외국인" dataKey="foreign" showXAxis={false} tickFormatter={tickFmt} />
-      <FlowBar data={data} label="기관" dataKey="institution" showXAxis={true} tickFormatter={tickFmt} />
+      <FlowBar data={visibleData} label="개인" dataKey="individual" showXAxis={false} tickFormatter={tickFmt} />
+      <FlowBar data={visibleData} label="외국인" dataKey="foreign" showXAxis={false} tickFormatter={tickFmt} />
+      <FlowBar data={visibleData} label="기관" dataKey="institution" showXAxis={true} tickFormatter={tickFmt} />
     </div>
   )
 }
