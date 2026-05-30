@@ -461,7 +461,7 @@ export function formatKrw(n: number): string {
   }).format(n)
 }
 
-/** 카드 등 좁은 공간용 — 1억↑ 'N.N억', 1만↑ 'N만', 미만 '₩N,NNN' */
+/** 카드 등 좁은 공간용 — 1억↑ 'N.N억', 1만↑ 'N.N만'(천 단위 보존), 미만 '₩N,NNN' */
 export function formatKrwCompact(n: number): string {
   const abs = Math.abs(n)
   const sign = n < 0 ? '-' : ''
@@ -471,8 +471,9 @@ export function formatKrwCompact(n: number): string {
     return `${sign}${formatted}억`
   }
   if (abs >= 1_0000) {
-    const man = Math.round(abs / 1_0000)
-    return `${sign}${man.toLocaleString('ko-KR')}만`
+    const man = abs / 1_0000
+    const formatted = man.toFixed(1).replace(/\.0$/, '')
+    return `${sign}${Number(formatted).toLocaleString('ko-KR')}만`
   }
   return formatKrw(n)
 }
