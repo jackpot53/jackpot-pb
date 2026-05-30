@@ -330,41 +330,35 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
     return 'bg-blue-300'
   })()
 
-  const dividerColor = (() => {
-    if (dailyChangePct === null) return 'border-black'
-    if (dailyChangePct >= 3)  return 'border-red-500'
-    if (dailyChangePct >= 1)  return 'border-red-400'
-    if (dailyChangePct > 0)   return 'border-red-300'
-    if (dailyChangePct === 0) return 'border-black'
-    if (dailyChangePct <= -3) return 'border-blue-500'
-    if (dailyChangePct <= -1) return 'border-blue-400'
-    return 'border-blue-300'
-  })()
+
 
   return (
     <div className="relative rounded-sm border border-gray-200 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden flex" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      <div className={cn("w-1 shrink-0", leftStripeColor)} />
-      <div className="flex flex-col gap-2 px-4 py-3.5 flex-1 min-w-0">
-        {/* row1: 로고 + 종목명 + 계좌유형 배지 + 차트 토글 */}
-        <div className="flex items-center gap-2 min-w-0">
-          <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={32} />
-          <Link href={`/assets/${asset.assetId}`} className="text-sm font-semibold text-foreground leading-snug hover:underline truncate">{asset.name}</Link>
-          {accountBadge}
-          {maturityBadge}
-          {hasChartToggle && (
-            <button
-              onClick={() => setChartOpen(v => !v)}
-              className="ml-auto shrink-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded-lg hover:bg-muted/40"
-            >
-              {asset.returnPct >= 0
-                ? <TrendingUp className="h-3 w-3 text-red-500" />
-                : <TrendingDown className="h-3 w-3 text-blue-500" />}
-              차트
-              <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', chartOpen && 'rotate-180')} />
-            </button>
-          )}
-        </div>
-        <div className={cn("border-t-2", dividerColor)} />
+      <div className={cn("w-1.5 shrink-0", leftStripeColor)} />
+      <div className="flex flex-col flex-1 min-w-0">
+      {/* 타이틀 행 */}
+      <div className="flex items-center gap-2 px-4 py-2.5">
+        <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={32} />
+        <Link href={`/assets/${asset.assetId}`} className="text-sm font-semibold text-foreground leading-snug hover:underline truncate">{asset.name}</Link>
+        {accountBadge}
+        {maturityBadge}
+        {hasChartToggle && (
+          <button
+            onClick={() => setChartOpen(v => !v)}
+            className="ml-auto shrink-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded-lg hover:bg-muted/40"
+          >
+            {asset.returnPct >= 0
+              ? <TrendingUp className="h-3 w-3 text-red-500" />
+              : <TrendingDown className="h-3 w-3 text-blue-500" />}
+            차트
+            <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', chartOpen && 'rotate-180')} />
+          </button>
+        )}
+      </div>
+      <div className="border-t-2 border-black/20" />
+
+      {/* 본문 */}
+      <div className="flex flex-col gap-2 px-4 py-3">
 
         {/* row3: 현재가 · 오늘 등락률 */}
         {!isSavings && (asset.currentPriceKrw > 0 || dailyChangePct !== null) && (
@@ -521,7 +515,6 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
             ) : null}
           </div>
         )}
-
       </div>
 
       {/* 차트 collapse */}
@@ -547,6 +540,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
           )}
         </>
       )}
+      </div>
     </div>
   )
 }
