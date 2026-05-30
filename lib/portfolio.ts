@@ -8,6 +8,7 @@ export {
   computePortfolio,
   aggregateByType,
   formatKrw,
+  formatKrwCompact,
   formatUsd,
   formatReturn,
   formatQty,

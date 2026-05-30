@@ -33,7 +33,7 @@ const CandlestickChart = dynamic(
   () => import('@/components/app/candlestick-chart').then(m => ({ default: m.CandlestickChart })),
   { ssr: false }
 )
-import { formatKrw, formatUsd, formatReturn, formatQty } from '@/lib/portfolio'
+import { formatKrw, formatKrwCompact, formatUsd, formatReturn, formatQty } from '@/lib/portfolio'
 import type { AssetPerformance } from '@/lib/portfolio'
 import { TodayReport } from '@/components/app/today-report'
 import { SummaryCards } from '@/components/app/summary-cards'
@@ -350,10 +350,10 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
               <span className="tabular-nums"><span className="text-muted-foreground">수량</span> <span className="font-medium text-foreground/90">{formatQty(asset.totalQuantity, isCrypto)}</span></span>
             )}
             {asset.avgCostPerUnit > 0 && !(isSavings && asset.monthlyContributionKrw != null) && (
-              <>{(!hideQty) && <span className="text-border/60">|</span>}<span className="tabular-nums"><span className="text-muted-foreground">{isSavings ? '예치원금' : '매수가'}</span> <span className="font-medium text-foreground/90">{asset.avgCostPerUnitOriginal != null ? formatUsd(asset.avgCostPerUnitOriginal / 100) : formatKrw(asset.avgCostPerUnit)}</span></span></>
+              <>{(!hideQty) && <span className="text-border/60">|</span>}<span className="tabular-nums"><span className="text-muted-foreground">{isSavings ? '예치원금' : '매수가'}</span> <span className="font-medium text-foreground/90">{asset.avgCostPerUnitOriginal != null ? formatUsd(asset.avgCostPerUnitOriginal / 100) : formatKrwCompact(asset.avgCostPerUnit)}</span></span></>
             )}
             {asset.totalCostKrw > 0 && !isSavings && (
-              <><span className="text-border/60">|</span><span className="tabular-nums"><span className="text-muted-foreground">투자금</span> <span className="font-medium text-foreground/90">{formatKrw(asset.totalCostKrw)}</span></span></>
+              <><span className="text-border/60">|</span><span className="tabular-nums"><span className="text-muted-foreground">투자금</span> <span className="font-medium text-foreground/90">{formatKrwCompact(asset.totalCostKrw)}</span></span></>
             )}
             {isSavings && asset.monthlyContributionKrw != null && asset.monthlyContributionKrw > 0 && (() => {
               const months = asset.initialTransactionDate
@@ -366,9 +366,9 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
               const calculatedTotal = months != null ? asset.monthlyContributionKrw * months : null
               return (
                 <>
-                  <span className="tabular-nums"><span className="text-muted-foreground">월납입</span> <span className="font-medium text-foreground/90">{formatKrw(asset.monthlyContributionKrw)}</span></span>
+                  <span className="tabular-nums"><span className="text-muted-foreground">월납입</span> <span className="font-medium text-foreground/90">{formatKrwCompact(asset.monthlyContributionKrw)}</span></span>
                   {calculatedTotal != null && (
-                    <><span className="text-border/60">|</span><span className="tabular-nums"><span className="text-muted-foreground">총납입</span> <span className="font-medium text-foreground/90">{formatKrw(calculatedTotal)}</span>{months != null && <span className="text-muted-foreground ml-1">({months}개월)</span>}</span></>
+                    <><span className="text-border/60">|</span><span className="tabular-nums"><span className="text-muted-foreground">총납입</span> <span className="font-medium text-foreground/90">{formatKrwCompact(calculatedTotal)}</span>{months != null && <span className="text-muted-foreground ml-1">({months}개월)</span>}</span></>
                   )}
                 </>
               )
@@ -410,7 +410,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
                 <span className="text-foreground">
                   {(asset.assetType === 'stock_us' || asset.assetType === 'etf_us') && asset.currentPriceUsd != null
                     ? formatUsd(asset.currentPriceUsd)
-                    : formatKrw(asset.currentPriceKrw)}
+                    : formatKrwCompact(asset.currentPriceKrw)}
                 </span>
                 {dailyChangePct !== null && (
                   <span className={`tabular-nums font-bold ml-1 ${(dailyChangePct ?? 0) >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
@@ -437,11 +437,11 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
               <>
                 <span className="text-border/60">|</span>
                 <span className={stockGainKrw >= 0 ? 'text-red-500' : 'text-blue-500'}>
-                  주가 {stockGainKrw >= 0 ? '+' : ''}{formatKrw(stockGainKrw)}
+                  주가 {stockGainKrw >= 0 ? '+' : ''}{formatKrwCompact(stockGainKrw)}
                 </span>
                 <span className="text-border/60">|</span>
                 <span className={fxGainKrw >= 0 ? 'text-red-500' : 'text-blue-500'}>
-                  환차 {fxGainKrw >= 0 ? '+' : ''}{formatKrw(fxGainKrw)}
+                  환차 {fxGainKrw >= 0 ? '+' : ''}{formatKrwCompact(fxGainKrw)}
                 </span>
                 {avgFxRate != null && asset.currentFxRate != null && (
                   <>
@@ -476,7 +476,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
           <div className="pt-2 border-t border-border flex items-center gap-2 tabular-nums flex-wrap">
             <span className="text-xs text-muted-foreground">평가금</span>
             <span className="text-xs font-semibold text-foreground">
-              {hasValue ? formatKrw(asset.currentValueKrw) : '—'}
+              {hasValue ? formatKrwCompact(asset.currentValueKrw) : '—'}
               {isUsdPurchase && asset.currentPriceUsd != null && hasHolding && hasValue && (
                 <span className="text-xs text-muted-foreground ml-1">({formatUsd(asset.currentPriceUsd * asset.totalQuantity / 1e8)})</span>
               )}
@@ -485,7 +485,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
               <>
                 <span className="text-border/60 text-xs">·</span>
                 <span className={`text-xs font-bold ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                  {profit >= 0 ? '+' : ''}{formatKrw(profit)}
+                  {profit >= 0 ? '+' : ''}{formatKrwCompact(profit)}
                 </span>
                 <span className={`text-xs font-semibold ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
                   ({formatReturn(asset.returnPct)})

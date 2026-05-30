@@ -461,6 +461,22 @@ export function formatKrw(n: number): string {
   }).format(n)
 }
 
+/** 카드 등 좁은 공간용 — 1억↑ 'N.N억', 1만↑ 'N만', 미만 '₩N,NNN' */
+export function formatKrwCompact(n: number): string {
+  const abs = Math.abs(n)
+  const sign = n < 0 ? '-' : ''
+  if (abs >= 1_0000_0000) {
+    const eok = abs / 1_0000_0000
+    const formatted = eok < 10 ? eok.toFixed(1).replace(/\.0$/, '') : Math.round(eok).toLocaleString('ko-KR')
+    return `${sign}${formatted}억`
+  }
+  if (abs >= 1_0000) {
+    const man = Math.round(abs / 1_0000)
+    return `${sign}${man.toLocaleString('ko-KR')}만`
+  }
+  return formatKrw(n)
+}
+
 /** Formats USD float as '$N,NNN.NN' (en-US locale, 2 decimals) */
 export function formatUsd(n: number): string {
   return new Intl.NumberFormat('en-US', {
