@@ -55,6 +55,8 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
   // 동기화 적용 중 재진입(피드백 루프) 방지
   const isApplyingRef = useRef(false)
   const dateSubsRef = useRef<Set<(r: DateRange | null) => void>>(new Set())
+  // 좌이동 하드 경계 — 최신 날짜 기준 3년 이전 인덱스 (setMasterDates 시 갱신)
+  const minFromRef = useRef<number>(0)
 
   const api = useMemo<ChartSyncApi>(() => {
     const clampIndex = (i: number) => {
@@ -117,6 +119,19 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
 
     const setMasterDates: ChartSyncApi['setMasterDates'] = (dates) => {
       datesRef.current = dates
+      // 좌이동 경계: 최신 날짜 기준 3년 이전 인덱스를 미리 계산
+      const len = dates.length
+      if (len > 0) {
+        const cutoff = new Date(dates[len - 1])
+        cutoff.setFullYear(cutoff.getFullYear() - 3)
+        let idx = 0
+        for (let i = len - 1; i >= 0; i--) {
+          if (new Date(dates[i]) < cutoff) { idx = i + 1; break }
+        }
+        minFromRef.current = idx
+      } else {
+        minFromRef.current = 0
+      }
       notifyDateSubs(currentRangeRef.current)
     }
 
@@ -186,7 +201,7 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
       let from = r.from + span * fraction
       let to = r.to + span * fraction
       const maxTo = len - 1 + RIGHT_MARGIN
-      const minFrom = -RIGHT_MARGIN
+      const minFrom = minFromRef.current
       if (to > maxTo) { to = maxTo; from = to - span }
       if (from < minFrom) { from = minFrom; to = from + span }
       applyLogicalRange({ from: from as Logical, to: to as Logical })
