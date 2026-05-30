@@ -6,7 +6,7 @@ import { TrendingUp, TrendingDown, Minus, PlusCircle, Wallet, CheckCircle2 } fro
 import { cn } from '@/lib/utils'
 import { AssetTypeBadge } from '@/components/app/asset-type-badge'
 import { AssetLogo } from '@/components/app/asset-logo'
-import { formatKrw, formatReturn } from '@/lib/portfolio'
+import { formatKrwCompact, formatReturn } from '@/lib/portfolio'
 import type { AssetPerformance } from '@/lib/portfolio'
 import { ASSET_TYPE_ACCENT } from '@/components/app/assets-page-client'
 
@@ -241,7 +241,7 @@ export const SummaryCards = memo(function SummaryCards({ grouped, performances, 
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">총 자산</p>
             </div>
             <p className="text-2xl font-bold tabular-nums">
-              {grandTotalValue > 0 ? formatKrw(animatedValue) : '—'}
+              {grandTotalValue > 0 ? formatKrwCompact(animatedValue) : '—'}
             </p>
             <p className="text-xs text-muted-foreground mt-1.5">현재 시세 기준 평가금액</p>
           </div>
@@ -258,7 +258,7 @@ export const SummaryCards = memo(function SummaryCards({ grouped, performances, 
           </div>
           <p className={cn('text-2xl font-bold tabular-nums', grandProfit !== 0 ? profitColor : 'text-foreground')}>
             {grandTotalValue > 0
-              ? `${grandProfit >= 0 ? '+' : '-'}${formatKrw(animatedProfit)}`
+              ? `${grandProfit >= 0 ? '+' : '-'}${formatKrwCompact(animatedProfit)}`
               : '—'}
           </p>
           {grandReturnPct !== null && grandTotalValue > 0 ? (
@@ -281,7 +281,7 @@ export const SummaryCards = memo(function SummaryCards({ grouped, performances, 
           </div>
           <p className={cn('text-2xl font-bold tabular-nums', realizedProfitKrw !== 0 ? realizedColor : 'text-foreground')}>
             {realizedProfitKrw !== 0
-              ? `${realizedProfitKrw >= 0 ? '+' : '-'}${formatKrw(animatedRealized)}`
+              ? `${realizedProfitKrw >= 0 ? '+' : '-'}${formatKrwCompact(animatedRealized)}`
               : '—'}
           </p>
           <p className="text-xs text-muted-foreground mt-1.5">
@@ -311,12 +311,12 @@ export const SummaryCards = memo(function SummaryCards({ grouped, performances, 
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xs font-medium text-muted-foreground shrink-0">평가금</span>
-                <span className="text-base font-bold tabular-nums text-foreground">{hasValue ? formatKrw(totalValue) : totalCost > 0 ? formatKrw(totalCost) : '—'}</span>
+                <span className="text-base font-bold tabular-nums text-foreground">{hasValue ? formatKrwCompact(totalValue) : totalCost > 0 ? formatKrwCompact(totalCost) : '—'}</span>
               </div>
               {hasValue && valuedCostInType > 0 ? (
                 <div className={`text-xs font-semibold tabular-nums flex items-center gap-1 ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
                   <span className="text-xs font-medium text-muted-foreground">수익금</span>
-                  <span>{profit >= 0 ? '+' : ''}{formatKrw(profit)}</span>
+                  <span>{profit >= 0 ? '+' : ''}{formatKrwCompact(profit)}</span>
                   {returnPct !== null && (
                     <>
                       <span className="text-border/60">|</span>
