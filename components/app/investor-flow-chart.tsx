@@ -1,13 +1,16 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useChartSync } from './chart-sync'
-import type { DateRange } from './chart-sync'
 import {
-  BarChart, Bar, Cell, XAxis, YAxis, ReferenceLine,
-  Tooltip, ResponsiveContainer,
-} from 'recharts'
+  createChart,
+  HistogramSeries,
+  type IChartApi,
+  type ISeriesApi,
+  type Time,
+} from 'lightweight-charts'
 import { Skeleton } from '@/components/ui/skeleton'
+import { resolvePalette, CHART_UP, CHART_DOWN } from '@/lib/chart/theme'
 import type { Period } from '@/components/app/asset-candle-chart'
 import type { InvestorFlowPoint } from '@/app/api/investor-flow/route'
 
@@ -17,18 +20,7 @@ interface Props {
   range?: '1y' | '3y' | '5y'
 }
 
-type AggPoint = InvestorFlowPoint & { weekKey?: string; monthKey?: string }
-
-function formatDate(date: string): string {
-  // 'YYYY-MM-DD' → 'MM/DD'
-  return date.slice(5).replace('-', '/')
-}
-
-function formatMonth(date: string): string {
-  return date.slice(0, 7).replace('-', '/')
-}
-
-function fmtK(v: number): string {
+function fmtFlow(v: number): string {
   const abs = Math.abs(v)
   if (abs >= 100_000_000) return `${(v / 100_000_000).toFixed(1)}억`
   if (abs >= 10_000) return `${(v / 10_000).toFixed(0)}만`
@@ -71,78 +63,105 @@ function aggregateByMonth(data: InvestorFlowPoint[]): InvestorFlowPoint[] {
   return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date))
 }
 
-const UP_COLOR = '#ef4444'
-const DOWN_COLOR = '#3b82f6'
-
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value?: number }[]; label?: string }) {
-  if (!active || !payload || payload.length === 0) return null
-  const v = payload[0]?.value ?? 0
-  return (
-    <div className="rounded-lg border border-border bg-popover px-3 py-2 text-xs shadow-md">
-      <p className="text-muted-foreground mb-1">{label}</p>
-      <p className={v >= 0 ? 'text-red-500 font-semibold' : 'text-blue-500 font-semibold'}>
-        {v >= 0 ? '+' : ''}{fmtK(v)}주
-      </p>
-    </div>
-  )
-}
-
-function FlowBar({
+function FlowChart({
   data,
   label,
   dataKey,
-  showXAxis,
-  tickFormatter,
+  height = 100,
 }: {
   data: InvestorFlowPoint[]
   label: string
-  dataKey: keyof InvestorFlowPoint
-  showXAxis: boolean
-  tickFormatter: (d: string) => string
+  dataKey: keyof Pick<InvestorFlowPoint, 'individual' | 'foreign' | 'institution'>
+  height?: number
 }) {
+  const sync = useChartSync()
+  const syncRef = useRef(sync)
+  syncRef.current = sync
+
+  const containerRef = useRef<HTMLDivElement>(null)
+  const chartRef = useRef<IChartApi | null>(null)
+  const seriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
+
+  // 차트 초기화 (마운트 시 1회)
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    const palette = resolvePalette(container)
+
+    const chart = createChart(container, {
+      autoSize: true,
+      layout: {
+        background: { color: 'transparent' },
+        textColor: palette.mutedText,
+        attributionLogo: false,
+        fontSize: 10,
+      },
+      grid: {
+        vertLines: { visible: false },
+        horzLines: { color: palette.grid, style: 2 },
+      },
+      rightPriceScale: { visible: false },
+      leftPriceScale: { visible: false },
+      timeScale: {
+        borderVisible: false,
+        timeVisible: false,
+      },
+      localization: { priceFormatter: fmtFlow },
+    })
+
+    const series = chart.addSeries(HistogramSeries, {
+      base: 0,
+      priceScaleId: 'flow',
+      priceLineVisible: false,
+      lastValueVisible: false,
+    })
+
+    chart.priceScale('flow').applyOptions({
+      scaleMargins: { top: 0.1, bottom: 0.1 },
+      borderVisible: false,
+    })
+
+    chartRef.current = chart
+    seriesRef.current = series
+
+    const unregister = syncRef.current.registerChart(chart)
+
+    return () => {
+      unregister()
+      chart.remove()
+      chartRef.current = null
+      seriesRef.current = null
+    }
+  }, [])
+
+  // 데이터 업데이트
+  useEffect(() => {
+    const chart = chartRef.current
+    const series = seriesRef.current
+    if (!chart || !series) return
+
+    series.setData(
+      data.map((p) => ({
+        time: p.date as Time,
+        value: p[dataKey],
+        color: p[dataKey] >= 0 ? CHART_UP : CHART_DOWN,
+      })),
+    )
+
+    const shared = syncRef.current.getCurrentLogicalRange()
+    if (shared) chart.timeScale().setVisibleLogicalRange(shared)
+    else chart.timeScale().fitContent()
+  }, [data, dataKey])
+
   return (
     <div>
-      <p className="text-[10px] text-muted-foreground pl-1 mb-0.5">{label}</p>
-      <ResponsiveContainer width="100%" height={110}>
-        <BarChart data={data} margin={{ top: 2, right: 4, bottom: 0, left: 0 }} barCategoryGap="20%">
-          <XAxis
-            dataKey="date"
-            tickFormatter={tickFormatter}
-            tick={showXAxis ? { fontSize: 9, fill: 'var(--muted-foreground)' } : false}
-            axisLine={false}
-            tickLine={false}
-            height={showXAxis ? 18 : 4}
-          />
-          <YAxis
-            tickFormatter={fmtK}
-            tick={{ fontSize: 9, fill: 'var(--muted-foreground)' }}
-            axisLine={false}
-            tickLine={false}
-            width={44}
-          />
-          <ReferenceLine y={0} stroke="var(--border)" strokeWidth={1} />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.3 }} />
-          <Bar dataKey={dataKey} isAnimationActive={false}>
-            {data.map((entry, idx) => (
-              <Cell
-                key={idx}
-                fill={(entry[dataKey] as number) >= 0 ? UP_COLOR : DOWN_COLOR}
-                opacity={0.85}
-              />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+      <p className="text-[10px] text-muted-foreground mb-0.5">{label}</p>
+      <div ref={containerRef} style={{ height }} className="w-full" />
     </div>
   )
 }
 
 export function InvestorFlowChart({ ticker, period, range = '1y' }: Props) {
-  const sync = useChartSync()
-  const [dateRange, setDateRange] = useState<DateRange | null>(null)
-
-  useEffect(() => sync.subscribeDateRange(setDateRange), [sync])
-
   const [raw, setRaw] = useState<InvestorFlowPoint[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [unsupported, setUnsupported] = useState(false)
@@ -170,20 +189,13 @@ export function InvestorFlowChart({ ticker, period, range = '1y' }: Props) {
     return raw
   }, [raw, period])
 
-  // 캔들 차트와 동기화된 날짜 범위로 필터링 (date 필드는 'YYYY-MM-DD' 형식으로 비교 가능)
-  const visibleData = dateRange
-    ? data.filter((d) => d.date >= dateRange.from && d.date <= dateRange.to)
-    : data
-
-  const tickFmt = period === '월봉' ? formatMonth : formatDate
-
   if (loading) {
     return (
       <div className="space-y-2">
         {['개인', '외국인', '기관'].map(l => (
           <div key={l}>
-            <p className="text-[10px] text-muted-foreground pl-1 mb-0.5">{l}</p>
-            <Skeleton className="h-[110px] w-full rounded-md" />
+            <p className="text-[10px] text-muted-foreground mb-0.5">{l}</p>
+            <Skeleton className="h-[100px] w-full" />
           </div>
         ))}
       </div>
@@ -208,9 +220,9 @@ export function InvestorFlowChart({ ticker, period, range = '1y' }: Props) {
 
   return (
     <div className="space-y-1">
-      <FlowBar data={visibleData} label="개인" dataKey="individual" showXAxis={false} tickFormatter={tickFmt} />
-      <FlowBar data={visibleData} label="외국인" dataKey="foreign" showXAxis={false} tickFormatter={tickFmt} />
-      <FlowBar data={visibleData} label="기관" dataKey="institution" showXAxis={true} tickFormatter={tickFmt} />
+      <FlowChart data={data} label="개인" dataKey="individual" />
+      <FlowChart data={data} label="외국인" dataKey="foreign" />
+      <FlowChart data={data} label="기관" dataKey="institution" />
     </div>
   )
 }
