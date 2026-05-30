@@ -31,6 +31,9 @@ import {
   lastBollingerSignal,
 } from '@/lib/robo-advisor/signals/bollinger-signals'
 import { BollingerBandFill } from './bollinger-band-primitive'
+import { ichimoku } from '@/lib/robo-advisor/indicators/ichimoku'
+import { detectIchimokuSignals, lastIchimokuSignal } from '@/lib/robo-advisor/signals/ichimoku-signals'
+import { IchimokuCloudFill } from './ichimoku-cloud-primitive'
 
 export type Period = '일봉' | '주봉' | '월봉'
 
@@ -95,6 +98,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
   )
   const [signalsVisible, setSignalsVisible] = useState(true)
   const [bollingerVisible, setBollingerVisible] = useState(true)
+  const [ichimokuVisible, setIchimokuVisible] = useState(false)
 const effectiveParams = useMemo<Record<Period, { interval: string; range: string }>>(
     () => ({
       '일봉': { ...PERIOD_PARAMS['일봉'], ...(periodRanges?.['일봉'] ? { range: periodRanges['일봉'] } : {}) },
@@ -113,6 +117,12 @@ const effectiveParams = useMemo<Record<Period, { interval: string; range: string
   const bbUpperSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
   const bbLowerSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
   const bbFillRef = useRef<BollingerBandFill | null>(null)
+  const tenkanSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const kijunSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const chikouSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const senkouASeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const senkouBSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const ichimokuFillRef = useRef<IchimokuCloudFill | null>(null)
   const showVolumeRef = useRef(showVolume ?? false)
   const avgPriceLineRef = useRef<IPriceLine | null>(null)
   const avgPriceRef = useRef<number | null | undefined>(avgPrice)
@@ -271,6 +281,54 @@ setPeriod(next)
     series.attachPrimitive(bbFill)
     bbFillRef.current = bbFill
 
+    // 일목균형표 라인 시리즈
+    const tenkanSeries = chart.addSeries(LineSeries, {
+      color: '#e11d48',
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    })
+    const kijunSeries = chart.addSeries(LineSeries, {
+      color: '#2563eb',
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    })
+    const chikouSeries = chart.addSeries(LineSeries, {
+      color: '#94a3b8',
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+      lineStyle: LineStyle.Dashed,
+    })
+    const senkouASeries = chart.addSeries(LineSeries, {
+      color: 'rgba(20,184,166,0.5)',
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    })
+    const senkouBSeries = chart.addSeries(LineSeries, {
+      color: 'rgba(239,68,68,0.5)',
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    })
+    tenkanSeriesRef.current = tenkanSeries
+    kijunSeriesRef.current = kijunSeries
+    chikouSeriesRef.current = chikouSeries
+    senkouASeriesRef.current = senkouASeries
+    senkouBSeriesRef.current = senkouBSeries
+
+    // 일목균형표 구름대 fill 프리미티브
+    const ichimokuFill = new IchimokuCloudFill()
+    series.attachPrimitive(ichimokuFill)
+    ichimokuFillRef.current = ichimokuFill
+
     const unregister = syncRef.current.registerChart(chart, { master: true })
 
     const unsubAxisWidth = syncRef.current.subscribeMasterAxisWidth(() => {})
@@ -345,6 +403,12 @@ setPeriod(next)
       bbUpperSeriesRef.current = null
       bbLowerSeriesRef.current = null
       bbFillRef.current = null
+      tenkanSeriesRef.current = null
+      kijunSeriesRef.current = null
+      chikouSeriesRef.current = null
+      senkouASeriesRef.current = null
+      senkouBSeriesRef.current = null
+      ichimokuFillRef.current = null
       avgPriceLineRef.current = null
     }
   }, [])
@@ -419,7 +483,51 @@ setPeriod(next)
       }
     }
 
-    // 마커 통합: MA 크로스 + (bollingerVisible 시) BB 시그널
+    // 일목균형표 라인 + 구름대 fill
+    const highs = baseData.map((p) => p.high)
+    const lows = baseData.map((p) => p.low)
+    const ich = ichimoku(highs, lows, closes)
+    const ichimokuLineMap: { ref: React.RefObject<ISeriesApi<'Line'> | null>; key: keyof typeof ich[0] }[] = [
+      { ref: tenkanSeriesRef, key: 'tenkan' },
+      { ref: kijunSeriesRef, key: 'kijun' },
+      { ref: chikouSeriesRef, key: 'chikou' },
+      { ref: senkouASeriesRef, key: 'senkouA' },
+      { ref: senkouBSeriesRef, key: 'senkouB' },
+    ]
+    for (const { ref, key } of ichimokuLineMap) {
+      const s = ref.current
+      if (!s) continue
+      if (!ichimokuVisible || closes.length < 52) {
+        s.setData([])
+        s.applyOptions({ visible: false })
+      } else {
+        const lineData = ich
+          .map((pt, i) => pt[key] == null ? null : { time: dates[i] as Time, value: pt[key] as number })
+          .filter((d): d is { time: Time; value: number } => d !== null)
+        s.setData(lineData)
+        s.applyOptions({ visible: true })
+      }
+    }
+    const ichFill = ichimokuFillRef.current
+    if (ichFill) {
+      if (!ichimokuVisible || closes.length < 52) {
+        ichFill.setVisible(false)
+      } else {
+        const fillData = ich
+          .map((pt, i) =>
+            pt.senkouA == null || pt.senkouB == null ? null : {
+              time: dates[i] as Time,
+              senkouA: pt.senkouA,
+              senkouB: pt.senkouB,
+            },
+          )
+          .filter((d): d is { time: Time; senkouA: number; senkouB: number } => d !== null)
+        ichFill.setData(fillData)
+        ichFill.setVisible(true)
+      }
+    }
+
+    // 마커 통합: MA 크로스 + (bollingerVisible 시) BB 시그널 + (ichimokuVisible 시) 일목 시그널
     const markers = markersRef.current
     if (markers) {
       const allMarkers: SeriesMarker<Time>[] = []
@@ -468,6 +576,21 @@ setPeriod(next)
         }
       }
 
+      if (ichimokuVisible && closes.length >= 52) {
+        for (const s of detectIchimokuSignals(ich, closes, dates)) {
+          allMarkers.push({
+            time: s.date as Time,
+            position: s.type === 'buy' ? ('belowBar' as const) : ('aboveBar' as const),
+            shape: s.kind === 'tk-cross'
+              ? (s.type === 'buy' ? ('arrowUp' as const) : ('arrowDown' as const))
+              : ('circle' as const),
+            color: s.type === 'buy' ? CHART_UP : CHART_DOWN,
+            text: s.kind === 'tk-cross' ? 'TK' : '구름',
+            size: 1,
+          })
+        }
+      }
+
       // lightweight-charts는 time 오름차순 요구
       allMarkers.sort((a, b) => {
         const at = String(a.time), bt = String(b.time)
@@ -504,7 +627,7 @@ setPeriod(next)
     })
     onDataChange?.(baseData)
     return () => cancelAnimationFrame(rafId)
-  }, [baseData, maVisible, signalsVisible, bollingerVisible, onDataChange])
+  }, [baseData, maVisible, signalsVisible, bollingerVisible, ichimokuVisible, onDataChange])
 
   // Live tick → 마지막 캔들만 patch (일봉)
   useEffect(() => {
@@ -544,19 +667,23 @@ setPeriod(next)
     setAvgPriceLabelY(typeof coord === 'number' ? coord : null)
   }, [avgPrice])
 
-  // 이평선 크로스 + 볼린저 최근 신호 — 배지용
+  // 이평선 크로스 + 볼린저 + 일목 최근 신호 — 배지용
   const signalBadges = useMemo(() => {
     const closes = baseData.map((p) => p.close)
     const dates = baseData.map((p) => p.date)
-    if (closes.length < 20) return { pair5_20: null, pair20_60: null, bbSignal: null }
+    if (closes.length < 20) return { pair5_20: null, pair20_60: null, bbSignal: null, ichimokuSignal: null }
     const sma5 = sma(closes, 5)
     const sma20 = sma(closes, 20)
     const sma60 = sma(closes, 60)
     const bands = bollinger(closes)
+    const highs = baseData.map((p) => p.high)
+    const lows = baseData.map((p) => p.low)
+    const ich = closes.length >= 52 ? ichimoku(highs, lows, closes) : null
     return {
       pair5_20: lastMaCrossFromSma(sma5, sma20, dates, '5/20'),
       pair20_60: closes.length >= 60 ? lastMaCrossFromSma(sma20, sma60, dates, '20/60') : null,
       bbSignal: lastBollingerSignal(bands, closes, dates),
+      ichimokuSignal: ich ? lastIchimokuSignal(ich, closes, dates) : null,
     }
   }, [baseData])
 
@@ -627,11 +754,19 @@ setPeriod(next)
           >
             볼린저
           </button>
+          <button
+            onClick={() => setIchimokuVisible((v) => !v)}
+            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] transition-opacity ${
+              ichimokuVisible ? 'opacity-100 hover:opacity-80' : 'opacity-35 hover:opacity-60'
+            }`}
+          >
+            일목
+          </button>
         </div>
       </div>
 
       {/* 이평선 크로스 + 볼린저 신호 배지 */}
-      {(signalsVisible || bollingerVisible) && (signalBadges.pair5_20 || signalBadges.pair20_60 || (bollingerVisible && signalBadges.bbSignal)) && (
+      {(signalsVisible || bollingerVisible || ichimokuVisible) && (signalBadges.pair5_20 || signalBadges.pair20_60 || (bollingerVisible && signalBadges.bbSignal) || (ichimokuVisible && signalBadges.ichimokuSignal)) && (
         <div className="flex items-center gap-1.5 px-2 pb-0.5 flex-wrap">
           {signalsVisible && signalBadges.pair5_20 && (
             <span
@@ -669,6 +804,20 @@ setPeriod(next)
               {signalBadges.bbSignal.kind === 'squeeze'
                 ? `스퀴즈돌파(${signalBadges.bbSignal.type === 'buy' ? '매수' : '매도'})`
                 : `${signalBadges.bbSignal.type === 'buy' ? '하단복귀(매수)' : '상단복귀(매도)'}`}
+            </span>
+          )}
+          {ichimokuVisible && signalBadges.ichimokuSignal && (
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                signalBadges.ichimokuSignal.type === 'buy'
+                  ? 'bg-red-50 border border-red-200 text-red-600'
+                  : 'bg-blue-50 border border-blue-200 text-blue-600'
+              }`}
+            >
+              일목 · {signalBadges.ichimokuSignal.daysAgo}일 전{' '}
+              {signalBadges.ichimokuSignal.kind === 'tk-cross'
+                ? (signalBadges.ichimokuSignal.type === 'buy' ? '전환선상향(매수)' : '전환선하향(매도)')
+                : (signalBadges.ichimokuSignal.type === 'buy' ? '구름돌파(매수)' : '구름이탈(매도)')}
             </span>
           )}
         </div>

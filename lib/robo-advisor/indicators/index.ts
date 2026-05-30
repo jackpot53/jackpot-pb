@@ -14,6 +14,8 @@ export type { AdxPoint } from './adx'
 export { atr, atrLast } from './atr'
 export { avgVolume, avgVolumeLast, volumeRatio } from './volume'
 export { volumeOscillator, volumeOscillatorLast } from './volume-oscillator'
+export { ichimoku, ichimokuLast } from './ichimoku'
+export type { IchimokuPoint, IchimokuParams } from './ichimoku'
 
 import { smaLast } from './sma'
 import { rsiLast } from './rsi'
