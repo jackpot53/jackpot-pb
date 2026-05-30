@@ -34,7 +34,7 @@ function fmtMacd(v: number): string {
   return v.toFixed(2)
 }
 
-export function MacdPanel({ data, height = 180 }: Props) {
+export function MacdPanel({ data, height = 120 }: Props) {
   const sync = useChartSync()
   const syncRef = useRef(sync)
   syncRef.current = sync

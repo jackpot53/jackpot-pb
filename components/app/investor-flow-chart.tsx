@@ -112,7 +112,7 @@ interface CumulativeTip {
   institution: number | null; foreign: number | null; individual: number | null
 }
 
-function CumulativeFlowChart({ data, height = 140 }: { data: FlowFilled[]; height?: number }) {
+function CumulativeFlowChart({ data, height = 100 }: { data: FlowFilled[]; height?: number }) {
   const sync = useChartSync()
   const syncRef = useRef(sync)
   syncRef.current = sync
@@ -244,7 +244,7 @@ function CumulativeFlowChart({ data, height = 140 }: { data: FlowFilled[]; heigh
 }
 
 function FlowChart({
-  data, label, dataKey, height = 100, yDomain,
+  data, label, dataKey, height = 70, yDomain,
 }: {
   data: FlowFilled[]
   label: string
