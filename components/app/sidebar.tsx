@@ -39,8 +39,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: '오늘의 인사이트', href: '/today',        icon: Sun,           color: 'text-yellow-400',  activeColor: 'text-yellow-300'  },
   { label: '자산 거래내역', href: '/transactions',   icon: ArrowLeftRight,color: 'text-sky-400',     activeColor: 'text-sky-300'     },
   { label: '머니 대시',    href: '/charts',         icon: LineChart,     color: 'text-violet-400',  activeColor: 'text-violet-300'  },
-  { label: '업데이트 정보',href: '/updates',        icon: History,       color: 'text-teal-400',    activeColor: 'text-teal-300'    },
-  { label: '도움말',       href: '/help',           icon: HelpCircle,    color: 'text-zinc-400',    activeColor: 'text-zinc-300'    },
   { label: '시장시그널',  href: '/robo-advisor/market', icon: Activity,  color: 'text-amber-400',   activeColor: 'text-amber-300',  pro: true },
   { label: '섹터시그널',  href: '/robo-advisor/sector', icon: Layers,    color: 'text-rose-400',    activeColor: 'text-rose-300'    },
   {
@@ -50,6 +48,11 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   { label: '모의투자',     href: '/paper-trading',  icon: TrendingUp,    color: 'text-cyan-400',    activeColor: 'text-cyan-300',   pro: true },
+]
+
+const BOTTOM_ITEMS: NavItem[] = [
+  { label: '업데이트 정보', href: '/updates', icon: History,    color: 'text-teal-400', activeColor: 'text-teal-300' },
+  { label: '도움말',        href: '/help',    icon: HelpCircle, color: 'text-zinc-400', activeColor: 'text-zinc-300' },
 ]
 
 const SYMBOLS = ['7', '₩', '★', '♦', '♠']
@@ -385,6 +388,40 @@ export function Sidebar() {
               </div>
             )}
             </div>
+          )
+        })}
+      </nav>
+
+      <nav className="shrink-0 px-2 pb-2 pt-1 border-t border-sidebar-border">
+        {BOTTOM_ITEMS.map((item) => {
+          const Icon = item.icon
+          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href))
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={closeMobile}
+              title={collapsed ? item.label : undefined}
+              className={cn(
+                'group flex items-center gap-3 rounded-lg transition-all duration-200',
+                collapsed && !isMobileOpen ? 'justify-center p-2' : 'px-3 py-1',
+                isActive
+                  ? 'bg-sidebar-accent border border-sidebar-border'
+                  : 'border border-transparent hover:bg-sidebar-accent/60 hover:border-sidebar-border/60'
+              )}
+            >
+              <div className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg transition-colors duration-200">
+                <Icon size={15} className={cn(isActive ? item.activeColor : item.color)} />
+              </div>
+              {showLabels && (
+                <span className={cn(
+                  'whitespace-nowrap text-sm font-light transition-colors duration-200',
+                  isActive ? 'text-foreground font-medium' : 'text-foreground'
+                )}>
+                  {item.label}
+                </span>
+              )}
+            </Link>
           )
         })}
       </nav>
