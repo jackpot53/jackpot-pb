@@ -165,9 +165,7 @@ function FlowChart({
       })),
     )
 
-    const shared = syncRef.current.getCurrentLogicalRange()
-    if (shared) chart.timeScale().setVisibleLogicalRange(shared)
-    else chart.timeScale().fitContent()
+    syncRef.current.applyRangeToChart(chart)
   }, [data, dataKey])
 
   return (

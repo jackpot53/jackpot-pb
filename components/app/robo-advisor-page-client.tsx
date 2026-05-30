@@ -89,7 +89,7 @@ export function RoboAdvisorPageClient() {
                 <span className="text-sm font-semibold">{selectedTicker.name}</span>
                 <span className="text-xs text-muted-foreground tabular-nums">{selectedTicker.ticker}</span>
               </div>
-              <div className="h-[400px]">
+              <div className="h-[400px] rounded-lg border border-border overflow-hidden">
                 {tickerChartLoading ? (
                   <Skeleton className="h-full w-full rounded-lg" />
                 ) : tickerOhlc && tickerOhlc.length > 0 ? (
@@ -107,15 +107,15 @@ export function RoboAdvisorPageClient() {
                 ) : null}
               </div>
 
-              <div className="mt-2">
+              <div className="mt-2 rounded-lg border border-border p-3">
                 <VolumePanel data={chartDataForMacd} />
               </div>
 
-              <div className="mt-2">
+              <div className="mt-2 rounded-lg border border-border p-3">
                 <TradingValuePanel data={chartDataForMacd} />
               </div>
 
-              <div className="mt-2">
+              <div className="mt-2 rounded-lg border border-border p-3">
                 <div className="flex items-center gap-2">
                   <p className="text-xs font-medium text-foreground">투자자별 매매동향</p>
                   <span className="text-[10px] text-muted-foreground">(순매수량, 단위: 주)</span>
@@ -129,7 +129,7 @@ export function RoboAdvisorPageClient() {
                 </div>
               </div>
 
-              <div className="mt-2">
+              <div className="mt-2 rounded-lg border border-border p-3">
                 <MacdPanel data={chartDataForMacd} />
               </div>
             </div>
