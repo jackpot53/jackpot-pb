@@ -8,6 +8,9 @@ import {
   HistogramSeries,
   LineStyle,
   createSeriesMarkers,
+  type HistogramData,
+  type LineData,
+  type MouseEventParams,
   type Time,
   type IChartApi,
   type ISeriesApi,
@@ -48,6 +51,8 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
   syncRef.current = sync
 
   const [axisWidth, setAxisWidth] = useState(CHART_RIGHT_AXIS_WIDTH)
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; date: string; tv: number | null; avg: number | null; flow: number | null; flowRolling: number | null } | null>(null)
+  const [containerWidth, setContainerWidth] = useState(0)
 
   useEffect(() => sync.subscribeMasterAxisWidth(setAxisWidth), [sync])
 
@@ -154,9 +159,36 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
     flowRollingSeriesRef.current = flowRollingSeries
     chartRef.current = chart
 
+    const FLOW_SCALE = 100_000_000
+
+    const ro = new ResizeObserver(([entry]) => {
+      if (entry) setContainerWidth(Math.floor(entry.contentRect.width))
+    })
+    ro.observe(container)
+
+    const onMove = (param: MouseEventParams<Time>) => {
+      if (!param.time || !param.point) { setTooltip(null); return }
+      const bar = param.seriesData.get(histSeries) as HistogramData<Time> | undefined
+      if (!bar || !('value' in bar)) { setTooltip(null); return }
+      const date = typeof param.time === 'string' ? param.time : ''
+      const avg = (param.seriesData.get(avgSeries) as LineData<Time> | undefined)?.value ?? null
+      const flowRaw = (param.seriesData.get(flowSeries) as LineData<Time> | undefined)?.value ?? null
+      const flowRollingRaw = (param.seriesData.get(flowRollingSeries) as LineData<Time> | undefined)?.value ?? null
+      setTooltip({
+        x: param.point.x, y: param.point.y, date,
+        tv: bar.value,
+        avg,
+        flow: flowRaw !== null ? flowRaw * FLOW_SCALE : null,
+        flowRolling: flowRollingRaw !== null ? flowRollingRaw * FLOW_SCALE : null,
+      })
+    }
+    chart.subscribeCrosshairMove(onMove)
+
     const unregister = syncRef.current.registerChart(chart)
 
     return () => {
+      ro.disconnect()
+      chart.unsubscribeCrosshairMove(onMove)
       unregister()
       chart.remove()
       chartRef.current = null
@@ -313,6 +345,35 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
         {noData && (
           <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
             거래대금 데이터가 부족합니다 (최소 22일 필요)
+          </div>
+        )}
+        {tooltip && (
+          <div
+            className="pointer-events-none absolute z-10 rounded-lg border border-border bg-popover text-popover-foreground px-2.5 py-1.5 shadow-md text-[11px]"
+            style={{
+              left: tooltip.x > containerWidth * 0.6 ? tooltip.x - 160 : tooltip.x + 10,
+              top: Math.max(4, tooltip.y - 50),
+            }}
+          >
+            <p className="text-muted-foreground mb-1 font-medium text-[10px]">{tooltip.date}</p>
+            <div className="grid grid-cols-2 gap-x-2.5 gap-y-0.5 tabular-nums">
+              {tooltip.tv !== null && <>
+                <span className="text-muted-foreground">거래대금</span>
+                <span className="font-semibold">{fmtKrw(tooltip.tv)}</span>
+              </>}
+              {tooltip.avg !== null && <>
+                <span className="text-muted-foreground">20일 평균</span>
+                <span className="text-amber-500">{fmtKrw(tooltip.avg)}</span>
+              </>}
+              {tooltip.flow !== null && <>
+                <span className="text-muted-foreground">전체 누적</span>
+                <span className="text-violet-500">{fmtKrw(tooltip.flow)}</span>
+              </>}
+              {tooltip.flowRolling !== null && <>
+                <span className="text-muted-foreground">60일 누적</span>
+                <span className="text-cyan-500">{fmtKrw(tooltip.flowRolling)}</span>
+              </>}
+            </div>
           </div>
         )}
       </div>
