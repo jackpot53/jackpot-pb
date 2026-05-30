@@ -6,7 +6,6 @@ import {
   createChart,
   HistogramSeries,
   LineSeries,
-  LineStyle,
   createSeriesMarkers,
   type HistogramData,
   type LineData,
@@ -22,7 +21,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { resolvePalette } from '@/lib/chart/theme'
 import type { Period } from '@/components/app/asset-candle-chart'
 import type { ShortSellingPoint } from '@/lib/kis/short-selling'
-import { detectShortSellingRisks, lastShortRiskFromEvents } from '@/lib/robo-advisor/signals/short-selling-risk'
+import {
+  detectShortSellingRisks,
+  lastShortRiskFromEvents,
+  type ShortRiskEvent,
+} from '@/lib/robo-advisor/signals/short-selling-risk'
 
 interface Props {
   ticker: string
@@ -70,7 +73,6 @@ function aggregateByWeek(data: ShortSellingPoint[]): ShortSellingPoint[] {
       existing.shortValue += p.shortValue
       existing.totalVolume += p.totalVolume
       existing.totalValue += p.totalValue
-      // 비중은 합산 후 재계산 — 단순합 금지
       existing.shortRatio = existing.totalVolume > 0
         ? (existing.shortVolume / existing.totalVolume) * 100 : 0
     } else {
@@ -105,82 +107,34 @@ function fillToMasterDates(points: ShortSellingPoint[], masterDates: string[]): 
   return masterDates.map(d => {
     const p = byDate.get(d)
     return p
-      ? { ...p, shortValue: p.shortValue, shortRatio: p.shortRatio }
+      ? { date: d, shortVolume: p.shortVolume, shortValue: p.shortValue, totalVolume: p.totalVolume, totalValue: p.totalValue, shortRatio: p.shortRatio }
       : { date: d, shortVolume: 0, shortValue: null, totalVolume: 0, totalValue: 0, shortRatio: null }
   })
 }
 
-// amber: 위험 경고 색
-const COLOR_RISK = '#f59e0b'    // amber-400
-const COLOR_RISK_HIGH = '#ef4444' // red-500
-const COLOR_NORMAL = '#94a3b8'  // slate-400
+const COLOR_RISK = '#f59e0b'
+const COLOR_RISK_HIGH = '#ef4444'
+const COLOR_NORMAL = '#94a3b8'
 
-export function ShortSellingPanel({ ticker, period, range = '1y' }: Props) {
+// ── 차트 서브 컴포넌트 ──────────────────────────────────────────────────────
+// InvestorFlowChart의 FlowChart와 같은 방식으로 분리:
+// 부모가 early return 후 이 컴포넌트가 마운트될 때만 useEffect([], []) 실행.
+function ShortChart({ data, riskEvents }: { data: ShortFilled[]; riskEvents: ShortRiskEvent[] }) {
   const sync = useChartSync()
   const syncRef = useRef(sync)
   syncRef.current = sync
-
-  const [raw, setRaw] = useState<ShortSellingPoint[] | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [unsupported, setUnsupported] = useState(false)
-  const [masterDates, setMasterDates] = useState<string[]>([])
-
-  const [tooltip, setTooltip] = useState<{
-    x: number; y: number; date: string
-    shortValue: number | null; shortRatio: number | null
-  } | null>(null)
-  const [containerWidth, setContainerWidth] = useState(0)
-
-  useEffect(() => sync.subscribeMasterDates(setMasterDates), [sync])
-
-  useEffect(() => {
-    setRaw(null)
-    setUnsupported(false)
-    setLoading(true)
-    const ctrl = new AbortController()
-    fetch(`/api/short-selling?ticker=${encodeURIComponent(ticker)}&range=${range}`, { signal: ctrl.signal })
-      .then(r => r.json())
-      .then((res: { data?: ShortSellingPoint[]; unsupported?: boolean }) => {
-        if (res.unsupported) { setUnsupported(true); return }
-        setRaw(res.data ?? [])
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-    return () => ctrl.abort()
-  }, [ticker, range])
-
-  const data = useMemo(() => {
-    if (!raw) return []
-    if (period === '주봉') return fillToMasterDates(aggregateByWeek(raw), masterDates)
-    if (period === '월봉') return fillToMasterDates(aggregateByMonth(raw), masterDates)
-    return fillToMasterDates(raw, masterDates)
-  }, [raw, period, masterDates])
-
-  // 시그널 계산은 빈 날짜를 제외한 실제 데이터 포인트 기준
-  const solidPoints = useMemo(
-    () => data
-      .filter((p) => p.shortRatio !== null)
-      .map((p) => ({
-        date: p.date,
-        shortVolume: p.shortVolume,
-        shortValue: p.shortValue ?? 0,
-        totalVolume: p.totalVolume,
-        totalValue: p.totalValue,
-        shortRatio: p.shortRatio ?? 0,
-      } satisfies ShortSellingPoint)),
-    [data],
-  )
-
-  const riskEvents = useMemo(
-    () => detectShortSellingRisks(solidPoints),
-    [solidPoints],
-  )
 
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const histSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
   const ratioSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
   const markersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null)
+
+  const [tooltip, setTooltip] = useState<{
+    x: number; y: number; date: string
+    shortValue: number | null; shortRatio: number | null
+  } | null>(null)
+  const [containerWidth, setContainerWidth] = useState(0)
 
   useEffect(() => {
     const container = containerRef.current
@@ -206,7 +160,6 @@ export function ShortSellingPanel({ ticker, period, range = '1y' }: Props) {
       localization: { priceFormatter: fmtKrw },
     })
 
-    // 히스토그램 = 공매도 거래대금 (주 Y축)
     const histSeries = chart.addSeries(HistogramSeries, {
       priceScaleId: 'right',
       priceLineVisible: false,
@@ -218,12 +171,10 @@ export function ShortSellingPanel({ ticker, period, range = '1y' }: Props) {
       borderVisible: false,
     })
 
-    // 라인 = 공매도 비중 % (보조 Y축 하단 30%)
     const ratioSeries = chart.addSeries(LineSeries, {
       priceScaleId: 'ratio',
       color: COLOR_RISK,
       lineWidth: 1,
-      lineStyle: LineStyle.Solid,
       priceLineVisible: false,
       lastValueVisible: false,
       crosshairMarkerVisible: false,
@@ -260,7 +211,6 @@ export function ShortSellingPanel({ ticker, period, range = '1y' }: Props) {
     chart.subscribeCrosshairMove(onMove)
 
     const unregister = syncRef.current.registerChart(chart)
-
     return () => {
       ro.disconnect()
       chart.unsubscribeCrosshairMove(onMove)
@@ -280,14 +230,6 @@ export function ShortSellingPanel({ ticker, period, range = '1y' }: Props) {
     const markers = markersRef.current
     if (!chart || !histSeries || !ratioSeries || !markers) return
 
-    if (data.length === 0) {
-      histSeries.setData([])
-      ratioSeries.setData([])
-      markers.setMarkers([])
-      return
-    }
-
-    // 위험 날짜 집합 (빠른 색상 조회용)
     const riskDates = new Set(riskEvents.map(e => e.date))
     const extremeDates = new Set(riskEvents.filter(e => e.reason === 'extreme').map(e => e.date))
 
@@ -321,6 +263,83 @@ export function ShortSellingPanel({ ticker, period, range = '1y' }: Props) {
     syncRef.current.applyRangeToChart(chart)
   }, [data, riskEvents])
 
+  return (
+    <div style={{ position: 'relative', height: 200 }}>
+      <div ref={containerRef} className="w-full h-full overflow-hidden" />
+      {tooltip && (
+        <div
+          className="pointer-events-none absolute z-10 rounded-lg border border-border bg-popover text-popover-foreground px-2.5 py-1.5 shadow-md text-[11px]"
+          style={{
+            left: tooltip.x > containerWidth * 0.6 ? tooltip.x - 150 : tooltip.x + 10,
+            top: Math.max(4, tooltip.y - 44),
+          }}
+        >
+          <p className="text-muted-foreground mb-1 font-medium text-[10px]">{tooltip.date}</p>
+          <div className="grid grid-cols-2 gap-x-2.5 gap-y-0.5 tabular-nums">
+            {tooltip.shortValue !== null && <>
+              <span className="text-muted-foreground">공매도 대금</span>
+              <span className="font-semibold">{fmtKrw(tooltip.shortValue)}</span>
+            </>}
+            {tooltip.shortRatio !== null && <>
+              <span className="text-muted-foreground">공매도 비중</span>
+              <span style={{ color: COLOR_RISK }}>{fmtPct(tooltip.shortRatio)}</span>
+            </>}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── 메인 패널 ────────────────────────────────────────────────────────────────
+export function ShortSellingPanel({ ticker, period, range = '1y' }: Props) {
+  const sync = useChartSync()
+  const [raw, setRaw] = useState<ShortSellingPoint[] | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [unsupported, setUnsupported] = useState(false)
+  const [masterDates, setMasterDates] = useState<string[]>([])
+
+  useEffect(() => sync.subscribeMasterDates(setMasterDates), [sync])
+
+  useEffect(() => {
+    setRaw(null)
+    setUnsupported(false)
+    setLoading(true)
+    const ctrl = new AbortController()
+    fetch(`/api/short-selling?ticker=${encodeURIComponent(ticker)}&range=${range}`, { signal: ctrl.signal })
+      .then(r => r.json())
+      .then((res: { data?: ShortSellingPoint[]; unsupported?: boolean }) => {
+        if (res.unsupported) { setUnsupported(true); return }
+        setRaw(res.data ?? [])
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+    return () => ctrl.abort()
+  }, [ticker, range])
+
+  const data = useMemo(() => {
+    if (!raw) return []
+    if (period === '주봉') return fillToMasterDates(aggregateByWeek(raw), masterDates)
+    if (period === '월봉') return fillToMasterDates(aggregateByMonth(raw), masterDates)
+    return fillToMasterDates(raw, masterDates)
+  }, [raw, period, masterDates])
+
+  const solidPoints = useMemo(
+    () => data
+      .filter((p) => p.shortRatio !== null)
+      .map((p) => ({
+        date: p.date,
+        shortVolume: p.shortVolume,
+        shortValue: p.shortValue ?? 0,
+        totalVolume: p.totalVolume,
+        totalValue: p.totalValue,
+        shortRatio: p.shortRatio ?? 0,
+      } satisfies ShortSellingPoint)),
+    [data],
+  )
+
+  const riskEvents = useMemo(() => detectShortSellingRisks(solidPoints), [solidPoints])
+
   const signalInfo = useMemo(
     () => lastShortRiskFromEvents(riskEvents, solidPoints),
     [riskEvents, solidPoints],
@@ -336,9 +355,7 @@ export function ShortSellingPanel({ ticker, period, range = '1y' }: Props) {
       : 'bg-amber-50 border border-amber-200 text-amber-600'
     : 'bg-muted border border-border text-muted-foreground'
 
-  if (loading) {
-    return <Skeleton className="h-[200px] w-full" />
-  }
+  if (loading) return <Skeleton className="h-[200px] w-full" />
 
   if (unsupported) {
     return (
@@ -384,29 +401,8 @@ export function ShortSellingPanel({ ticker, period, range = '1y' }: Props) {
           {badgeText}
         </span>
       </div>
-      <div className="mt-2 relative" style={{ height: '200px' }}>
-        <div ref={containerRef} className="w-full h-full overflow-hidden" />
-        {tooltip && (
-          <div
-            className="pointer-events-none absolute z-10 rounded-lg border border-border bg-popover text-popover-foreground px-2.5 py-1.5 shadow-md text-[11px]"
-            style={{
-              left: tooltip.x > containerWidth * 0.6 ? tooltip.x - 150 : tooltip.x + 10,
-              top: Math.max(4, tooltip.y - 44),
-            }}
-          >
-            <p className="text-muted-foreground mb-1 font-medium text-[10px]">{tooltip.date}</p>
-            <div className="grid grid-cols-2 gap-x-2.5 gap-y-0.5 tabular-nums">
-              {tooltip.shortValue !== null && <>
-                <span className="text-muted-foreground">공매도 대금</span>
-                <span className="font-semibold">{fmtKrw(tooltip.shortValue)}</span>
-              </>}
-              {tooltip.shortRatio !== null && <>
-                <span className="text-muted-foreground">공매도 비중</span>
-                <span style={{ color: COLOR_RISK }}>{fmtPct(tooltip.shortRatio)}</span>
-              </>}
-            </div>
-          </div>
-        )}
+      <div className="mt-2">
+        <ShortChart data={data} riskEvents={riskEvents} />
       </div>
     </div>
   )
