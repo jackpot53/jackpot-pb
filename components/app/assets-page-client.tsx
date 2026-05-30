@@ -321,27 +321,25 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
 
   return (
     <div className={cn("relative rounded-xl border border-border hover:shadow-md transition-all", ASSET_TYPE_ACCENT[asset.assetType] ?? 'bg-card')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      {/* 차트 토글 — 우상단 */}
-      {hasChartToggle && (
-        <button
-          onClick={() => setChartOpen(v => !v)}
-          className="absolute top-1/2 -translate-y-1/2 right-2.5 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded-lg hover:bg-muted/40"
-        >
-          {asset.returnPct >= 0
-            ? <TrendingUp className="h-3 w-3 text-red-500" />
-            : <TrendingDown className="h-3 w-3 text-blue-500" />}
-          차트
-          <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', chartOpen && 'rotate-180')} />
-        </button>
-      )}
-
-      <div className={cn('flex flex-col gap-2 px-4 py-3.5', hasChartToggle && 'pr-16')}>
-        {/* row1: 로고 + 종목명 + 계좌유형 배지 */}
-        <div className="flex items-center gap-2 min-w-0 flex-wrap">
+      <div className="flex flex-col gap-2 px-4 py-3.5">
+        {/* row1: 로고 + 종목명 + 계좌유형 배지 + 차트 토글 */}
+        <div className="flex items-center gap-2 min-w-0">
           <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={32} />
-          <Link href={`/assets/${asset.assetId}`} className="text-sm font-semibold text-foreground leading-snug hover:underline">{asset.name}</Link>
+          <Link href={`/assets/${asset.assetId}`} className="text-sm font-semibold text-foreground leading-snug hover:underline truncate">{asset.name}</Link>
           {accountBadge}
           {maturityBadge}
+          {hasChartToggle && (
+            <button
+              onClick={() => setChartOpen(v => !v)}
+              className="ml-auto shrink-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded-lg hover:bg-muted/40"
+            >
+              {asset.returnPct >= 0
+                ? <TrendingUp className="h-3 w-3 text-red-500" />
+                : <TrendingDown className="h-3 w-3 text-blue-500" />}
+              차트
+              <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', chartOpen && 'rotate-180')} />
+            </button>
+          )}
         </div>
 
         {/* row2: 수량 · 매수가 · 투자금 (savings/insurance 전용 필드 치환) */}
