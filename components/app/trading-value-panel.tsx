@@ -100,6 +100,7 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
     chart.priceScale('tv').applyOptions({
       scaleMargins: { top: 0.05, bottom: 0.38 },
       borderVisible: false,
+      minimumWidth: CHART_RIGHT_AXIS_WIDTH,
     })
 
     // 누적 자금 흐름 선: 하단 35%
@@ -125,6 +126,7 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
     chart.priceScale('flow').applyOptions({
       scaleMargins: { top: 0.68, bottom: 0.05 },
       borderVisible: false,
+      visible: false,
     })
 
     markersRef.current = createSeriesMarkers(histSeries) as ISeriesMarkersPluginApi<Time>

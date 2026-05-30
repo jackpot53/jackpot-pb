@@ -3,7 +3,7 @@
 import { createContext, useContext, useMemo, useRef, type ReactNode } from 'react'
 import type { IChartApi, Logical, LogicalRange } from 'lightweight-charts'
 
-export const CHART_RIGHT_AXIS_WIDTH = 56
+export const CHART_RIGHT_AXIS_WIDTH = 72
 
 /** 보조지표 패널 — 날짜축을 완전히 숨겨 날짜 표시는 캔들 차트에만 */
 export const HIDDEN_TIME_SCALE = {
