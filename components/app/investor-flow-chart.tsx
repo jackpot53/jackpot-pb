@@ -244,12 +244,13 @@ function CumulativeFlowChart({ data, height = 140 }: { data: FlowFilled[]; heigh
 }
 
 function FlowChart({
-  data, label, dataKey, height = 100,
+  data, label, dataKey, height = 100, yDomain,
 }: {
   data: FlowFilled[]
   label: string
   dataKey: keyof Pick<FlowFilled, 'individual' | 'foreign' | 'institution'>
   height?: number
+  yDomain: [number, number] | null
 }) {
   const sync = useChartSync()
   const syncRef = useRef(sync)
@@ -308,6 +309,18 @@ function FlowChart({
       seriesRef.current = null
     }
   }, [])
+
+  useEffect(() => {
+    const series = seriesRef.current
+    if (!series || !yDomain) return
+    const [minValue, maxValue] = yDomain
+    series.applyOptions({
+      autoscaleInfoProvider: () => ({
+        priceRange: { minValue, maxValue },
+        margins: { above: 0.08, below: 0.08 },
+      }),
+    })
+  }, [yDomain])
 
   useEffect(() => {
     const chart = chartRef.current
@@ -384,6 +397,19 @@ export function InvestorFlowChart({ ticker, period, range = '1y' }: Props) {
 
   const cumulative = useMemo(() => toCumulative(data), [data])
 
+  // 세 주체의 전체 min/max를 통합해 공통 Y축 스케일 계산 — 0 포함 보장
+  const yDomain = useMemo((): [number, number] | null => {
+    if (data.length === 0) return null
+    let min = 0, max = 0
+    for (const p of data) {
+      if (p.institution !== null) { min = Math.min(min, p.institution); max = Math.max(max, p.institution) }
+      if (p.foreign !== null) { min = Math.min(min, p.foreign); max = Math.max(max, p.foreign) }
+      if (p.individual !== null) { min = Math.min(min, p.individual); max = Math.max(max, p.individual) }
+    }
+    if (min === 0 && max === 0) return null
+    return [min, max]
+  }, [data])
+
   if (loading) {
     return (
       <div className="space-y-2">
@@ -417,9 +443,9 @@ export function InvestorFlowChart({ ticker, period, range = '1y' }: Props) {
   return (
     <div className="space-y-1">
       <CumulativeFlowChart data={cumulative} />
-      <FlowChart data={data} label="개인" dataKey="individual" />
-      <FlowChart data={data} label="외국인" dataKey="foreign" />
-      <FlowChart data={data} label="기관" dataKey="institution" />
+      <FlowChart data={data} label="개인" dataKey="individual" yDomain={yDomain} />
+      <FlowChart data={data} label="외국인" dataKey="foreign" yDomain={yDomain} />
+      <FlowChart data={data} label="기관" dataKey="institution" yDomain={yDomain} />
     </div>
   )
 }
