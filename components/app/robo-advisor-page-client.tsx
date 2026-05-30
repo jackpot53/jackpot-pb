@@ -24,6 +24,10 @@ const VolumePanel = dynamic(
   () => import('@/components/app/volume-panel').then(m => ({ default: m.VolumePanel })),
   { ssr: false, loading: () => <Skeleton className="h-[180px] w-full rounded-xl" /> },
 )
+const TradingValuePanel = dynamic(
+  () => import('@/components/app/trading-value-panel').then(m => ({ default: m.TradingValuePanel })),
+  { ssr: false, loading: () => <Skeleton className="h-[180px] w-full rounded-xl" /> },
+)
 
 const PERIOD_RANGES: Record<string, string> = { '일봉': '3y', '주봉': '3y', '월봉': '5y' }
 
@@ -104,6 +108,10 @@ export function RoboAdvisorPageClient() {
 
             <div className="mt-4 border-t border-border pt-4">
               <VolumePanel data={chartDataForMacd} />
+            </div>
+
+            <div className="mt-4 border-t border-border pt-4">
+              <TradingValuePanel data={chartDataForMacd} />
             </div>
 
             <div className="mt-4 border-t border-border pt-4">
