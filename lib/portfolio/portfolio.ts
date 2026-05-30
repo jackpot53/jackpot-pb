@@ -461,13 +461,13 @@ export function formatKrw(n: number): string {
   }).format(n)
 }
 
-/** 카드 등 좁은 공간용 — 1억↑ 'N.N억', 1만�� 'N.N만', 미만 'N,NNN' (₩ 기호 없음) */
+/** 카드 등 좁은 공간용 — 1만↑ N,NNN.N만(천원 정밀도), 10억↑ N,NNN억, ₩ 기호 없음 */
 export function formatKrwCompact(n: number): string {
   const abs = Math.abs(n)
   const sign = n < 0 ? '-' : ''
-  if (abs >= 1_0000_0000) {
+  if (abs >= 10_0000_0000) {
     const eok = abs / 1_0000_0000
-    const formatted = eok < 10 ? eok.toFixed(1).replace(/\.0$/, '') : Math.round(eok).toLocaleString('ko-KR')
+    const formatted = eok < 100 ? eok.toFixed(1).replace(/\.0$/, '') : Math.round(eok).toLocaleString('ko-KR')
     return `${sign}${formatted}억`
   }
   if (abs >= 1_0000) {
