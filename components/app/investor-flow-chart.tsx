@@ -112,7 +112,7 @@ interface CumulativeTip {
   institution: number | null; foreign: number | null; individual: number | null
 }
 
-function CumulativeFlowChart({ data, height = 100 }: { data: FlowFilled[]; height?: number }) {
+function CumulativeFlowChart({ data, height = 160 }: { data: FlowFilled[]; height?: number }) {
   const sync = useChartSync()
   const syncRef = useRef(sync)
   syncRef.current = sync
@@ -244,7 +244,7 @@ function CumulativeFlowChart({ data, height = 100 }: { data: FlowFilled[]; heigh
 }
 
 function FlowChart({
-  data, label, dataKey, height = 70, yDomain,
+  data, label, dataKey, height = 120, yDomain,
 }: {
   data: FlowFilled[]
   label: string
@@ -413,11 +413,11 @@ export function InvestorFlowChart({ ticker, period, range = '1y' }: Props) {
   if (loading) {
     return (
       <div>
-        <Skeleton className="h-[100px] w-full" />
+        <Skeleton className="h-[160px] w-full" />
         {['개인', '외국인', '기관'].map(l => (
           <div key={l} className="border-t border-border mt-2 pt-2">
             <p className="text-[10px] text-muted-foreground mb-0.5">{l}</p>
-            <Skeleton className="h-[70px] w-full" />
+            <Skeleton className="h-[120px] w-full" />
           </div>
         ))}
       </div>

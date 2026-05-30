@@ -45,7 +45,7 @@ function fmtKrw(v: number): string {
   return v.toLocaleString('ko-KR')
 }
 
-export function TradingValuePanel({ data, height = 120 }: Props) {
+export function TradingValuePanel({ data, height = 160 }: Props) {
   const sync = useChartSync()
   const syncRef = useRef(sync)
   syncRef.current = sync
