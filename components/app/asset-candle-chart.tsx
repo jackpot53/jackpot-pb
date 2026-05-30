@@ -23,7 +23,14 @@ import { useChartSync, CHART_RIGHT_AXIS_WIDTH } from './chart-sync'
 import { CHART_UP, CHART_DOWN, resolvePalette } from '@/lib/chart/theme'
 import { MA_COLORS, MA_PERIODS } from '@/lib/chart/ma-colors'
 import { sma } from '@/lib/robo-advisor/indicators/sma'
+import { bollinger } from '@/lib/robo-advisor/indicators/bollinger'
 import { detectMaCrossesFromSma, lastMaCrossFromSma } from '@/lib/robo-advisor/signals/ma-cross'
+import {
+  detectBollingerReentries,
+  detectBollingerSqueezeBreakouts,
+  lastBollingerSignal,
+} from '@/lib/robo-advisor/signals/bollinger-signals'
+import { BollingerBandFill } from './bollinger-band-primitive'
 
 export type Period = '일봉' | '주봉' | '월봉'
 
@@ -87,6 +94,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
     Object.fromEntries(MA_PERIODS.map((p) => [p, true])),
   )
   const [signalsVisible, setSignalsVisible] = useState(true)
+  const [bollingerVisible, setBollingerVisible] = useState(true)
 const effectiveParams = useMemo<Record<Period, { interval: string; range: string }>>(
     () => ({
       '일봉': { ...PERIOD_PARAMS['일봉'], ...(periodRanges?.['일봉'] ? { range: periodRanges['일봉'] } : {}) },
@@ -102,6 +110,9 @@ const effectiveParams = useMemo<Record<Period, { interval: string; range: string
   const maSeriesRef = useRef<Map<number, ISeriesApi<'Line'>>>(new Map())
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
   const markersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null)
+  const bbUpperSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const bbLowerSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
+  const bbFillRef = useRef<BollingerBandFill | null>(null)
   const showVolumeRef = useRef(showVolume ?? false)
   const avgPriceLineRef = useRef<IPriceLine | null>(null)
   const avgPriceRef = useRef<number | null | undefined>(avgPrice)
@@ -217,6 +228,25 @@ setPeriod(next)
       maMap.set(p, maSeries)
     }
 
+    // 볼린저 밴드 상·하단 라인 (중간선=MA20으로 대체)
+    const BB_LINE_COLOR = '#94a3b8'
+    const bbUpper = chart.addSeries(LineSeries, {
+      color: BB_LINE_COLOR,
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+      lineStyle: LineStyle.Dashed,
+    })
+    const bbLower = chart.addSeries(LineSeries, {
+      color: BB_LINE_COLOR,
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+      lineStyle: LineStyle.Dashed,
+    })
+
     if (showVolumeRef.current) {
       const volSeries = chart.addSeries(HistogramSeries, {
         priceScaleId: 'volume',
@@ -232,7 +262,14 @@ setPeriod(next)
     chartRef.current = chart
     seriesRef.current = series
     maSeriesRef.current = maMap
+    bbUpperSeriesRef.current = bbUpper
+    bbLowerSeriesRef.current = bbLower
     markersRef.current = createSeriesMarkers(series) as ISeriesMarkersPluginApi<Time>
+
+    // 볼린저 밴드 fill 프리미티브
+    const bbFill = new BollingerBandFill()
+    series.attachPrimitive(bbFill)
+    bbFillRef.current = bbFill
 
     const unregister = syncRef.current.registerChart(chart, { master: true })
 
@@ -305,6 +342,9 @@ setPeriod(next)
       maSeriesRef.current = new Map()
       volumeSeriesRef.current = null
       markersRef.current = null
+      bbUpperSeriesRef.current = null
+      bbLowerSeriesRef.current = null
+      bbFillRef.current = null
       avgPriceLineRef.current = null
     }
   }, [])
@@ -339,32 +379,101 @@ setPeriod(next)
       maSeries.applyOptions({ visible: maVisible[p] })
     }
 
-    // 이평선 크로스 마커
+    // 볼린저 밴드 상·하단 라인 + fill
+    const bands = bollinger(closes)
+    const bbUpper = bbUpperSeriesRef.current
+    const bbLower = bbLowerSeriesRef.current
+    const bbFill = bbFillRef.current
+    if (bbUpper && bbLower) {
+      if (!bollingerVisible || closes.length < 20) {
+        bbUpper.setData([])
+        bbLower.setData([])
+        bbUpper.applyOptions({ visible: false })
+        bbLower.applyOptions({ visible: false })
+      } else {
+        const upperData = bands
+          .map((b, i) => b.upper == null ? null : { time: dates[i] as Time, value: b.upper })
+          .filter((d): d is { time: Time; value: number } => d !== null)
+        const lowerData = bands
+          .map((b, i) => b.lower == null ? null : { time: dates[i] as Time, value: b.lower })
+          .filter((d): d is { time: Time; value: number } => d !== null)
+        bbUpper.setData(upperData)
+        bbLower.setData(lowerData)
+        bbUpper.applyOptions({ visible: true })
+        bbLower.applyOptions({ visible: true })
+      }
+    }
+    if (bbFill) {
+      if (!bollingerVisible || closes.length < 20) {
+        bbFill.setVisible(false)
+      } else {
+        const fillData = bands
+          .map((b, i) => b.upper == null || b.lower == null ? null : {
+            time: dates[i] as Time,
+            upper: b.upper,
+            lower: b.lower,
+          })
+          .filter((d): d is { time: Time; upper: number; lower: number } => d !== null)
+        bbFill.setData(fillData)
+        bbFill.setVisible(true)
+      }
+    }
+
+    // 마커 통합: MA 크로스 + (bollingerVisible 시) BB 시그널
     const markers = markersRef.current
     if (markers) {
-      if (!signalsVisible) {
-        markers.setMarkers([])
-      } else {
+      const allMarkers: SeriesMarker<Time>[] = []
+
+      if (signalsVisible) {
         const sma5 = smaByPeriod.get(5) ?? sma(closes, 5)
         const sma20 = smaByPeriod.get(20) ?? sma(closes, 20)
         const sma60 = smaByPeriod.get(60) ?? sma(closes, 60)
 
         const crosses5_20 = detectMaCrossesFromSma(sma5, sma20, dates, '5/20')
         const crosses20_60 = detectMaCrossesFromSma(sma20, sma60, dates, '20/60')
-        const allCrosses = [...crosses5_20, ...crosses20_60].sort((a, b) =>
-          a.date < b.date ? -1 : a.date > b.date ? 1 : 0,
-        )
-
-        const crossMarkers: SeriesMarker<Time>[] = allCrosses.map((c) => ({
-          time: c.date as Time,
-          position: c.type === 'golden' ? ('belowBar' as const) : ('aboveBar' as const),
-          shape: c.type === 'golden' ? ('arrowUp' as const) : ('arrowDown' as const),
-          color: c.type === 'golden' ? CHART_UP : CHART_DOWN,
-          text: c.pair === '5/20' ? '5·20' : '20·60',
-          size: 1,
-        }))
-        markers.setMarkers(crossMarkers)
+        for (const c of [...crosses5_20, ...crosses20_60]) {
+          allMarkers.push({
+            time: c.date as Time,
+            position: c.type === 'golden' ? ('belowBar' as const) : ('aboveBar' as const),
+            shape: c.type === 'golden' ? ('arrowUp' as const) : ('arrowDown' as const),
+            color: c.type === 'golden' ? CHART_UP : CHART_DOWN,
+            text: c.pair === '5/20' ? '5·20' : '20·60',
+            size: 1,
+          })
+        }
       }
+
+      if (bollingerVisible && closes.length >= 20) {
+        const bbReentries = detectBollingerReentries(bands, closes, dates)
+        const bbSqueeze = detectBollingerSqueezeBreakouts(bands, closes, dates)
+        for (const s of bbReentries) {
+          allMarkers.push({
+            time: s.date as Time,
+            position: s.type === 'buy' ? ('belowBar' as const) : ('aboveBar' as const),
+            shape: 'circle' as const,
+            color: s.type === 'buy' ? CHART_UP : CHART_DOWN,
+            text: 'BB',
+            size: 1,
+          })
+        }
+        for (const s of bbSqueeze) {
+          allMarkers.push({
+            time: s.date as Time,
+            position: 'belowBar' as const,
+            shape: 'square' as const,
+            color: CHART_UP,
+            text: '돌파',
+            size: 1,
+          })
+        }
+      }
+
+      // lightweight-charts는 time 오름차순 요구
+      allMarkers.sort((a, b) => {
+        const at = String(a.time), bt = String(b.time)
+        return at < bt ? -1 : at > bt ? 1 : 0
+      })
+      markers.setMarkers(allMarkers)
     }
 
     const volSeries = volumeSeriesRef.current
@@ -395,7 +504,7 @@ setPeriod(next)
     })
     onDataChange?.(baseData)
     return () => cancelAnimationFrame(rafId)
-  }, [baseData, maVisible, signalsVisible, onDataChange])
+  }, [baseData, maVisible, signalsVisible, bollingerVisible, onDataChange])
 
   // Live tick → 마지막 캔들만 patch (일봉)
   useEffect(() => {
@@ -435,17 +544,19 @@ setPeriod(next)
     setAvgPriceLabelY(typeof coord === 'number' ? coord : null)
   }, [avgPrice])
 
-  // 이평선 크로스 최근 신호 — 배지용
-  const maCrossSignals = useMemo(() => {
+  // 이평선 크로스 + 볼린저 최근 신호 — 배지용
+  const signalBadges = useMemo(() => {
     const closes = baseData.map((p) => p.close)
     const dates = baseData.map((p) => p.date)
-    if (closes.length < 20) return { pair5_20: null, pair20_60: null }
+    if (closes.length < 20) return { pair5_20: null, pair20_60: null, bbSignal: null }
     const sma5 = sma(closes, 5)
     const sma20 = sma(closes, 20)
     const sma60 = sma(closes, 60)
+    const bands = bollinger(closes)
     return {
       pair5_20: lastMaCrossFromSma(sma5, sma20, dates, '5/20'),
       pair20_60: closes.length >= 60 ? lastMaCrossFromSma(sma20, sma60, dates, '20/60') : null,
+      bbSignal: lastBollingerSignal(bands, closes, dates),
     }
   }, [baseData])
 
@@ -508,34 +619,56 @@ setPeriod(next)
           >
             신호
           </button>
+          <button
+            onClick={() => setBollingerVisible((v) => !v)}
+            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] transition-opacity ${
+              bollingerVisible ? 'opacity-100 hover:opacity-80' : 'opacity-35 hover:opacity-60'
+            }`}
+          >
+            볼린저
+          </button>
         </div>
       </div>
 
-      {/* 이평선 크로스 신호 배지 */}
-      {signalsVisible && (maCrossSignals.pair5_20 || maCrossSignals.pair20_60) && (
-        <div className="flex items-center gap-1.5 px-2 pb-0.5">
-          {maCrossSignals.pair5_20 && (
+      {/* 이평선 크로스 + 볼린저 신호 배지 */}
+      {(signalsVisible || bollingerVisible) && (signalBadges.pair5_20 || signalBadges.pair20_60 || (bollingerVisible && signalBadges.bbSignal)) && (
+        <div className="flex items-center gap-1.5 px-2 pb-0.5 flex-wrap">
+          {signalsVisible && signalBadges.pair5_20 && (
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                maCrossSignals.pair5_20.type === 'golden'
+                signalBadges.pair5_20.type === 'golden'
                   ? 'bg-red-50 border border-red-200 text-red-600'
                   : 'bg-blue-50 border border-blue-200 text-blue-600'
               }`}
             >
-              5·20 · {maCrossSignals.pair5_20.daysAgo}일 전{' '}
-              {maCrossSignals.pair5_20.type === 'golden' ? '골든(매수)' : '데드(매도)'}
+              5·20 · {signalBadges.pair5_20.daysAgo}일 전{' '}
+              {signalBadges.pair5_20.type === 'golden' ? '골든(매수)' : '데드(매도)'}
             </span>
           )}
-          {maCrossSignals.pair20_60 && (
+          {signalsVisible && signalBadges.pair20_60 && (
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                maCrossSignals.pair20_60.type === 'golden'
+                signalBadges.pair20_60.type === 'golden'
                   ? 'bg-red-50 border border-red-200 text-red-600'
                   : 'bg-blue-50 border border-blue-200 text-blue-600'
               }`}
             >
-              20·60 · {maCrossSignals.pair20_60.daysAgo}일 전{' '}
-              {maCrossSignals.pair20_60.type === 'golden' ? '골든(매수)' : '데드(매도)'}
+              20·60 · {signalBadges.pair20_60.daysAgo}일 전{' '}
+              {signalBadges.pair20_60.type === 'golden' ? '골든(매수)' : '데드(매도)'}
+            </span>
+          )}
+          {bollingerVisible && signalBadges.bbSignal && (
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                signalBadges.bbSignal.type === 'buy'
+                  ? 'bg-red-50 border border-red-200 text-red-600'
+                  : 'bg-blue-50 border border-blue-200 text-blue-600'
+              }`}
+            >
+              볼린저 · {signalBadges.bbSignal.daysAgo}일 전{' '}
+              {signalBadges.bbSignal.kind === 'squeeze'
+                ? `스퀴즈돌파(${signalBadges.bbSignal.type === 'buy' ? '매수' : '매도'})`
+                : `${signalBadges.bbSignal.type === 'buy' ? '하단복귀(매수)' : '상단복귀(매도)'}`}
             </span>
           )}
         </div>

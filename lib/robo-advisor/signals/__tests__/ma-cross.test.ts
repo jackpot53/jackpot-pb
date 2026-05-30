@@ -1,11 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { detectMaCrossesFromSma, lastMaCrossFromSma } from '../ma-cross'
 import { sma } from '../../indicators/sma'
-import type { OhlcPoint } from '@/lib/price/sparkline'
-
-function makeCloses(values: number[]): number[] {
-  return values
-}
 
 function smaArr(closes: number[], period: number) {
   return sma(closes, period)
