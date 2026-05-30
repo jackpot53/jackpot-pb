@@ -33,7 +33,7 @@ const CandlestickChart = dynamic(
   () => import('@/components/app/candlestick-chart').then(m => ({ default: m.CandlestickChart })),
   { ssr: false }
 )
-import { formatKrw, formatKrwCompact, formatUsd, formatReturn, formatQty } from '@/lib/portfolio'
+import { formatKrwCompact, formatUsd, formatReturn, formatQty } from '@/lib/portfolio'
 import type { AssetPerformance } from '@/lib/portfolio'
 import { TodayReport } from '@/components/app/today-report'
 import { SummaryCards } from '@/components/app/summary-cards'
@@ -576,14 +576,14 @@ function AssetGridCard({ asset, sparklineData, lineData }: {
         <div className="flex items-baseline gap-1">
           <Wallet className="h-3 w-3 text-muted-foreground/40 shrink-0" />
           <span className="text-xs text-muted-foreground">평가금</span>
-          <span className="text-sm font-semibold text-foreground">{hasValue ? formatKrw(asset.currentValueKrw) : '—'}</span>
+          <span className="text-sm font-semibold text-foreground">{hasValue ? formatKrwCompact(asset.currentValueKrw) : '—'}</span>
         </div>
         {hasValue && hasCost && (
           <>
             <span className="text-black text-xs">|</span>
             <div className="flex items-baseline gap-1">
               <span className="text-xs text-muted-foreground">수익금</span>
-              <span className={`text-sm font-bold ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>{profit >= 0 ? '+' : ''}{formatKrw(profit)}</span>
+              <span className={`text-sm font-bold ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>{profit >= 0 ? '+' : ''}{formatKrwCompact(profit)}</span>
               <span className="text-xs text-muted-foreground ml-1">수익률</span>
               <span className={`text-xs font-semibold ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>{formatReturn(asset.returnPct)}</span>
             </div>
@@ -623,19 +623,19 @@ function SummaryBar({ assets }: { assets: AssetPerformance[] }) {
     <div className="flex items-center gap-3 text-sm px-1">
       <div className="flex items-baseline gap-1">
         <span className="text-xs text-muted-foreground">투자</span>
-        <span className="font-semibold">{totalCost > 0 ? formatKrw(totalCost) : '—'}</span>
+        <span className="font-semibold">{totalCost > 0 ? formatKrwCompact(totalCost) : '—'}</span>
       </div>
       <div className="h-4 w-px bg-border shrink-0" />
       <div className="flex items-baseline gap-1">
         <span className="text-xs text-muted-foreground">평가</span>
-        <span className="font-semibold">{hasAnyValue ? formatKrw(totalValue) : '—'}</span>
+        <span className="font-semibold">{hasAnyValue ? formatKrwCompact(totalValue) : '—'}</span>
       </div>
       <div className="h-4 w-px bg-border shrink-0" />
       <div className="flex items-baseline gap-1">
         <span className="text-xs text-muted-foreground">손익</span>
         {hasAnyValue && totalCost > 0 ? (
           <span className={`font-semibold ${totalProfit >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>
-            {totalProfit >= 0 ? '+' : ''}{formatKrw(totalProfit)}
+            {totalProfit >= 0 ? '+' : ''}{formatKrwCompact(totalProfit)}
             {totalReturnPct !== null && (
               <span className="text-xs ml-1 opacity-80">{formatReturn(totalReturnPct)}</span>
             )}
@@ -685,16 +685,16 @@ function AssetCardList({ assets, title, sparklines, lineDataMap }: {
             {/* 매수금 · 평가금 · 수익금 인라인 */}
             <div className="flex items-center gap-x-2 gap-y-1 text-xs flex-wrap" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
               <span className="text-muted-foreground">매수금</span>
-              <span className="font-semibold text-foreground tabular-nums">{totalCost > 0 ? formatKrw(totalCost) : '—'}</span>
+              <span className="font-semibold text-foreground tabular-nums">{totalCost > 0 ? formatKrwCompact(totalCost) : '—'}</span>
               <span className="text-muted-foreground/40">|</span>
               <span className="text-muted-foreground">평가금</span>
-              <span className="font-semibold text-foreground tabular-nums">{hasAnyValue ? formatKrw(totalValue) : '—'}</span>
+              <span className="font-semibold text-foreground tabular-nums">{hasAnyValue ? formatKrwCompact(totalValue) : '—'}</span>
               <span className="text-muted-foreground/40">|</span>
               <span className="text-muted-foreground">수익금</span>
               {hasAnyValue && totalCost > 0 ? (
                 <>
                   <span className={`font-semibold tabular-nums ${totalProfit >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>
-                    {totalProfit >= 0 ? '+' : ''}{formatKrw(totalProfit)}
+                    {totalProfit >= 0 ? '+' : ''}{formatKrwCompact(totalProfit)}
                   </span>
                   {totalReturnPct !== null && (
                     <>
