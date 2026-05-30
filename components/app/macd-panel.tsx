@@ -190,10 +190,10 @@ export function MacdPanel({ data, height = 180 }: Props) {
   const noData = data.length < 40
 
   return (
-    <div data-component="MacdPanel" className="rounded-xl border border-border bg-card p-3">
+    <div data-component="MacdPanel">
       <button
         onClick={() => setIsOpen((o) => !o)}
-        className="flex items-center justify-between w-full px-1"
+        className="flex items-center justify-between w-full"
       >
         <div className="flex items-center gap-2">
           <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform duration-200 ${isOpen ? '' : '-rotate-90'}`} />
@@ -218,7 +218,7 @@ export function MacdPanel({ data, height = 180 }: Props) {
         )}
       </button>
       <div className="mt-2 relative overflow-hidden" style={{ height: isOpen ? `${height}px` : 0 }}>
-        <div ref={containerRef} className="w-full h-full rounded-md overflow-hidden" />
+        <div ref={containerRef} className="w-full h-full overflow-hidden" />
         {isOpen && noData && (
           <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
             MACD 계산을 위한 데이터가 부족합니다 (최소 40일 필요)

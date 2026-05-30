@@ -117,10 +117,10 @@ export function RoboAdvisorPageClient() {
               </div>
 
               <div className="mt-4 border-t border-border pt-4">
-              <div className="rounded-xl border border-border bg-card p-3">
+              <div>
                 <button
                   onClick={() => setInvestorFlowOpen((o) => !o)}
-                  className="flex items-center gap-2 w-full px-1"
+                  className="flex items-center gap-2 w-full"
                 >
                   <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform duration-200 ${investorFlowOpen ? '' : '-rotate-90'}`} />
                   <p className="text-xs font-medium text-foreground">투자자별 매매동향</p>
