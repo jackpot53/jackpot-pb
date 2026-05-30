@@ -1,9 +1,16 @@
 'use client'
 
 import { createContext, useContext, useMemo, useRef, type ReactNode } from 'react'
-import type { IChartApi, LogicalRange } from 'lightweight-charts'
+import type { IChartApi, Logical, LogicalRange } from 'lightweight-charts'
 
 export const CHART_RIGHT_AXIS_WIDTH = 56
+
+/** 보조지표 패널 — 날짜축을 완전히 숨겨 날짜 표시는 캔들 차트에만 */
+export const HIDDEN_TIME_SCALE = {
+  borderVisible: false,
+  timeVisible: false,
+  visible: false,
+} as const
 
 export interface DateRange {
   from: string
@@ -21,6 +28,16 @@ interface ChartSyncApi {
   resetRange: () => void
   /** Recharts 등 logical-range가 없는 차트를 위한 날짜 범위 구독 */
   subscribeDateRange: (cb: (range: DateRange | null) => void) => () => void
+  /**
+   * months 개월치 기간 프리셋을 전 차트에 적용한다.
+   * months=null 이면 전체 데이터가 보이도록 fit한다.
+   */
+  applyMonthsPreset: (months: number | null) => void
+  /**
+   * 현재 보이는 span을 유지하면서 fraction 비율만큼 좌(음수)/우(양수)로 이동한다.
+   * 데이터 경계에서 클램프된다.
+   */
+  pan: (fraction: number) => void
 }
 
 const ChartSyncContext = createContext<ChartSyncApi | null>(null)
@@ -118,7 +135,64 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    return { registerChart, setMasterDates, getCurrentLogicalRange, resetRange, subscribeDateRange }
+    // 오른쪽 여백 바 수 (fitContent 시 캔들이 우측 끝에 딱 붙지 않도록)
+    const RIGHT_MARGIN = 2
+
+    // 현재 공유 range, 없으면 첫 번째 차트의 실제 보이는 range에서 읽는다
+    const getActiveRange = (): LogicalRange | null => {
+      if (currentRangeRef.current) return currentRangeRef.current
+      for (const c of chartsRef.current) {
+        const r = c.timeScale().getVisibleLogicalRange()
+        if (r) return r
+      }
+      return null
+    }
+
+    // 전 차트에 동시 적용 (isApplyingRef 가드로 동기화 핸들러 재진입 방지)
+    const applyLogicalRange = (range: LogicalRange) => {
+      currentRangeRef.current = range
+      isApplyingRef.current = true
+      try {
+        chartsRef.current.forEach((c) => c.timeScale().setVisibleLogicalRange(range))
+        notifyDateSubs(range)
+      } finally {
+        isApplyingRef.current = false
+      }
+    }
+
+    const applyMonthsPreset: ChartSyncApi['applyMonthsPreset'] = (months) => {
+      const dates = datesRef.current
+      const len = dates.length
+      if (len === 0) return
+      const to = (len - 1 + RIGHT_MARGIN) as Logical
+      if (months == null) {
+        applyLogicalRange({ from: 0 as Logical, to })
+        return
+      }
+      const cutoff = new Date(dates[len - 1])
+      cutoff.setMonth(cutoff.getMonth() - months)
+      let from = 0
+      for (let i = len - 1; i >= 0; i--) {
+        if (new Date(dates[i]) < cutoff) { from = i + 1; break }
+      }
+      applyLogicalRange({ from: Math.min(from, len - 1) as Logical, to })
+    }
+
+    const pan: ChartSyncApi['pan'] = (fraction) => {
+      const r = getActiveRange()
+      if (!r) return
+      const len = datesRef.current.length
+      const span = r.to - r.from
+      let from = r.from + span * fraction
+      let to = r.to + span * fraction
+      const maxTo = len - 1 + RIGHT_MARGIN
+      const minFrom = -RIGHT_MARGIN
+      if (to > maxTo) { to = maxTo; from = to - span }
+      if (from < minFrom) { from = minFrom; to = from + span }
+      applyLogicalRange({ from: from as Logical, to: to as Logical })
+    }
+
+    return { registerChart, setMasterDates, getCurrentLogicalRange, resetRange, subscribeDateRange, applyMonthsPreset, pan }
   }, [])
 
   return <ChartSyncContext.Provider value={api}>{children}</ChartSyncContext.Provider>

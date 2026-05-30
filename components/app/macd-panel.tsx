@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useChartSync, CHART_RIGHT_AXIS_WIDTH } from './chart-sync'
-import { ChevronDown } from 'lucide-react'
+import { useEffect, useMemo, useRef } from 'react'
+import { useChartSync, CHART_RIGHT_AXIS_WIDTH, HIDDEN_TIME_SCALE } from './chart-sync'
 import {
   createChart,
   LineSeries,
@@ -30,7 +29,6 @@ export function MacdPanel({ data, height = 180 }: Props) {
   const syncRef = useRef(sync)
   syncRef.current = sync
 
-  const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const histSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
@@ -45,6 +43,8 @@ export function MacdPanel({ data, height = 180 }: Props) {
 
     const chart = createChart(container, {
       autoSize: true,
+      handleScroll: false,
+      handleScale: false,
       layout: {
         background: { color: 'transparent' },
         textColor: palette.mutedText,
@@ -60,10 +60,7 @@ export function MacdPanel({ data, height = 180 }: Props) {
         minimumWidth: CHART_RIGHT_AXIS_WIDTH,
         scaleMargins: { top: 0.1, bottom: 0.1 },
       },
-      timeScale: {
-        borderVisible: false,
-        timeVisible: false,
-      },
+      timeScale: HIDDEN_TIME_SCALE,
     })
 
     const histSeries = chart.addSeries(HistogramSeries, {
@@ -192,14 +189,10 @@ export function MacdPanel({ data, height = 180 }: Props) {
 
   return (
     <div data-component="MacdPanel">
-      <button
-        onClick={() => setIsOpen((o) => !o)}
-        className="flex items-center justify-between w-full"
-      >
+      <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-2">
-          <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform duration-200 ${isOpen ? '' : '-rotate-90'}`} />
           <p className="text-xs font-medium text-foreground">MACD (12, 26, 9)</p>
-          {isOpen && !noData && (
+          {!noData && (
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1">
                 <span className="inline-block w-4 h-[1.5px] bg-blue-500" />
@@ -217,10 +210,10 @@ export function MacdPanel({ data, height = 180 }: Props) {
             {badgeText}
           </span>
         )}
-      </button>
-      <div className="mt-2 relative overflow-hidden" style={{ height: isOpen ? `${height}px` : 0 }}>
+      </div>
+      <div className="mt-2 relative overflow-hidden" style={{ height: `${height}px` }}>
         <div ref={containerRef} className="w-full h-full overflow-hidden" />
-        {isOpen && noData && (
+        {noData && (
           <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
             MACD 계산을 위한 데이터가 부족합니다 (최소 40일 필요)
           </div>
