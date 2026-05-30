@@ -558,7 +558,16 @@ function AssetCard({ asset, showSparkline }: {
           {showSparkline && asset.ticker && !isLineType && (
             <div className="px-4 pb-3">
               <div className="h-[280px] rounded-lg overflow-hidden border border-border/40 bg-white">
-                <AssetCandleChart ticker={asset.ticker} initialData={[]} assetType={asset.assetType} />
+                <AssetCandleChart
+                  ticker={asset.ticker}
+                  initialData={[]}
+                  assetType={asset.assetType}
+                  avgPrice={
+                    asset.avgCostPerUnitOriginal != null
+                      ? asset.avgCostPerUnitOriginal / 100
+                      : asset.avgCostPerUnit > 0 ? asset.avgCostPerUnit : null
+                  }
+                />
               </div>
             </div>
           )}
