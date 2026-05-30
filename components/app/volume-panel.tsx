@@ -53,10 +53,7 @@ export function VolumePanel({ data, height = 180 }: Props) {
         vertLines: { visible: false },
         horzLines: { color: palette.grid, style: 2 },
       },
-      rightPriceScale: {
-        borderVisible: false,
-        scaleMargins: { top: 0.1, bottom: 0.1 },
-      },
+      rightPriceScale: { visible: false },
       timeScale: {
         borderVisible: false,
         timeVisible: false,
@@ -69,11 +66,13 @@ export function VolumePanel({ data, height = 180 }: Props) {
     })
 
     const histSeries = chart.addSeries(HistogramSeries, {
+      priceScaleId: 'volume',
       priceLineVisible: false,
       lastValueVisible: false,
     })
 
     const avgSeries = chart.addSeries(LineSeries, {
+      priceScaleId: 'volume',
       color: '#f59e0b',
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
@@ -82,7 +81,12 @@ export function VolumePanel({ data, height = 180 }: Props) {
       crosshairMarkerVisible: false,
     })
 
-    markersRef.current = createSeriesMarkers(avgSeries) as ISeriesMarkersPluginApi<Time>
+    chart.priceScale('volume').applyOptions({
+      scaleMargins: { top: 0.1, bottom: 0.05 },
+      borderVisible: false,
+    })
+
+    markersRef.current = createSeriesMarkers(histSeries) as ISeriesMarkersPluginApi<Time>
     histSeriesRef.current = histSeries
     avgSeriesRef.current = avgSeries
     chartRef.current = chart
