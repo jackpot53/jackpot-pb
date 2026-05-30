@@ -186,10 +186,10 @@ export function VolumePanel({ data, height = 180 }: Props) {
   const noData = data.length < 22
 
   return (
-    <div data-component="VolumePanel" className="rounded-xl border border-border bg-card p-3">
+    <div data-component="VolumePanel">
       <button
         onClick={() => setIsOpen((o) => !o)}
-        className="flex items-center justify-between w-full px-1"
+        className="flex items-center justify-between w-full"
       >
         <div className="flex items-center gap-2">
           <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform duration-200 ${isOpen ? '' : '-rotate-90'}`} />
@@ -210,7 +210,7 @@ export function VolumePanel({ data, height = 180 }: Props) {
         )}
       </button>
       <div className="mt-2 relative overflow-hidden" style={{ height: isOpen ? `${height}px` : 0 }}>
-        <div ref={containerRef} className="w-full h-full rounded-md overflow-hidden" />
+        <div ref={containerRef} className="w-full h-full overflow-hidden" />
         {isOpen && noData && (
           <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
             거래량 데이터가 부족합니다 (최소 22일 필요)
