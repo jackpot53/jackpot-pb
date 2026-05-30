@@ -45,6 +45,7 @@ const NAV_ITEMS: NavItem[] = [
     label: '알고리즘시그널',  href: '/robo-advisor/stock',  icon: BarChart3, color: 'text-orange-400',  activeColor: 'text-orange-300',
     children: [
       { label: 'MACD', badge: '보조', href: '/robo-advisor/stock/macd' },
+      { label: '거래량', badge: '보조', href: '/robo-advisor/stock/volume' },
     ],
   },
   { label: '모의투자',     href: '/paper-trading',  icon: TrendingUp,    color: 'text-cyan-400',    activeColor: 'text-cyan-300',   pro: true },
