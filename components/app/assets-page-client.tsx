@@ -368,7 +368,7 @@ function AssetCard({ asset, showSparkline }: {
         {hasChartToggle && (
           <button
             onClick={() => setChartOpen(v => !v)}
-            className={cn("ml-auto shrink-0 flex items-center gap-1 text-xs transition-colors px-2 py-0.5 rounded-lg", titleText === 'text-white' ? 'text-white/70 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/40')}
+            className={cn("ml-auto shrink-0 flex items-center gap-1 text-xs transition-colors px-2 py-0.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40")}
           >
             차트
             <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', chartOpen && 'rotate-180')} />

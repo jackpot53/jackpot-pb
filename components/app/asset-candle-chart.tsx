@@ -33,6 +33,7 @@ interface AssetCandleChartProps {
   initialData: OhlcPoint[]
   assetType?: string
   avgPrice?: number | null
+  periodRanges?: Partial<Record<Period, string>>
 }
 
 interface TooltipState {
@@ -64,13 +65,22 @@ function toSeriesData(points: OhlcPoint[]): CandlestickData<Time>[] {
   }))
 }
 
-export function AssetCandleChart({ ticker, initialData, avgPrice }: AssetCandleChartProps) {
+export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges }: AssetCandleChartProps) {
   const [period, setPeriod] = useState<Period>('일봉')
   const [fetchedByPeriod, setFetchedByPeriod] = useState<Partial<Record<Period, OhlcPoint[]>>>({})
   const [loading, setLoading] = useState(false)
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const [maVisible, setMaVisible] = useState<Record<number, boolean>>(
     Object.fromEntries(MA_PERIODS.map((p) => [p, true])),
+  )
+
+  const effectiveParams = useMemo<Record<Period, { interval: string; range: string }>>(
+    () => ({
+      '일봉': { ...PERIOD_PARAMS['일봉'], ...(periodRanges?.['일봉'] ? { range: periodRanges['일봉'] } : {}) },
+      '주봉': { ...PERIOD_PARAMS['주봉'], ...(periodRanges?.['주봉'] ? { range: periodRanges['주봉'] } : {}) },
+      '월봉': { ...PERIOD_PARAMS['월봉'], ...(periodRanges?.['월봉'] ? { range: periodRanges['월봉'] } : {}) },
+    }),
+    [periodRanges],
   )
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -94,7 +104,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice }: AssetCandleC
   // initialData가 비어있으면 일봉 데이터를 직접 fetch
   useEffect(() => {
     if (initialData.length > 0) return
-    const { interval, range } = PERIOD_PARAMS['일봉']
+    const { interval, range } = effectiveParams['일봉']
     fetch(`/api/sparklines?tickers=${encodeURIComponent(ticker)}&interval=${interval}&range=${range}`)
       .then((r) => r.json())
       .then((res: Record<string, OhlcPoint[]>) => {
@@ -102,14 +112,14 @@ export function AssetCandleChart({ ticker, initialData, avgPrice }: AssetCandleC
         if (d && d.length >= 2) setFetchedByPeriod((prev) => ({ ...prev, '일봉': d }))
       })
       .catch(() => {})
-  }, [ticker, initialData.length])
+  }, [ticker, initialData.length, effectiveParams])
 
   // 주/월봉 전환 시 호출 — 사용자 액션에서 직접 트리거.
   const selectPeriod = useCallback(
     (next: Period) => {
       setPeriod(next)
       if (next === '일봉' || fetchedByPeriod[next]) return
-      const { interval, range } = PERIOD_PARAMS[next]
+      const { interval, range } = effectiveParams[next]
       setLoading(true)
       fetch(`/api/sparklines?tickers=${encodeURIComponent(ticker)}&interval=${interval}&range=${range}`)
         .then((r) => r.json())
@@ -122,7 +132,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice }: AssetCandleC
         .catch(() => {})
         .finally(() => setLoading(false))
     },
-    [fetchedByPeriod, ticker],
+    [fetchedByPeriod, ticker, effectiveParams],
   )
 
   // avgPriceRef를 prop과 동기화 (차트 생성 effect 클로저에서 최신 값 읽기용)

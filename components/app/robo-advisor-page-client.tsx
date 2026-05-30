@@ -1,17 +1,21 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Search, TrendingUp, BarChart3, ArrowUpDown, Layers,
   Cpu, Landmark, Car, Pill, FlaskConical, Building2, Wifi,
-  ShoppingCart, Utensils, MonitorPlay, Zap, Leaf, Trophy
+  ShoppingCart, Utensils, MonitorPlay, Zap, Leaf, Trophy, X,
 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import type { UniverseStockWithSignals, BacktestStats } from '@/db/queries/robo-advisor'
 import { RoboAdvisorDetailDialog } from '@/components/app/robo-advisor-detail-dialog'
+import { RoboAdvisorTickerSearch, type TickerSuggestion } from '@/components/app/robo-advisor-ticker-search'
+import { AssetCandleChart } from '@/components/app/asset-candle-chart'
+import type { OhlcPoint } from '@/lib/price/sparkline'
 
 interface Props {
   universe: UniverseStockWithSignals[]
@@ -178,6 +182,30 @@ export function RoboAdvisorPageClient({ universe, statsMap }: Props) {
   const [search, setSearch] = useState('')
   const [selectedStock, setSelectedStock] = useState<UniverseStockWithSignals | null>(null)
 
+  const [selectedTicker, setSelectedTicker] = useState<TickerSuggestion | null>(null)
+  const [tickerOhlc, setTickerOhlc] = useState<OhlcPoint[] | null>(null)
+  const [tickerChartLoading, setTickerChartLoading] = useState(false)
+
+  const handleTickerSelect = useCallback((s: TickerSuggestion) => {
+    setSelectedTicker(s)
+    setTickerOhlc(null)
+  }, [])
+
+  useEffect(() => {
+    if (!selectedTicker) return
+    setTickerChartLoading(true)
+    const ctrl = new AbortController()
+    fetch(
+      `/api/sparklines?tickers=${encodeURIComponent(selectedTicker.ticker)}&interval=1d&range=3y`,
+      { signal: ctrl.signal },
+    )
+      .then((r) => r.json())
+      .then((res: Record<string, OhlcPoint[]>) => setTickerOhlc(res[selectedTicker.ticker] ?? []))
+      .catch(() => {})
+      .finally(() => setTickerChartLoading(false))
+    return () => ctrl.abort()
+  }, [selectedTicker])
+
   const getPrimaryWinRate = (stock: UniverseStockWithSignals) => {
     const triggered = stock.signals.filter((s) => s.triggered)
     if (triggered.length === 0) return null
@@ -282,6 +310,49 @@ export function RoboAdvisorPageClient({ universe, statsMap }: Props) {
 
   return (
     <div data-component="RoboAdvisorPageClient" className="space-y-4">
+      {/* 종목 차트 조회 */}
+      <div className="rounded-xl border bg-card p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-foreground">종목 차트 조회</p>
+          {selectedTicker && (
+            <button
+              onClick={() => { setSelectedTicker(null); setTickerOhlc(null) }}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="w-3 h-3" />
+              닫기
+            </button>
+          )}
+        </div>
+        <RoboAdvisorTickerSearch
+          onSelect={handleTickerSelect}
+          selectedTicker={selectedTicker?.ticker ?? null}
+        />
+        {selectedTicker && (
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-sm font-semibold">{selectedTicker.name}</span>
+              <span className="text-xs text-muted-foreground tabular-nums">{selectedTicker.ticker}</span>
+            </div>
+            <div className="h-[400px]">
+              {tickerChartLoading ? (
+                <Skeleton className="h-full w-full rounded-lg" />
+              ) : tickerOhlc && tickerOhlc.length > 0 ? (
+                <AssetCandleChart
+                  ticker={selectedTicker.ticker}
+                  initialData={tickerOhlc}
+                  periodRanges={{ '일봉': '3y', '주봉': '3y', '월봉': '5y' }}
+                />
+              ) : !tickerChartLoading ? (
+                <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                  차트 데이터를 불러오지 못했습니다
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* 상단 통계 + 검색 */}
       <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
         <div className="flex items-center gap-2 flex-wrap">
