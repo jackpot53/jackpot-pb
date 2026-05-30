@@ -7,27 +7,36 @@ import {
   HistogramSeries,
   LineSeries,
   LineStyle,
+  type HistogramData,
   type IChartApi,
   type ISeriesApi,
   type LineData,
   type Time,
+  type WhitespaceData,
 } from 'lightweight-charts'
 import { Skeleton } from '@/components/ui/skeleton'
 import { resolvePalette, CHART_UP, CHART_DOWN } from '@/lib/chart/theme'
 import type { Period } from '@/components/app/asset-candle-chart'
 import type { InvestorFlowPoint } from '@/app/api/investor-flow/route'
 
-// 투자자별 고정 색상 — CHART_UP(적)/CHART_DOWN(청)과 겹치지 않는 식별 색
 const FLOW_COLORS = {
-  institution: '#f59e0b', // 기관 — amber
-  foreign:     '#3b82f6', // 외국인 — blue
-  individual:  '#10b981', // 개인 — green
+  institution: '#f59e0b',
+  foreign:     '#3b82f6',
+  individual:  '#10b981',
 } as const
 
 interface Props {
   ticker: string
   period: Period
   range?: '1y' | '3y' | '5y'
+}
+
+// null = masterDates 에는 있지만 API 데이터가 없는 날짜 (whitespace)
+interface FlowFilled {
+  date: string
+  institution: number | null
+  foreign: number | null
+  individual: number | null
 }
 
 function fmtFlow(v: number): string {
@@ -73,27 +82,34 @@ function aggregateByMonth(data: InvestorFlowPoint[]): InvestorFlowPoint[] {
   return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date))
 }
 
-// 기간 시작점부터 순매수량을 누적해 추세 라인용 데이터로 변환
-function toCumulative(data: InvestorFlowPoint[]): InvestorFlowPoint[] {
+// 집계 후 masterDates 에 맞춰 fill — 없는 날짜는 null (whitespace)
+function fillToMasterDates(points: InvestorFlowPoint[], masterDates: string[]): FlowFilled[] {
+  if (masterDates.length === 0) return points.map(p => ({ ...p }))
+  const byDate = new Map(points.map(p => [p.date, p]))
+  return masterDates.map(d => {
+    const p = byDate.get(d)
+    return p
+      ? { date: d, institution: p.institution, foreign: p.foreign, individual: p.individual }
+      : { date: d, institution: null, foreign: null, individual: null }
+  })
+}
+
+// 누적 순매수 — null 구간은 whitespace (라인 끊김) 처리
+function toCumulative(data: FlowFilled[]): FlowFilled[] {
   let inst = 0, frgn = 0, indv = 0
-  return data.map((d) => {
+  return data.map(d => {
+    if (d.institution === null) return { date: d.date, institution: null, foreign: null, individual: null }
     inst += d.institution
-    frgn += d.foreign
-    indv += d.individual
+    frgn += d.foreign!
+    indv += d.individual!
     return { date: d.date, institution: inst, foreign: frgn, individual: indv }
   })
 }
 
-// 누적 순매수 추세 — 기관·외국인·개인 3개 라인을 한 패널에 겹쳐 표시
-function CumulativeFlowChart({
-  data,
-  height = 140,
-}: {
-  data: InvestorFlowPoint[]
-  height?: number
-}) {
+function CumulativeFlowChart({ data, height = 140 }: { data: FlowFilled[]; height?: number }) {
   const sync = useChartSync()
   const syncRef = useRef(sync)
+  syncRef.current = sync
 
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
@@ -101,7 +117,6 @@ function CumulativeFlowChart({
   const frgnSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
   const indvSeriesRef = useRef<ISeriesApi<'Line'> | null>(null)
 
-  // 차트 초기화 (마운트 시 1회)
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
@@ -111,41 +126,19 @@ function CumulativeFlowChart({
       autoSize: true,
       handleScroll: false,
       handleScale: false,
-      layout: {
-        background: { color: 'transparent' },
-        textColor: palette.mutedText,
-        attributionLogo: false,
-        fontSize: 10,
-      },
-      grid: {
-        vertLines: { visible: false },
-        horzLines: { color: palette.grid, style: 2 },
-      },
+      layout: { background: { color: 'transparent' }, textColor: palette.mutedText, attributionLogo: false, fontSize: 10 },
+      grid: { vertLines: { visible: false }, horzLines: { color: palette.grid, style: 2 } },
       rightPriceScale: { visible: false },
       leftPriceScale: { visible: false },
       timeScale: HIDDEN_TIME_SCALE,
     })
 
-    const commonOpts = {
-      lineWidth: 1,
-      priceLineVisible: false,
-      lastValueVisible: false,
-      crosshairMarkerVisible: false,
-    } as const
-
+    const commonOpts = { lineWidth: 1, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false } as const
     const instSeries = chart.addSeries(LineSeries, { ...commonOpts, color: FLOW_COLORS.institution })
     const frgnSeries = chart.addSeries(LineSeries, { ...commonOpts, color: FLOW_COLORS.foreign })
     const indvSeries = chart.addSeries(LineSeries, { ...commonOpts, color: FLOW_COLORS.individual })
 
-    // 0 기준선 — 매수/매도 전환점 가독성 (MACD 패널 패턴 재사용)
-    instSeries.createPriceLine({
-      price: 0,
-      lineStyle: LineStyle.Dashed,
-      lineWidth: 1,
-      color: palette.mutedText,
-      axisLabelVisible: false,
-      title: '',
-    })
+    instSeries.createPriceLine({ price: 0, lineStyle: LineStyle.Dashed, lineWidth: 1, color: palette.mutedText, axisLabelVisible: false, title: '' })
 
     chartRef.current = chart
     instSeriesRef.current = instSeries
@@ -153,7 +146,6 @@ function CumulativeFlowChart({
     indvSeriesRef.current = indvSeries
 
     const unregister = syncRef.current.registerChart(chart)
-
     return () => {
       unregister()
       chart.remove()
@@ -164,7 +156,6 @@ function CumulativeFlowChart({
     }
   }, [])
 
-  // 데이터 업데이트
   useEffect(() => {
     const chart = chartRef.current
     const instSeries = instSeriesRef.current
@@ -172,8 +163,11 @@ function CumulativeFlowChart({
     const indvSeries = indvSeriesRef.current
     if (!chart || !instSeries || !frgnSeries || !indvSeries) return
 
-    const toLine = (key: keyof Pick<InvestorFlowPoint, 'institution' | 'foreign' | 'individual'>): LineData[] =>
-      data.map((p) => ({ time: p.date as Time, value: p[key] }))
+    const toLine = (key: keyof Pick<FlowFilled, 'institution' | 'foreign' | 'individual'>): (LineData | WhitespaceData)[] =>
+      data.map(p => {
+        const v = p[key]
+        return v === null ? { time: p.date as Time } : { time: p.date as Time, value: v }
+      })
 
     instSeries.setData(toLine('institution'))
     frgnSeries.setData(toLine('foreign'))
@@ -184,21 +178,14 @@ function CumulativeFlowChart({
 
   return (
     <div>
-      {/* 헤더 + 범례 — MACD 패널 범례 패턴 재사용 */}
       <div className="flex items-center gap-2 mb-0.5">
         <p className="text-[10px] text-muted-foreground">누적 순매수 추세</p>
-        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="inline-block w-4 h-[1.5px]" style={{ background: FLOW_COLORS.institution }} />
-          기관
-        </span>
-        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="inline-block w-4 h-[1.5px]" style={{ background: FLOW_COLORS.foreign }} />
-          외국인
-        </span>
-        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <span className="inline-block w-4 h-[1.5px]" style={{ background: FLOW_COLORS.individual }} />
-          개인
-        </span>
+        {(['institution', 'foreign', 'individual'] as const).map(k => (
+          <span key={k} className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            <span className="inline-block w-4 h-[1.5px]" style={{ background: FLOW_COLORS[k] }} />
+            {k === 'institution' ? '기관' : k === 'foreign' ? '외국인' : '개인'}
+          </span>
+        ))}
       </div>
       <div ref={containerRef} style={{ height }} className="w-full" />
     </div>
@@ -206,24 +193,21 @@ function CumulativeFlowChart({
 }
 
 function FlowChart({
-  data,
-  label,
-  dataKey,
-  height = 100,
+  data, label, dataKey, height = 100,
 }: {
-  data: InvestorFlowPoint[]
+  data: FlowFilled[]
   label: string
-  dataKey: keyof Pick<InvestorFlowPoint, 'individual' | 'foreign' | 'institution'>
+  dataKey: keyof Pick<FlowFilled, 'individual' | 'foreign' | 'institution'>
   height?: number
 }) {
   const sync = useChartSync()
   const syncRef = useRef(sync)
+  syncRef.current = sync
 
   const containerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const seriesRef = useRef<ISeriesApi<'Histogram'> | null>(null)
 
-  // 차트 초기화 (마운트 시 1회)
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
@@ -233,40 +217,21 @@ function FlowChart({
       autoSize: true,
       handleScroll: false,
       handleScale: false,
-      layout: {
-        background: { color: 'transparent' },
-        textColor: palette.mutedText,
-        attributionLogo: false,
-        fontSize: 10,
-      },
-      grid: {
-        vertLines: { visible: false },
-        horzLines: { color: palette.grid, style: 2 },
-      },
-      rightPriceScale: {
-        visible: false,
-      },
+      layout: { background: { color: 'transparent' }, textColor: palette.mutedText, attributionLogo: false, fontSize: 10 },
+      grid: { vertLines: { visible: false }, horzLines: { color: palette.grid, style: 2 } },
+      rightPriceScale: { visible: false },
       leftPriceScale: { visible: false },
       timeScale: HIDDEN_TIME_SCALE,
       localization: { priceFormatter: fmtFlow },
     })
 
-    const series = chart.addSeries(HistogramSeries, {
-      base: 0,
-      priceScaleId: 'right',
-      priceLineVisible: false,
-      lastValueVisible: false,
-    })
-
-    chart.priceScale('right').applyOptions({
-      scaleMargins: { top: 0.1, bottom: 0.1 },
-    })
+    const series = chart.addSeries(HistogramSeries, { base: 0, priceScaleId: 'right', priceLineVisible: false, lastValueVisible: false })
+    chart.priceScale('right').applyOptions({ scaleMargins: { top: 0.1, bottom: 0.1 } })
 
     chartRef.current = chart
     seriesRef.current = series
 
     const unregister = syncRef.current.registerChart(chart)
-
     return () => {
       unregister()
       chart.remove()
@@ -275,19 +240,18 @@ function FlowChart({
     }
   }, [])
 
-  // 데이터 업데이트
   useEffect(() => {
     const chart = chartRef.current
     const series = seriesRef.current
     if (!chart || !series) return
 
-    series.setData(
-      data.map((p) => ({
-        time: p.date as Time,
-        value: p[dataKey],
-        color: p[dataKey] >= 0 ? CHART_UP : CHART_DOWN,
-      })),
-    )
+    const chartData: (HistogramData | WhitespaceData)[] = data.map(p => {
+      const v = p[dataKey]
+      return v === null
+        ? { time: p.date as Time }
+        : { time: p.date as Time, value: v, color: v >= 0 ? CHART_UP : CHART_DOWN }
+    })
+    series.setData(chartData)
 
     syncRef.current.applyRangeToChart(chart)
   }, [data, dataKey])
@@ -298,15 +262,6 @@ function FlowChart({
       <div ref={containerRef} style={{ height }} className="w-full" />
     </div>
   )
-}
-
-function fillToMasterDates(
-  points: InvestorFlowPoint[],
-  masterDates: string[],
-): InvestorFlowPoint[] {
-  if (masterDates.length === 0) return points
-  const byDate = new Map(points.map((p) => [p.date, p]))
-  return masterDates.map((d) => byDate.get(d) ?? { date: d, institution: 0, foreign: 0, individual: 0 })
 }
 
 export function InvestorFlowChart({ ticker, period, range = '1y' }: Props) {
@@ -334,22 +289,20 @@ export function InvestorFlowChart({ ticker, period, range = '1y' }: Props) {
     return () => ctrl.abort()
   }, [ticker, range])
 
+  // 집계 먼저 → masterDates fill — 주봉/월봉은 집계된 날짜로 fill
   const data = useMemo(() => {
     if (!raw) return []
-    if (period === '주봉') return aggregateByWeek(fillToMasterDates(raw, masterDates))
-    if (period === '월봉') return aggregateByMonth(fillToMasterDates(raw, masterDates))
+    if (period === '주봉') return fillToMasterDates(aggregateByWeek(raw), masterDates)
+    if (period === '월봉') return fillToMasterDates(aggregateByMonth(raw), masterDates)
     return fillToMasterDates(raw, masterDates)
   }, [raw, period, masterDates])
 
-  // 누적 순매수 — 기간 집계 후의 data를 그대로 재사용 (별도 fetch 불필요)
   const cumulative = useMemo(() => toCumulative(data), [data])
 
   if (loading) {
     return (
       <div className="space-y-2">
-        {/* 누적 추세 스켈레톤 */}
         <Skeleton className="h-[140px] w-full" />
-        {/* 히스토그램 스켈레톤 */}
         {['개인', '외국인', '기관'].map(l => (
           <div key={l}>
             <p className="text-[10px] text-muted-foreground mb-0.5">{l}</p>

@@ -124,7 +124,7 @@ export function RoboAdvisorPageClient() {
                   <InvestorFlowChart
                     ticker={selectedTicker.ticker}
                     period={chartPeriod}
-                    range="3y"
+                    range={chartPeriod === '월봉' ? '5y' : '3y'}
                   />
                 </div>
               </div>

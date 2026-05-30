@@ -22,11 +22,6 @@ function parseDateStr(s: string): string {
   return s.replace(/\./g, '-')
 }
 
-function extractText(html: string, pattern: RegExp): string {
-  const m = html.match(pattern)
-  return m ? m[1].trim() : ''
-}
-
 async function fetchPage(code: string, page: number): Promise<InvestorFlowPoint[]> {
   const url = `https://finance.naver.com/item/frgn.naver?code=${code}&page=${page}`
   const res = await fetch(url, {
@@ -81,10 +76,54 @@ function extractCode(ticker: string): string {
   return ticker.replace(/\.(KS|KQ)$/, '')
 }
 
-function rangeToPages(range: string): number {
-  if (range === '5y') return 30
-  if (range === '3y') return 18
-  return 9  // 1y default
+function rangeToStartDate(range: string): Date {
+  const d = new Date()
+  if (range === '5y') d.setFullYear(d.getFullYear() - 5)
+  else if (range === '3y') d.setFullYear(d.getFullYear() - 3)
+  else d.setFullYear(d.getFullYear() - 1)
+  return d
+}
+
+function sortAndDedup(points: InvestorFlowPoint[]): InvestorFlowPoint[] {
+  points.sort((a, b) => a.date.localeCompare(b.date))
+  const seen = new Set<string>()
+  return points.filter(p => {
+    if (seen.has(p.date)) return false
+    seen.add(p.date)
+    return true
+  })
+}
+
+// Naver 스크래핑: targetStart 날짜에 도달하거나 데이터가 소진될 때까지 수집.
+// 페이지 1 = 최근, 페이지 N = 과거 방향이므로 페이지를 늘릴수록 더 오래된 데이터.
+async function fetchNaverUntilStart(code: string, targetStart: Date): Promise<InvestorFlowPoint[]> {
+  const MAX_PAGES = 80  // 5년치도 충분히 커버
+  const BATCH = 5
+  const targetStartStr = targetStart.toISOString().slice(0, 10)
+  const allPoints: InvestorFlowPoint[] = []
+
+  for (let start = 1; start <= MAX_PAGES; start += BATCH) {
+    const pageCount = Math.min(BATCH, MAX_PAGES - start + 1)
+    const pages = Array.from({ length: pageCount }, (_, i) => start + i)
+    const results = await Promise.allSettled(pages.map(p => fetchPage(code, p)))
+
+    let gotAny = false
+    for (const r of results) {
+      if (r.status === 'fulfilled' && r.value.length > 0) {
+        allPoints.push(...r.value)
+        gotAny = true
+      }
+    }
+
+    // 이번 배치에서 아무 데이터도 못 받으면 과거 데이터 소진 — 종료
+    if (!gotAny) break
+
+    // 수집된 최고(오래된) 날짜가 목표 시작일에 도달했으면 종료
+    const oldest = allPoints.reduce((min, p) => p.date < min ? p.date : min, allPoints[0].date)
+    if (oldest <= targetStartStr) break
+  }
+
+  return allPoints
 }
 
 export async function GET(req: NextRequest) {
@@ -98,50 +137,55 @@ export async function GET(req: NextRequest) {
   }
 
   const code = extractCode(ticker)
+  const targetStart = rangeToStartDate(range)
+  // 목표 시작일 기준 2주 이내면 "커버됨"으로 판정 (주말·공휴일 여유)
+  const coverageTolerance = new Date(targetStart)
+  coverageTolerance.setDate(coverageTolerance.getDate() + 14)
+  const toleranceStr = coverageTolerance.toISOString().slice(0, 10)
 
-  // KIS 우선 — 실패 또는 데이터 없으면 아래 Naver 스크래핑으로 폴백
+  // KIS 우선 시도
+  let kisData: InvestorFlowPoint[] | null = null
   const kisCode = toKisCode(ticker)
   if (kisCode) {
     try {
-      const kisData = await fetchKisInvestorFlow(kisCode, range)
-      if (kisData && kisData.length > 0) {
-        return NextResponse.json(
-          { data: kisData },
-          { headers: { 'Cache-Control': 'public, max-age=86400' } },
-        )
-      }
+      const result = await fetchKisInvestorFlow(kisCode, range)
+      if (result && result.length > 0) kisData = result
     } catch (err) {
       console.error('[investor-flow] KIS fetch error, falling back to Naver:', err)
     }
   }
 
-  const maxPages = rangeToPages(range)
+  // KIS가 전체 기간을 커버하면 바로 반환 (kisData는 오름차순 정렬됨)
+  if (kisData && kisData[0].date <= toleranceStr) {
+    return NextResponse.json(
+      { data: kisData },
+      { headers: { 'Cache-Control': 'public, max-age=86400' } },
+    )
+  }
 
+  // KIS 미커버 — Naver를 목표 시작일까지 스크래핑
   try {
-    // 1~maxPages 병렬 fetch (5개씩 batch로 제한)
-    const allPoints: InvestorFlowPoint[] = []
-    const BATCH = 5
-    for (let start = 1; start <= maxPages; start += BATCH) {
-      const pages = Array.from({ length: Math.min(BATCH, maxPages - start + 1) }, (_, i) => start + i)
-      const results = await Promise.allSettled(pages.map(p => fetchPage(code, p)))
-      for (const r of results) {
-        if (r.status === 'fulfilled') allPoints.push(...r.value)
+    const naverRaw = await fetchNaverUntilStart(code, targetStart)
+    const naverData = sortAndDedup(naverRaw)
+
+    if (naverData.length === 0) {
+      // Naver도 실패 → KIS 데이터라도 반환
+      if (kisData && kisData.length > 0) {
+        return NextResponse.json({ data: kisData }, { headers: { 'Cache-Control': 'public, max-age=86400' } })
       }
+      return NextResponse.json({ error: 'fetch failed' }, { status: 500 })
     }
 
-    // 날짜 기준 정렬 (오래된 것부터)
-    allPoints.sort((a, b) => a.date.localeCompare(b.date))
+    // KIS와 Naver 중 더 과거까지 커버하는 소스 선택 (데이터 일관성을 위해 단일 소스)
+    if (kisData && kisData.length > 0 && kisData[0].date < naverData[0].date) {
+      return NextResponse.json({ data: kisData }, { headers: { 'Cache-Control': 'public, max-age=86400' } })
+    }
 
-    // 중복 날짜 제거
-    const seen = new Set<string>()
-    const data = allPoints.filter(p => {
-      if (seen.has(p.date)) return false
-      seen.add(p.date)
-      return true
-    })
-
-    return NextResponse.json({ data }, { headers: { 'Cache-Control': 'public, max-age=86400' } })
+    return NextResponse.json({ data: naverData }, { headers: { 'Cache-Control': 'public, max-age=86400' } })
   } catch {
+    if (kisData && kisData.length > 0) {
+      return NextResponse.json({ data: kisData }, { headers: { 'Cache-Control': 'public, max-age=86400' } })
+    }
     return NextResponse.json({ error: 'fetch failed' }, { status: 500 })
   }
 }
