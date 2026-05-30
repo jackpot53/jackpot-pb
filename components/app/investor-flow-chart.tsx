@@ -412,12 +412,12 @@ export function InvestorFlowChart({ ticker, period, range = '1y' }: Props) {
 
   if (loading) {
     return (
-      <div className="space-y-2">
-        <Skeleton className="h-[140px] w-full" />
+      <div>
+        <Skeleton className="h-[100px] w-full" />
         {['개인', '외국인', '기관'].map(l => (
-          <div key={l}>
+          <div key={l} className="border-t border-border mt-2 pt-2">
             <p className="text-[10px] text-muted-foreground mb-0.5">{l}</p>
-            <Skeleton className="h-[100px] w-full" />
+            <Skeleton className="h-[70px] w-full" />
           </div>
         ))}
       </div>
@@ -441,11 +441,17 @@ export function InvestorFlowChart({ ticker, period, range = '1y' }: Props) {
   }
 
   return (
-    <div className="space-y-1">
+    <div>
       <CumulativeFlowChart data={cumulative} />
-      <FlowChart data={data} label="개인" dataKey="individual" yDomain={yDomain} />
-      <FlowChart data={data} label="외국인" dataKey="foreign" yDomain={yDomain} />
-      <FlowChart data={data} label="기관" dataKey="institution" yDomain={yDomain} />
+      {([
+        { label: '개인', dataKey: 'individual' as const },
+        { label: '외국인', dataKey: 'foreign' as const },
+        { label: '기관', dataKey: 'institution' as const },
+      ]).map(({ label, dataKey }) => (
+        <div key={label} className="border-t border-border mt-2 pt-2">
+          <FlowChart data={data} label={label} dataKey={dataKey} yDomain={yDomain} />
+        </div>
+      ))}
     </div>
   )
 }
