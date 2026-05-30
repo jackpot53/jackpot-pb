@@ -18,9 +18,9 @@ type Period = '일봉' | '주봉' | '월봉'
 
 const PERIODS: Period[] = ['일봉', '주봉', '월봉']
 const PERIOD_PARAMS: Record<Period, { interval: string; range: string }> = {
-  '일봉': { interval: '1d', range: '1mo' },
-  '주봉': { interval: '1wk', range: '6mo' },
-  '월봉': { interval: '1mo', range: '2y' },
+  '일봉': { interval: '1d', range: '1y' },
+  '주봉': { interval: '1wk', range: '1y' },
+  '월봉': { interval: '1mo', range: '1y' },
 }
 
 interface AssetCandleChartProps {
@@ -232,10 +232,6 @@ export function AssetCandleChart({ ticker, initialData }: AssetCandleChartProps)
     })
   }, [data, period])
 
-  if (baseData.length === 0) {
-    return null
-  }
-
   const changePct = tooltip
     ? ((tooltip.point.close - tooltip.point.open) / tooltip.point.open) * 100
     : null
@@ -261,6 +257,11 @@ export function AssetCandleChart({ ticker, initialData }: AssetCandleChartProps)
       </div>
 
       <div ref={containerRef} className="relative flex-1 min-h-0">
+        {baseData.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-xs text-muted-foreground">{loading ? '불러오는 중…' : '데이터 없음'}</span>
+          </div>
+        )}
         {tooltip && (
           <div
             className="pointer-events-none absolute z-10 rounded-lg border border-border bg-popover text-popover-foreground px-3 py-2 shadow-md text-xs min-w-[140px]"

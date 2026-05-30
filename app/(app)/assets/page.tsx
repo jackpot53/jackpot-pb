@@ -9,6 +9,7 @@ import { getRealizedProfitKrw } from '@/db/queries/transactions'
 import { toMonthlyData, toAnnualData, toDailyData, snapshotsForType } from '@/lib/snapshot/aggregation'
 import { AssetsPageClient } from '@/components/app/assets-page-client'
 import { timed, perfMark, perfLog } from '@/lib/perf'
+import AssetsLoading from './loading'
 
 export default async function AssetsPage() {
   const user = await getAuthUser()
@@ -16,9 +17,7 @@ export default async function AssetsPage() {
 
   return (
     <div className="space-y-6">
-      <Suspense fallback={
-        <div className="h-40 rounded-2xl bg-muted/40 animate-pulse" />
-      }>
+      <Suspense fallback={<AssetsLoading />}>
         <AssetsContent userId={user.id} />
       </Suspense>
     </div>

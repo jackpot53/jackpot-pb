@@ -1,47 +1,90 @@
 import { Skeleton } from '@/components/ui/skeleton'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+
+function SummaryCardsSkeleton() {
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="rounded-xl border border-border bg-card p-4 space-y-2">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-7 w-28" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function TodayReportSkeleton() {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+      <Skeleton className="h-3.5 w-24" />
+      <div className="flex gap-4">
+        <Skeleton className="h-3 w-32" />
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-3 w-28" />
+      </div>
+    </div>
+  )
+}
+
+function AssetSectionSkeleton() {
+  return (
+    <div className="space-y-2">
+      {/* CollapsibleChart 헤더 */}
+      <div className="rounded-xl border border-border bg-card px-4 py-2.5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-5 w-16 rounded-full" />
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-3 w-10" />
+          <Skeleton className="h-3 w-14" />
+          <Skeleton className="h-3 w-10" />
+          <Skeleton className="h-3 w-16" />
+        </div>
+        <Skeleton className="h-4 w-4 rounded" />
+      </div>
+      {/* 자산 카드 2개 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-1.5">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="rounded-sm border border-gray-200 bg-white flex overflow-hidden">
+            <div className="w-1.5 shrink-0 bg-muted" />
+            <div className="flex flex-col flex-1 gap-2 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                <Skeleton className="h-3.5 w-28" />
+                <Skeleton className="h-5 w-12 ml-auto rounded-none" />
+              </div>
+              <div className="flex items-center gap-2 pt-1.5 border-t border-black/[0.05]">
+                <Skeleton className="h-3 w-12" />
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-3 w-16" />
+              </div>
+              <div className="flex items-center gap-2 pt-1.5 border-t border-black/[0.05]">
+                <Skeleton className="h-3 w-10" />
+                <Skeleton className="h-3 w-14" />
+                <Skeleton className="h-3 w-12" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function AssetsLoading() {
   return (
     <div className="space-y-6">
-      {/* Hero 배너 */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 p-6 sm:p-8 shadow-xl">
-        <div className="space-y-2">
-          <Skeleton className="h-3 w-20 bg-white/25" />
-          <Skeleton className="h-8 w-36 bg-white/30" />
-          <Skeleton className="h-3 w-52 bg-white/18" />
-        </div>
+      <SummaryCardsSkeleton />
+      <TodayReportSkeleton />
+      {/* 필터 셀렉트 */}
+      <div className="flex gap-2 justify-center">
+        <Skeleton className="h-8 w-36 rounded-md" />
+        <Skeleton className="h-8 w-36 rounded-md" />
       </div>
-
-      {/* 미니 통계 카드 3개 */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i}>
-            <CardHeader className="pb-2">
-              <Skeleton className="h-3 w-16" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-6 w-24" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* 자산 테이블 */}
-      <Card>
-        <CardContent className="divide-y divide-border/50 pt-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 py-3">
-              <Skeleton className="h-5 w-12 rounded-full flex-shrink-0" />
-              <div className="flex-1 space-y-1.5">
-                <Skeleton className="h-3 w-28" />
-                <Skeleton className="h-2.5 w-18" />
-              </div>
-              <Skeleton className="h-3.5 w-20" />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
+      {/* 자산 섹션 3개 */}
+      {Array.from({ length: 3 }).map((_, i) => (
+        <AssetSectionSkeleton key={i} />
+      ))}
     </div>
   )
 }

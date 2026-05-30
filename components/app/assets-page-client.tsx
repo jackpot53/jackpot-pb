@@ -689,14 +689,6 @@ function AssetCardList({ assets, title, sparklines, lineDataMap }: {
   const hasStale = assets.some((a) => a.isStale)
   const displayAssets = merged ? mergeAssets(assets) : assets
 
-  const totalCost = assets.reduce((s, a) => s + a.totalCostKrw, 0)
-  const valuedAssets = assets.filter((a) => a.currentValueKrw > 0)
-  const totalValue = valuedAssets.reduce((s, a) => s + a.currentValueKrw, 0)
-  const valuedCost = valuedAssets.reduce((s, a) => s + a.totalCostKrw, 0)
-  const totalProfit = totalValue - valuedCost
-  const totalReturnPct = valuedCost > 0 ? (totalProfit / valuedCost) * 100 : null
-  const hasAnyValue = totalValue > 0
-
   function handleRefresh() {
     startTransition(async () => {
       await refreshAllPrices()
@@ -710,32 +702,6 @@ function AssetCardList({ assets, title, sparklines, lineDataMap }: {
         <div className="flex items-center justify-between gap-2 px-1 flex-wrap">
           <div className="flex items-center gap-x-3 gap-y-1 flex-wrap min-w-0">
             {title && <div className="flex items-center gap-2 flex-wrap">{title}</div>}
-            {/* 매수금 · 평가금 · 수익금 인라인 */}
-            <div className="flex items-center gap-x-2 gap-y-1 text-xs flex-wrap" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-              <span className="text-muted-foreground">매수금</span>
-              <span className="font-semibold text-foreground tabular-nums">{totalCost > 0 ? formatKrwCompact(totalCost) : '—'}</span>
-              <span className="text-muted-foreground/40">|</span>
-              <span className="text-muted-foreground">평가금</span>
-              <span className="font-semibold text-foreground tabular-nums">{hasAnyValue ? formatKrwCompact(totalValue) : '—'}</span>
-              <span className="text-muted-foreground/40">|</span>
-              <span className="text-muted-foreground">수익금</span>
-              {hasAnyValue && totalCost > 0 ? (
-                <>
-                  <span className={`font-semibold tabular-nums ${totalProfit >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>
-                    {totalProfit >= 0 ? '+' : ''}{formatKrwCompact(totalProfit)}
-                  </span>
-                  {totalReturnPct !== null && (
-                    <>
-                      <span className="text-muted-foreground/40">|</span>
-                      <span className="text-muted-foreground">수익률</span>
-                      <span className={`font-semibold tabular-nums ${totalReturnPct >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>
-                        {formatReturn(totalReturnPct)}
-                      </span>
-                    </>
-                  )}
-                </>
-              ) : <span className="text-muted-foreground">—</span>}
-            </div>
           </div>
           <div className="flex items-center gap-2">
             {hasStale && (
@@ -785,20 +751,57 @@ function CollapsibleChart({ assets, sparklines, monthlyData, annualData, dailyDa
   dailyData?: DailyDataPoint[]
 }) {
   const [open, setOpen] = useState(false)
+
+  const assetType = assets[0]?.assetType
+  const totalCost = assets.reduce((s, a) => s + a.totalCostKrw, 0)
+  const valuedAssets = assets.filter((a) => a.currentValueKrw > 0)
+  const totalValue = valuedAssets.reduce((s, a) => s + a.currentValueKrw, 0)
+  const valuedCost = valuedAssets.reduce((s, a) => s + a.totalCostKrw, 0)
+  const totalProfit = totalValue - valuedCost
+  const totalReturnPct = valuedCost > 0 ? (totalProfit / valuedCost) * 100 : null
+  const hasAnyValue = totalValue > 0
+
   return (
     <div className="bg-card rounded-xl overflow-hidden border border-border">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium hover:bg-muted/30 transition-colors"
       >
-        <div className="flex items-center gap-2">
-          <span>차트</span>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-xs font-medium text-muted-foreground border border-border">
-            <HelpCircle className="h-2.5 w-2.5 shrink-0" />
-            일간 · 월간 · 연간 총 수익 현황
-          </span>
+        <div className="flex items-center gap-x-3 gap-y-1 flex-wrap min-w-0">
+          {assetType && <AssetTypeBadge assetType={assetType as AssetPerformance['assetType']} />}
+          {assetType === 'fund' && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <HelpCircle className="h-3 w-3" />
+              1일 1회 기준가 갱신
+            </span>
+          )}
+          <div className="flex items-center gap-x-2 gap-y-1 text-xs flex-wrap" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+            <span className="text-muted-foreground">매수금</span>
+            <span className="font-semibold text-foreground tabular-nums">{totalCost > 0 ? formatKrwCompact(totalCost) : '—'}</span>
+            <span className="text-muted-foreground/40">|</span>
+            <span className="text-muted-foreground">평가금</span>
+            <span className="font-semibold text-foreground tabular-nums">{hasAnyValue ? formatKrwCompact(totalValue) : '—'}</span>
+            <span className="text-muted-foreground/40">|</span>
+            <span className="text-muted-foreground">수익금</span>
+            {hasAnyValue && totalCost > 0 ? (
+              <>
+                <span className={`font-semibold tabular-nums ${totalProfit >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>
+                  {totalProfit >= 0 ? '+' : ''}{formatKrwCompact(totalProfit)}
+                </span>
+                {totalReturnPct !== null && (
+                  <>
+                    <span className="text-muted-foreground/40">|</span>
+                    <span className="text-muted-foreground">수익률</span>
+                    <span className={`font-semibold tabular-nums ${totalReturnPct >= 0 ? 'text-rose-600' : 'text-blue-600'}`}>
+                      {formatReturn(totalReturnPct)}
+                    </span>
+                  </>
+                )}
+              </>
+            ) : <span className="text-muted-foreground">—</span>}
+          </div>
         </div>
-        <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-4 w-4 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <div className="h-[360px] px-4 pb-4">
@@ -834,7 +837,7 @@ export function AssetsPageClient({ performances, realizedProfitKrw = 0, sparklin
       ),
     ]
     if (liveTickers.length > 0) {
-      fetch(`/api/sparklines?tickers=${liveTickers.join(',')}`)
+      fetch(`/api/sparklines?tickers=${liveTickers.join(',')}&interval=1d&range=1y`)
         .then((r) => r.json())
         .then((data: Record<string, OhlcPoint[]>) => setSparklines(data))
         .catch(() => {})
@@ -1029,8 +1032,8 @@ function AssetFilter({
           <div className="flex-1 min-w-0 max-w-36">
             <Select value={activeAccount === 'all' ? '' : activeAccount} onValueChange={(v) => setActiveAccount((v || 'all') as 'all' | 'personal' | 'pension' | 'direct')}>
               <SelectTrigger className="h-8 w-full text-xs justify-center">
-                <SelectValue placeholder="투자 방식">
-                  {activeAccount === 'all' ? '투자 방식' : activeAccount === 'personal' ? '증권계좌' : activeAccount === 'pension' ? '연금계좌' : '직접보유'}
+                <SelectValue placeholder="계좌유형">
+                  {activeAccount === 'all' ? '계좌유형' : activeAccount === 'personal' ? '증권계좌' : activeAccount === 'pension' ? '연금계좌' : '직접보유'}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -1091,17 +1094,6 @@ function AssetFilter({
                   assets={filteredGrouped[type]}
                   sparklines={sparklines}
                   lineDataMap={lineDataMap}
-                  title={
-                    <>
-                      <AssetTypeBadge assetType={type as AssetPerformance['assetType']} />
-                      {type === 'fund' && (
-                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <HelpCircle className="h-3 w-3" />
-                          1일 1회 기준가 갱신
-                        </span>
-                      )}
-                    </>
-                  }
                 />
               </div>
             </div>
