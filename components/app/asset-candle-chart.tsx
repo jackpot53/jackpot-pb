@@ -15,7 +15,6 @@ import {
   type Time,
   type MouseEventParams,
 } from 'lightweight-charts'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { OhlcPoint } from '@/lib/price/sparkline'
 import { useChartSync, CHART_RIGHT_AXIS_WIDTH } from './chart-sync'
 import { CHART_UP, CHART_DOWN, resolvePalette } from '@/lib/chart/theme'
@@ -83,10 +82,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
   const [maVisible, setMaVisible] = useState<Record<number, boolean>>(
     Object.fromEntries(MA_PERIODS.map((p) => [p, true])),
   )
-  // 현재 활성화된 기간 프리셋 라벨 ('1M'|'3M'|'6M'|'1Y'|'전체'|null)
-  const [activePreset, setActivePreset] = useState<string | null>(null)
-
-  const effectiveParams = useMemo<Record<Period, { interval: string; range: string }>>(
+const effectiveParams = useMemo<Record<Period, { interval: string; range: string }>>(
     () => ({
       '일봉': { ...PERIOD_PARAMS['일봉'], ...(periodRanges?.['일봉'] ? { range: periodRanges['일봉'] } : {}) },
       '주봉': { ...PERIOD_PARAMS['주봉'], ...(periodRanges?.['주봉'] ? { range: periodRanges['주봉'] } : {}) },
@@ -132,8 +128,7 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
   const selectPeriod = useCallback(
     (next: Period) => {
       syncRef.current.resetRange()
-      setActivePreset(null) // 기간 전환 시 프리셋 강조 초기화
-      setPeriod(next)
+setPeriod(next)
       onPeriodChange?.(next)
       if (next === '일봉' || fetchedByPeriod[next]) return
       const { interval, range } = effectiveParams[next]
@@ -458,45 +453,6 @@ export function AssetCandleChart({ ticker, initialData, avgPrice, periodRanges, 
         </div>
       </div>
 
-      {/* 내비게이션 툴바: 기간 프리셋 + 좌우 이동 */}
-      <div className="flex items-center justify-center gap-0.5 px-2 pb-1">
-        <button
-          disabled={baseData.length === 0}
-          onClick={() => { syncRef.current.pan(-0.3); setActivePreset(null) }}
-          className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          aria-label="과거로 이동"
-        >
-          <ChevronLeft className="w-3.5 h-3.5" />
-        </button>
-        {([
-          { label: '1M', months: 1 },
-          { label: '3M', months: 3 },
-          { label: '6M', months: 6 },
-          { label: '1Y', months: 12 },
-          { label: '전체', months: null },
-        ] as const).map(({ label, months }) => (
-          <button
-            key={label}
-            disabled={baseData.length === 0}
-            onClick={() => { syncRef.current.applyMonthsPreset(months); setActivePreset(label) }}
-            className={`px-2 py-0.5 text-[11px] rounded-md font-medium transition-colors disabled:opacity-30 disabled:cursor-not-allowed ${
-              activePreset === label
-                ? 'bg-muted text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-        <button
-          disabled={baseData.length === 0}
-          onClick={() => { syncRef.current.pan(0.3); setActivePreset(null) }}
-          className="p-0.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          aria-label="최신으로 이동"
-        >
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
 
       <div ref={containerRef} className="relative flex-1 min-h-0">
         {avgPriceLabelY != null && (
