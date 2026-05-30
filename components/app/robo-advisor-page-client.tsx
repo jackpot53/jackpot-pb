@@ -99,7 +99,6 @@ export function RoboAdvisorPageClient() {
                     initialData={tickerOhlc}
                     periodRanges={PERIOD_RANGES}
                     onPeriodChange={setChartPeriod}
-                    showVolume
                     onDataChange={setChartDataForMacd}
                   />
                 ) : !tickerChartLoading ? (
