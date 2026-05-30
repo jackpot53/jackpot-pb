@@ -45,6 +45,14 @@ const CciPanel = dynamic(
   () => import('@/components/app/cci-panel').then(m => ({ default: m.CciPanel })),
   { ssr: false, loading: () => <Skeleton className="h-[180px] w-full rounded-xl" /> },
 )
+const FinancialsChart = dynamic(
+  () => import('@/components/app/financials-chart').then(m => ({ default: m.FinancialsChart })),
+  { ssr: false, loading: () => <Skeleton className="h-[300px] w-full rounded-xl" /> },
+)
+const ShortSellingPanel = dynamic(
+  () => import('@/components/app/short-selling-panel').then(m => ({ default: m.ShortSellingPanel })),
+  { ssr: false, loading: () => <Skeleton className="h-[200px] w-full rounded-xl" /> },
+)
 
 const PERIOD_RANGES: Record<string, string> = { '일봉': '3y', '주봉': '3y', '월봉': '5y' }
 
@@ -132,6 +140,14 @@ export function RoboAdvisorPageClient() {
               </div>
 
               <div className="mt-2 rounded-lg border border-border p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-xs font-medium text-foreground">분기 실적</p>
+                  <span className="text-[10px] text-muted-foreground">(매출·영업이익·순이익 + 추정)</span>
+                </div>
+                <FinancialsChart ticker={selectedTicker.ticker} />
+              </div>
+
+              <div className="mt-2 rounded-lg border border-border p-3">
                 <div className="flex items-center gap-2">
                   <p className="text-xs font-medium text-foreground">투자자별 매매동향</p>
                   <span className="text-[10px] text-muted-foreground">(순매수량, 단위: 주)</span>
@@ -143,6 +159,18 @@ export function RoboAdvisorPageClient() {
                     range={chartPeriod === '월봉' ? '5y' : '3y'}
                   />
                 </div>
+              </div>
+
+              <div className="mt-2 rounded-lg border border-border p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <p className="text-xs font-medium text-foreground">공매도 위험신호</p>
+                  <span className="text-[10px] text-muted-foreground">(거래대금 · 비중 %)</span>
+                </div>
+                <ShortSellingPanel
+                  ticker={selectedTicker.ticker}
+                  period={chartPeriod}
+                  range={chartPeriod === '월봉' ? '5y' : '3y'}
+                />
               </div>
 
               <div className="mt-2 rounded-lg border border-border p-3">
