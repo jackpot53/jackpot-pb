@@ -1,5 +1,5 @@
 import type { OhlcPoint } from '@/lib/price/sparkline'
-import { tradingValue, avgTradingValue, avgTradingValueLast } from '../indicators/trading-value'
+import { tradingValueFromData, avgTradingValue, avgTradingValueLast } from '../indicators/trading-value'
 
 const VALUE_MULTIPLIER = 2
 const PRICE_RISE_THRESHOLD = 1.02
@@ -21,9 +21,7 @@ export interface ValueFlowEvent {
 export function detectTradingValueFlow(ohlc: OhlcPoint[]): boolean {
   if (ohlc.length < 22) return false
 
-  const closes = ohlc.map((p) => p.close)
-  const volumes = ohlc.map((p) => p.volume ?? null)
-  const tvs = tradingValue(closes, volumes)
+  const tvs = tradingValueFromData(ohlc)
 
   const todayTv = tvs[tvs.length - 1]
   if (todayTv === null) return false
@@ -46,9 +44,7 @@ export function detectTradingValueFlow(ohlc: OhlcPoint[]): boolean {
 export function detectTradingValueFlows(ohlc: OhlcPoint[]): ValueFlowEvent[] {
   if (ohlc.length < 22) return []
 
-  const closes = ohlc.map((p) => p.close)
-  const volumes = ohlc.map((p) => p.volume ?? null)
-  const tvs = tradingValue(closes, volumes)
+  const tvs = tradingValueFromData(ohlc)
   const avgTVs = avgTradingValue(tvs, AVG_PERIOD)
   const events: ValueFlowEvent[] = []
 
@@ -100,9 +96,7 @@ export function lastTradingValueFlow(
 export function cumulativeValueFlow(ohlc: OhlcPoint[]): (number | null)[] {
   if (ohlc.length === 0) return []
 
-  const closes = ohlc.map((p) => p.close)
-  const volumes = ohlc.map((p) => p.volume ?? null)
-  const tvs = tradingValue(closes, volumes)
+  const tvs = tradingValueFromData(ohlc)
 
   const result: (number | null)[] = new Array(ohlc.length).fill(null)
   let cumulative = 0
@@ -134,9 +128,7 @@ export function cumulativeValueFlowRolling(
 ): (number | null)[] {
   if (ohlc.length === 0) return []
 
-  const closes = ohlc.map((p) => p.close)
-  const volumes = ohlc.map((p) => p.volume ?? null)
-  const tvs = tradingValue(closes, volumes)
+  const tvs = tradingValueFromData(ohlc)
 
   // 일별 방향 가중 거래대금 (i=0은 이전 종가 없어서 null)
   const dailyFlows: (number | null)[] = new Array(ohlc.length).fill(null)

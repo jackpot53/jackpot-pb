@@ -15,7 +15,7 @@ import {
   type SeriesMarker,
 } from 'lightweight-charts'
 import type { OhlcPoint } from '@/lib/price/sparkline'
-import { tradingValue, avgTradingValue } from '@/lib/robo-advisor/indicators/trading-value'
+import { tradingValueFromData, avgTradingValue } from '@/lib/robo-advisor/indicators/trading-value'
 import {
   detectTradingValueFlows,
   lastTradingValueFlowFromEvents,
@@ -189,9 +189,7 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
       return
     }
 
-    const closes = data.map((p) => p.close)
-    const volumes = data.map((p) => p.volume ?? null)
-    const tvs = tradingValue(closes, volumes)
+    const tvs = tradingValueFromData(data)
     const avgTVs = avgTradingValue(tvs, 20)
 
     const histData: { time: Time; value: number; color: string }[] = []

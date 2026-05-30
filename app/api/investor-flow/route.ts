@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { toKisCode } from '@/lib/kis/symbol'
+import { fetchKisInvestorFlow } from '@/lib/kis/investor-flow'
 
 export const dynamic = 'force-dynamic'
 
@@ -96,6 +98,23 @@ export async function GET(req: NextRequest) {
   }
 
   const code = extractCode(ticker)
+
+  // KIS 우선 — 실패 또는 데이터 없으면 아래 Naver 스크래핑으로 폴백
+  const kisCode = toKisCode(ticker)
+  if (kisCode) {
+    try {
+      const kisData = await fetchKisInvestorFlow(kisCode, range)
+      if (kisData && kisData.length > 0) {
+        return NextResponse.json(
+          { data: kisData },
+          { headers: { 'Cache-Control': 'public, max-age=86400' } },
+        )
+      }
+    } catch (err) {
+      console.error('[investor-flow] KIS fetch error, falling back to Naver:', err)
+    }
+  }
+
   const maxPages = rangeToPages(range)
 
   try {

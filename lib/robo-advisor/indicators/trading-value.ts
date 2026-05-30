@@ -1,7 +1,22 @@
+import type { OhlcPoint } from '@/lib/price/sparkline'
+
 /**
  * 거래대금(close × volume, KRW) 관련 지표.
  * volume이 shares 단위이므로 close를 곱하면 실제 유동 자금을 반영한다.
  */
+
+/**
+ * OhlcPoint 배열에서 거래대금 배열을 반환한다.
+ * KIS 데이터는 tradingValue(acml_tr_pbmn)를 직접 사용하고,
+ * 없는 경우 close × volume으로 계산한다.
+ */
+export function tradingValueFromData(data: OhlcPoint[]): (number | null)[] {
+  return data.map((p) => {
+    if (p.tradingValue !== undefined) return p.tradingValue
+    const v = p.volume ?? null
+    return v !== null ? p.close * v : null
+  })
+}
 
 /** 인덱스 단위 거래대금. close 또는 volume이 null이면 null. */
 export function tradingValue(

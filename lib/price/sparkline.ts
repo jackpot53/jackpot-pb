@@ -1,3 +1,6 @@
+import { toKisCode } from '@/lib/kis/symbol'
+import { fetchKisOhlc } from '@/lib/kis/chart'
+
 export interface OhlcPoint {
   date: string  // 'YYYY-MM-DD'
   open: number
@@ -5,6 +8,7 @@ export interface OhlcPoint {
   low: number
   close: number
   volume?: number | null
+  tradingValue?: number | null  // 거래대금(KRW) — KIS acml_tr_pbmn; 없으면 close × volume으로 계산
 }
 
 export async function fetchSparklineData(
@@ -12,6 +16,17 @@ export async function fetchSparklineData(
   interval = '1d',
   range = '1mo',
 ): Promise<OhlcPoint[] | null> {
+  // 한국 종목(.KS/.KQ)은 KIS 우선, 실패 시 Yahoo로 폴백
+  const kisCode = toKisCode(ticker)
+  if (kisCode) {
+    try {
+      const kisData = await fetchKisOhlc(kisCode, interval, range)
+      if (kisData && kisData.length >= 2) return kisData
+    } catch (err) {
+      console.error('[sparkline] KIS fetch error, falling back to Yahoo:', err)
+    }
+  }
+
   try {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=${interval}&range=${range}`
     const res = await fetch(url, {
