@@ -292,22 +292,6 @@ export function RoboAdvisorPageClient({ universe, statsMap }: Props) {
     return []
   }, [filtered, filter])
 
-  if (universe.length === 0) {
-    return (
-      <div data-component="RoboAdvisorPageClient" className="flex flex-col items-center justify-center py-24 gap-4 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-muted border border-border flex items-center justify-center">
-          <BarChart3 className="w-8 h-8 text-muted-foreground" />
-        </div>
-        <div className="space-y-1">
-          <p className="text-foreground font-medium">종목 데이터가 아직 준비되지 않았습니다</p>
-          <p className="text-muted-foreground text-sm">
-            관리자가 초기 데이터를 로드하면 자동으로 표시됩니다
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div data-component="RoboAdvisorPageClient" className="space-y-4">
       {/* 종목 차트 조회 */}
@@ -430,11 +414,21 @@ export function RoboAdvisorPageClient({ universe, statsMap }: Props) {
       </div>
 
       {/* 결과 없음 */}
-      {filtered.length === 0 && (
+      {universe.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-muted border border-border flex items-center justify-center">
+            <BarChart3 className="w-7 h-7 text-muted-foreground" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-foreground font-medium">종목 데이터가 아직 준비되지 않았습니다</p>
+            <p className="text-muted-foreground text-sm">관리자가 초기 데이터를 로드하면 자동으로 표시됩니다</p>
+          </div>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="py-12 text-center text-muted-foreground text-sm">
           조건에 맞는 종목이 없습니다
         </div>
-      )}
+      ) : null}
 
       {/* 종목 리스트 (필터에 따른 뷰) */}
       {filter === 'sector' || filter === 'top200' ? (
