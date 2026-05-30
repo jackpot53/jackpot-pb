@@ -330,6 +330,15 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
     return 'bg-blue-300'
   })()
 
+  const priceRowBg = (() => {
+    if (dailyChangePct === null || dailyChangePct === 0) return 'bg-black/[0.03]'
+    if (dailyChangePct > 0) return 'bg-red-50'
+    return 'bg-blue-50'
+  })()
+
+  const titleBg = 'bg-white'
+  const titleText = 'text-foreground'
+
 
 
   return (
@@ -337,19 +346,16 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
       <div className={cn("w-1.5 shrink-0", leftStripeColor)} />
       <div className="flex flex-col flex-1 min-w-0">
       {/* 타이틀 행 */}
-      <div className="flex items-center gap-2 px-4 py-2.5">
+      <div className={cn("flex items-center gap-2 px-4 py-1.5", titleBg)}>
         <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={32} />
-        <Link href={`/assets/${asset.assetId}`} className="text-sm font-semibold text-foreground leading-snug hover:underline truncate">{asset.name}</Link>
+        <Link href={`/assets/${asset.assetId}`} className={cn("text-sm font-semibold leading-snug hover:underline truncate", titleText)}>{asset.name}</Link>
         {accountBadge}
         {maturityBadge}
         {hasChartToggle && (
           <button
             onClick={() => setChartOpen(v => !v)}
-            className="ml-auto shrink-0 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded-lg hover:bg-muted/40"
+            className={cn("ml-auto shrink-0 flex items-center gap-1 text-xs transition-colors px-2 py-0.5 rounded-lg", titleText === 'text-white' ? 'text-white/70 hover:text-white hover:bg-white/10' : 'text-muted-foreground hover:text-foreground hover:bg-muted/40')}
           >
-            {asset.returnPct >= 0
-              ? <TrendingUp className="h-3 w-3 text-red-500" />
-              : <TrendingDown className="h-3 w-3 text-blue-500" />}
             차트
             <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', chartOpen && 'rotate-180')} />
           </button>
@@ -357,42 +363,42 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
       </div>
       <div className="border-t-2 border-black/[0.05]" />
 
-      {/* 본문 */}
-      <div className="flex flex-col gap-2 px-4 py-3">
-
-        {/* row3: 현재가 · 오늘 등락률 */}
-        {!isSavings && (asset.currentPriceKrw > 0 || dailyChangePct !== null) && (
-          <div className="flex items-center gap-2 text-xs -mx-4 px-4 py-1.5 bg-black/[0.03]">
-            <span className="relative flex h-1.5 w-1.5 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            </span>
-            {asset.currentPriceKrw > 0 ? (
-              <span className="tabular-nums inline-flex items-center gap-2">
-                <span className="text-muted-foreground">현재가</span>
-                <span className={`font-bold ${dailyChangePct === null ? 'text-foreground' : dailyChangePct > 0 ? 'text-red-500' : dailyChangePct < 0 ? 'text-blue-500' : 'text-foreground'}`}>
-                  {(asset.assetType === 'stock_us' || asset.assetType === 'etf_us') && asset.currentPriceUsd != null
-                    ? formatUsd(asset.currentPriceUsd)
-                    : formatKrwCompact(asset.currentPriceKrw)}
+      {/* row3: 현재가 · 오늘 등락률 */}
+      {!isSavings && (asset.currentPriceKrw > 0 || dailyChangePct !== null) && (
+        <div className={`flex items-center gap-2 text-xs px-4 py-1.5 ${priceRowBg}`}>
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 ${dailyChangePct === null || dailyChangePct === 0 ? 'bg-emerald-400' : dailyChangePct > 0 ? 'bg-red-400' : 'bg-blue-400'}`} />
+            <span className={`relative inline-flex h-2 w-2 rounded-full ${dailyChangePct === null || dailyChangePct === 0 ? 'bg-emerald-500' : dailyChangePct > 0 ? 'bg-red-500' : 'bg-blue-500'}`} />
+          </span>
+          {asset.currentPriceKrw > 0 ? (
+            <span className="tabular-nums inline-flex items-center gap-2">
+              <span className="text-muted-foreground">현재가</span>
+              <span className={`font-bold animate-pulse ${dailyChangePct === null ? 'text-foreground' : dailyChangePct > 0 ? 'text-red-500' : dailyChangePct < 0 ? 'text-blue-500' : 'text-foreground'}`}>
+                {(asset.assetType === 'stock_us' || asset.assetType === 'etf_us') && asset.currentPriceUsd != null
+                  ? formatUsd(asset.currentPriceUsd)
+                  : formatKrwCompact(asset.currentPriceKrw)}
+              </span>
+              {dailyChangePct !== null && (
+                <span className={`tabular-nums font-bold ${(dailyChangePct ?? 0) >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                  {(dailyChangePct ?? 0) >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
                 </span>
-                {dailyChangePct !== null && (
-                  <span className={`tabular-nums font-bold ${(dailyChangePct ?? 0) >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                    {(dailyChangePct ?? 0) >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
-                  </span>
-                )}
-              </span>
-            ) : dailyChangePct !== null && (
-              <span className={`tabular-nums font-bold ${dailyChangePct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                <span className="font-normal text-muted-foreground">오늘</span>{' '}
-                {dailyChangePct >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
-              </span>
-            )}
-          </div>
-        )}
+              )}
+            </span>
+          ) : dailyChangePct !== null && (
+            <span className={`tabular-nums font-bold ${dailyChangePct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+              <span className="font-normal text-muted-foreground">오늘</span>{' '}
+              {dailyChangePct >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* 본문 */}
+      <div className="flex flex-col gap-2 px-4 pt-2 pb-3">
 
         {/* row4: 평가금 · 수익금 · 수익률 */}
         {(hasValue || hasCost) && (
-          <div className="flex items-center gap-2 tabular-nums flex-wrap text-xs pt-1.5 border-t border-black/[0.05]">
+          <div className="flex items-center gap-2 tabular-nums flex-wrap text-xs">
             <span className="text-muted-foreground">평가금</span>
             <span className="font-semibold text-foreground">
               {hasValue ? formatKrwCompact(asset.currentValueKrw) : '—'}
