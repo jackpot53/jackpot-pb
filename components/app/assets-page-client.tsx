@@ -317,27 +317,46 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
     )
   })()
 
-  const nameBlock = (
-    <div className="flex-1 min-w-0">
-      {/* Row1: 이름 + 계좌 badge + 만기 배지 */}
-      <div className="flex items-center gap-2 min-w-0 flex-wrap">
-        <Link href={`/assets/${asset.assetId}`} className="text-sm font-semibold text-foreground leading-snug hover:underline">{asset.name}</Link>
-        {accountBadge}
-        {maturityBadge}
-      </div>
-      {/* Row2: 수량 · 매수가 · 현재가 · 상승률 */}
-      {hasHolding && (
-        <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground flex-wrap">
-          {!hideQty && (
-            <span className="tabular-nums"><span className="text-muted-foreground">수량</span> <span className="font-medium text-foreground/90">{formatQty(asset.totalQuantity, isCrypto)}</span></span>
-          )}
-          {asset.avgCostPerUnit > 0 && !(isSavings && asset.monthlyContributionKrw != null) && (
-            <>{(!hideQty) && <span className="text-border/60">|</span>}<span className="tabular-nums"><span className="text-muted-foreground">{isSavings ? '예치원금' : '매수가'}</span> <span className="font-medium text-foreground/90">{asset.avgCostPerUnitOriginal != null ? formatUsd(asset.avgCostPerUnitOriginal / 100) : formatKrw(asset.avgCostPerUnit)}</span></span></>
-          )}
-          {asset.totalCostKrw > 0 && !isSavings && (
-            <><span className="text-border/60">|</span><span className="tabular-nums"><span className="text-muted-foreground">투자금</span> <span className="font-medium text-foreground/90">{formatKrw(asset.totalCostKrw)}</span></span></>
-          )}
-{isSavings && asset.monthlyContributionKrw != null && asset.monthlyContributionKrw > 0 && (() => {
+  const hasChartToggle = (showSparkline && asset.ticker) || lineData !== undefined
+
+  return (
+    <div className={cn("relative rounded-xl border border-border hover:shadow-md transition-all", ASSET_TYPE_ACCENT[asset.assetType] ?? 'bg-card')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      {/* 차트 토글 — 우상단 */}
+      {hasChartToggle && (
+        <button
+          onClick={() => setChartOpen(v => !v)}
+          className="absolute top-2.5 right-2.5 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded-lg hover:bg-muted/40"
+        >
+          {asset.returnPct >= 0
+            ? <TrendingUp className="h-3 w-3 text-red-500" />
+            : <TrendingDown className="h-3 w-3 text-blue-500" />}
+          차트
+          <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', chartOpen && 'rotate-180')} />
+        </button>
+      )}
+
+      <div className={cn('flex flex-col gap-2 px-4 py-3.5', hasChartToggle && 'pr-16')}>
+        {/* row1: 로고 + 종목명 + 계좌유형 배지 */}
+        <div className="flex items-center gap-2 min-w-0 flex-wrap">
+          <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={32} />
+          <Link href={`/assets/${asset.assetId}`} className="text-sm font-semibold text-foreground leading-snug hover:underline">{asset.name}</Link>
+          {accountBadge}
+          {maturityBadge}
+        </div>
+
+        {/* row2: 수량 · 매수가 · 투자금 (savings/insurance 전용 필드 치환) */}
+        {hasHolding && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+            {!hideQty && (
+              <span className="tabular-nums"><span className="text-muted-foreground">수량</span> <span className="font-medium text-foreground/90">{formatQty(asset.totalQuantity, isCrypto)}</span></span>
+            )}
+            {asset.avgCostPerUnit > 0 && !(isSavings && asset.monthlyContributionKrw != null) && (
+              <>{(!hideQty) && <span className="text-border/60">|</span>}<span className="tabular-nums"><span className="text-muted-foreground">{isSavings ? '예치원금' : '매수가'}</span> <span className="font-medium text-foreground/90">{asset.avgCostPerUnitOriginal != null ? formatUsd(asset.avgCostPerUnitOriginal / 100) : formatKrw(asset.avgCostPerUnit)}</span></span></>
+            )}
+            {asset.totalCostKrw > 0 && !isSavings && (
+              <><span className="text-border/60">|</span><span className="tabular-nums"><span className="text-muted-foreground">투자금</span> <span className="font-medium text-foreground/90">{formatKrw(asset.totalCostKrw)}</span></span></>
+            )}
+            {isSavings && asset.monthlyContributionKrw != null && asset.monthlyContributionKrw > 0 && (() => {
               const months = asset.initialTransactionDate
                 ? (() => {
                     const start = new Date(asset.initialTransactionDate)
@@ -355,154 +374,127 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
                 </>
               )
             })()}
-          {isSavings && asset.interestRateBp != null && asset.interestRateBp > 0 && (
-            <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-emerald-600">연{(asset.interestRateBp / 10000).toFixed(2)}%</span>
-            {asset.compoundType && (
-              <span className="ml-1 text-xs px-1.5 py-0.5 rounded-none font-medium text-white" style={{
-                backgroundColor: asset.compoundType === 'simple' ? '#3b82f6' : '#10b981'
-              }}>
-                {asset.compoundType === 'simple' ? '단리' : '복리'}
-              </span>
-            )}
-            </>
-          )}
-          {isInsurance && asset.insuranceDetails?.expectedReturnRateBp != null && asset.insuranceDetails.expectedReturnRateBp > 0 && (
-            <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-emerald-600">연{(asset.insuranceDetails.expectedReturnRateBp / 10000).toFixed(2)}%</span>
-            {asset.insuranceDetails.compoundType && (
-              <span className="ml-1 text-xs px-1.5 py-0.5 rounded-none font-medium text-white" style={{
-                backgroundColor: asset.insuranceDetails.compoundType === 'simple' ? '#3b82f6' : '#10b981'
-              }}>
-                {asset.insuranceDetails.compoundType === 'simple' ? '단리' : '복리'}
-              </span>
-            )}
-            </>
-          )}
-          {isSavings && asset.initialTransactionDate && (
-            <><span className="text-border/60">|</span><span className="tabular-nums"><span className="text-muted-foreground">가입일</span> <span className="font-medium text-foreground/90">{asset.initialTransactionDate.replace(/-/g, '.')}</span></span></>
-          )}
-        </div>
-      )}
-      {/* Row3: 현재가 · 오늘 등락률 */}
-      {!isSavings && (asset.currentPriceKrw > 0 || dailyChangePct !== null) && (
-        <div className="flex items-center gap-2 mt-1.5 pt-1.5 border-t border-border/30 text-xs flex-wrap">
-          {asset.currentPriceKrw > 0 ? (
-            <span className="tabular-nums font-bold inline-flex items-center gap-2">
-              <span className="font-normal text-muted-foreground">현재가</span>
-              <span className="text-foreground">
-                {(asset.assetType === 'stock_us' || asset.assetType === 'etf_us') && asset.currentPriceUsd != null
-                  ? formatUsd(asset.currentPriceUsd)
-                  : formatKrw(asset.currentPriceKrw)}
-              </span>
-              {dailyChangePct !== null && (
-                <span className={`tabular-nums font-bold ml-1 ${(dailyChangePct ?? 0) >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                  {(dailyChangePct ?? 0) >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
+            {isSavings && asset.interestRateBp != null && asset.interestRateBp > 0 && (
+              <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-emerald-600">연{(asset.interestRateBp / 10000).toFixed(2)}%</span>
+              {asset.compoundType && (
+                <span className="ml-1 text-xs px-1.5 py-0.5 rounded-none font-medium text-white" style={{
+                  backgroundColor: asset.compoundType === 'simple' ? '#3b82f6' : '#10b981'
+                }}>
+                  {asset.compoundType === 'simple' ? '단리' : '복리'}
                 </span>
               )}
-            </span>
-          ) : dailyChangePct !== null && (
-            <span className={`tabular-nums font-bold ${dailyChangePct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-              <span className="font-normal text-muted-foreground">오늘</span>{' '}
-              {dailyChangePct >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
-            </span>
-          )}
-        </div>
-      )}
-      {/* Row4: US 자산 FX 컨텍스트 */}
-      {isUsAsset && (
-        <div className="flex items-center gap-1.5 mt-1 text-xs flex-wrap">
-          <span className={`font-semibold shrink-0 ${isKrwPurchase ? 'text-amber-400' : 'text-sky-400'}`}>
-            {isKrwPurchase ? '원화매수' : '달러매수'}
-          </span>
-          {hasFxBreakdown && stockGainKrw != null && fxGainKrw != null ? (
-            <>
-              <span className="text-border/60">|</span>
-              <span className={stockGainKrw >= 0 ? 'text-red-500' : 'text-blue-500'}>
-                주가 {stockGainKrw >= 0 ? '+' : ''}{formatKrw(stockGainKrw)}
-              </span>
-              <span className="text-border/60">|</span>
-              <span className={fxGainKrw >= 0 ? 'text-red-500' : 'text-blue-500'}>
-                환차 {fxGainKrw >= 0 ? '+' : ''}{formatKrw(fxGainKrw)}
-              </span>
-              {avgFxRate != null && asset.currentFxRate != null && (
-                <>
-                  <span className="text-border/60">|</span>
-                  <span className="text-muted-foreground">
-                    환율 ₩{Math.round(avgFxRate).toLocaleString()} → ₩{Math.round(asset.currentFxRate).toLocaleString()}
-                  </span>
-                  {asset.fxReturnPct != null && (
-                    <span className={`font-semibold ${asset.fxReturnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                      ({asset.fxReturnPct >= 0 ? '+' : ''}{asset.fxReturnPct.toFixed(1)}%)
-                    </span>
-                  )}
-                </>
+              </>
+            )}
+            {isInsurance && asset.insuranceDetails?.expectedReturnRateBp != null && asset.insuranceDetails.expectedReturnRateBp > 0 && (
+              <><span className="text-border/60">|</span><span className="tabular-nums font-medium text-emerald-600">연{(asset.insuranceDetails.expectedReturnRateBp / 10000).toFixed(2)}%</span>
+              {asset.insuranceDetails.compoundType && (
+                <span className="ml-1 text-xs px-1.5 py-0.5 rounded-none font-medium text-white" style={{
+                  backgroundColor: asset.insuranceDetails.compoundType === 'simple' ? '#3b82f6' : '#10b981'
+                }}>
+                  {asset.insuranceDetails.compoundType === 'simple' ? '단리' : '복리'}
+                </span>
               )}
-            </>
-          ) : isUsdPurchase && asset.currentFxRate != null ? (
-            <>
-              <span className="text-border/60">|</span>
-              <span className="text-muted-foreground">₩{Math.round(asset.currentFxRate).toLocaleString()} 기준</span>
-            </>
-          ) : isKrwPurchase ? (
-            <>
-              <span className="text-border/60">|</span>
-              <span className="text-muted-foreground">주가+환율 변동 반영</span>
-            </>
-          ) : null}
-        </div>
-      )}
-    </div>
-  )
-
-  const valueFooter = (hasValue || hasCost) && (
-    <div className="mt-2.5 pt-2.5 border-t border-border flex items-center gap-2 tabular-nums flex-wrap">
-      <span className="text-xs text-muted-foreground">평가금</span>
-      <span className="text-sm font-semibold text-foreground">
-        {hasValue ? formatKrw(asset.currentValueKrw) : '—'}
-        {isUsdPurchase && asset.currentPriceUsd != null && hasHolding && hasValue && (
-          <span className="text-xs text-muted-foreground ml-1">({formatUsd(asset.currentPriceUsd * asset.totalQuantity / 1e8)})</span>
+              </>
+            )}
+            {isSavings && asset.initialTransactionDate && (
+              <><span className="text-border/60">|</span><span className="tabular-nums"><span className="text-muted-foreground">가입일</span> <span className="font-medium text-foreground/90">{asset.initialTransactionDate.replace(/-/g, '.')}</span></span></>
+            )}
+          </div>
         )}
-      </span>
-      {hasValue && hasCost && (
-        <>
-          <span className="text-border/60 text-xs">·</span>
-          <span className={`text-sm font-bold ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-            {profit >= 0 ? '+' : ''}{formatKrw(profit)}
-          </span>
-          <span className={`text-xs font-semibold ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-            ({formatReturn(asset.returnPct)})
-          </span>
-        </>
-      )}
-    </div>
-  )
 
-  return (
-    <div className={cn("relative rounded-xl border border-border hover:shadow-md transition-all", ASSET_TYPE_ACCENT[asset.assetType] ?? 'bg-card')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      {/* 차트 토글 — 우상단 */}
-      {((showSparkline && asset.ticker) || lineData !== undefined) && (
-        <button
-          onClick={() => setChartOpen(v => !v)}
-          className="absolute top-2.5 right-2.5 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded-lg hover:bg-muted/40"
-        >
-          {asset.returnPct >= 0
-            ? <TrendingUp className="h-3 w-3 text-red-500" />
-            : <TrendingDown className="h-3 w-3 text-blue-500" />}
-          차트
-          <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', chartOpen && 'rotate-180')} />
-        </button>
-      )}
+        {/* row3: 현재가 · 오늘 등락률 */}
+        {!isSavings && (asset.currentPriceKrw > 0 || dailyChangePct !== null) && (
+          <div className="flex items-center gap-2 pt-1.5 border-t border-border/30 text-xs flex-wrap">
+            {asset.currentPriceKrw > 0 ? (
+              <span className="tabular-nums font-bold inline-flex items-center gap-2">
+                <span className="font-normal text-muted-foreground">현재가</span>
+                <span className="text-foreground">
+                  {(asset.assetType === 'stock_us' || asset.assetType === 'etf_us') && asset.currentPriceUsd != null
+                    ? formatUsd(asset.currentPriceUsd)
+                    : formatKrw(asset.currentPriceKrw)}
+                </span>
+                {dailyChangePct !== null && (
+                  <span className={`tabular-nums font-bold ml-1 ${(dailyChangePct ?? 0) >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                    {(dailyChangePct ?? 0) >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
+                  </span>
+                )}
+              </span>
+            ) : dailyChangePct !== null && (
+              <span className={`tabular-nums font-bold ${dailyChangePct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                <span className="font-normal text-muted-foreground">오늘</span>{' '}
+                {dailyChangePct >= 0 ? '+' : ''}{dailyChangePct.toFixed(2)}%
+              </span>
+            )}
+          </div>
+        )}
 
-      <div className={cn('flex items-stretch gap-3 px-4 py-3.5', ((showSparkline && asset.ticker) || lineData !== undefined) && 'pr-16')}>
-        {/* 로고 */}
-        <div className="shrink-0 self-center">
-          <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={40} />
-        </div>
+        {/* FX 행: 미국 자산일 때만 row3 아래 조건부 */}
+        {isUsAsset && (
+          <div className="flex items-center gap-1.5 text-xs flex-wrap">
+            <span className={`font-semibold shrink-0 ${isKrwPurchase ? 'text-amber-400' : 'text-sky-400'}`}>
+              {isKrwPurchase ? '원화매수' : '달러매수'}
+            </span>
+            {hasFxBreakdown && stockGainKrw != null && fxGainKrw != null ? (
+              <>
+                <span className="text-border/60">|</span>
+                <span className={stockGainKrw >= 0 ? 'text-red-500' : 'text-blue-500'}>
+                  주가 {stockGainKrw >= 0 ? '+' : ''}{formatKrw(stockGainKrw)}
+                </span>
+                <span className="text-border/60">|</span>
+                <span className={fxGainKrw >= 0 ? 'text-red-500' : 'text-blue-500'}>
+                  환차 {fxGainKrw >= 0 ? '+' : ''}{formatKrw(fxGainKrw)}
+                </span>
+                {avgFxRate != null && asset.currentFxRate != null && (
+                  <>
+                    <span className="text-border/60">|</span>
+                    <span className="text-muted-foreground">
+                      환율 ₩{Math.round(avgFxRate).toLocaleString()} → ₩{Math.round(asset.currentFxRate).toLocaleString()}
+                    </span>
+                    {asset.fxReturnPct != null && (
+                      <span className={`font-semibold ${asset.fxReturnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                        ({asset.fxReturnPct >= 0 ? '+' : ''}{asset.fxReturnPct.toFixed(1)}%)
+                      </span>
+                    )}
+                  </>
+                )}
+              </>
+            ) : isUsdPurchase && asset.currentFxRate != null ? (
+              <>
+                <span className="text-border/60">|</span>
+                <span className="text-muted-foreground">₩{Math.round(asset.currentFxRate).toLocaleString()} 기준</span>
+              </>
+            ) : isKrwPurchase ? (
+              <>
+                <span className="text-border/60">|</span>
+                <span className="text-muted-foreground">주가+환율 변동 반영</span>
+              </>
+            ) : null}
+          </div>
+        )}
 
-        {/* 종목 정보 */}
-        <div className="flex flex-col flex-1 min-w-0">
-          {nameBlock}
-          {valueFooter}
-        </div>
+        {/* row4: 평가금 · 수익금 · 수익률 */}
+        {(hasValue || hasCost) && (
+          <div className="pt-2 border-t border-border flex items-center gap-2 tabular-nums flex-wrap">
+            <span className="text-xs text-muted-foreground">평가금</span>
+            <span className="text-sm font-semibold text-foreground">
+              {hasValue ? formatKrw(asset.currentValueKrw) : '—'}
+              {isUsdPurchase && asset.currentPriceUsd != null && hasHolding && hasValue && (
+                <span className="text-xs text-muted-foreground ml-1">({formatUsd(asset.currentPriceUsd * asset.totalQuantity / 1e8)})</span>
+              )}
+            </span>
+            {hasValue && hasCost && (
+              <>
+                <span className="text-border/60 text-xs">·</span>
+                <span className={`text-sm font-bold ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                  {profit >= 0 ? '+' : ''}{formatKrw(profit)}
+                </span>
+                <span className={`text-xs font-semibold ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                  ({formatReturn(asset.returnPct)})
+                </span>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 차트 collapse */}
