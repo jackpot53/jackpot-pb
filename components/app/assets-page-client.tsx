@@ -236,13 +236,27 @@ function mergeAssets(assets: AssetPerformance[]): MergedAsset[] {
 
 
 
-function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
+function AssetCard({ asset, showSparkline }: {
   asset: AssetPerformance & { mergedCount?: number }
-  sparklineData?: OhlcPoint[]
-  lineData?: AssetHistoryPoint[]
   showSparkline?: boolean
 }) {
   const [chartOpen, setChartOpen] = useState(false)
+  const [lineData, setLineData] = useState<AssetHistoryPoint[] | null>(null)
+  const lineFetched = useRef(false)
+
+  const isLineType = asset.assetType === 'fund' || asset.assetType === 'savings' || asset.assetType === 'insurance'
+
+  useEffect(() => {
+    if (!chartOpen || !isLineType || lineFetched.current) return
+    lineFetched.current = true
+    fetch(`/api/asset-history?assetIds=${asset.assetId}`)
+      .then((r) => r.json())
+      .then((data: { results: Array<{ assetId: string; points: AssetHistoryPoint[] }> }) => {
+        const found = data.results?.find((r) => r.assetId === asset.assetId)
+        if (found) setLineData(found.points ?? [])
+      })
+      .catch(() => {})
+  }, [chartOpen, isLineType, asset.assetId])
   const hasHolding = asset.totalQuantity > 0 || (asset.assetType === 'savings' && (asset.totalCostKrw > 0 || asset.monthlyContributionKrw != null))
   const isCrypto = asset.assetType === 'crypto'
   const hasValue = asset.currentValueKrw > 0
@@ -317,7 +331,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
     )
   })()
 
-  const hasChartToggle = (showSparkline && asset.ticker) || lineData !== undefined
+  const hasChartToggle = (showSparkline && asset.ticker) || isLineType
 
   const leftStripeColor = (() => {
     if (dailyChangePct === null) return 'bg-border'
@@ -526,21 +540,25 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
       {/* 차트 collapse */}
       {chartOpen && (
         <>
-          {lineData !== undefined && (
+          {isLineType && (
             <div className="px-4 pb-3">
               <div className="h-[240px] rounded-lg overflow-hidden border border-border/40">
-                <AssetLineChart
-                  data={lineData}
-                  kind={asset.assetType === 'savings' || asset.assetType === 'insurance' ? 'line-projected' : 'line-nav'}
-                  positive={asset.returnPct >= 0}
-                />
+                {lineData !== null ? (
+                  <AssetLineChart
+                    data={lineData}
+                    kind={asset.assetType === 'savings' || asset.assetType === 'insurance' ? 'line-projected' : 'line-nav'}
+                    positive={asset.returnPct >= 0}
+                  />
+                ) : (
+                  <div className="w-full h-full animate-pulse bg-muted/40 rounded-lg" />
+                )}
               </div>
             </div>
           )}
-          {showSparkline && asset.ticker && !lineData && (
+          {showSparkline && asset.ticker && !isLineType && (
             <div className="px-4 pb-3">
               <div className="h-[280px] rounded-lg overflow-hidden border border-border/40 bg-white">
-                <AssetCandleChart ticker={asset.ticker} initialData={sparklineData ?? []} assetType={asset.assetType} />
+                <AssetCandleChart ticker={asset.ticker} initialData={[]} assetType={asset.assetType} />
               </div>
             </div>
           )}
@@ -674,11 +692,9 @@ function SummaryBar({ assets }: { assets: AssetPerformance[] }) {
   )
 }
 
-function AssetCardList({ assets, title, sparklines, lineDataMap }: {
+function AssetCardList({ assets, title }: {
   assets: AssetPerformance[]
   title?: React.ReactNode
-  sparklines?: Record<string, OhlcPoint[]>
-  lineDataMap?: Record<string, AssetHistoryPoint[]>
 }) {
   const [merged, setMerged] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -733,8 +749,6 @@ function AssetCardList({ assets, title, sparklines, lineDataMap }: {
               ? (asset.ticker ?? asset.name)
               : asset.assetId}
             asset={asset}
-            sparklineData={asset.ticker ? sparklines?.[asset.ticker] : undefined}
-            lineData={lineDataMap?.[asset.assetId]}
             showSparkline={showSparkline}
           />
         ))}
@@ -743,14 +757,28 @@ function AssetCardList({ assets, title, sparklines, lineDataMap }: {
   )
 }
 
-function CollapsibleChart({ assets, sparklines, monthlyData, annualData, dailyData }: {
+function CollapsibleChart({ assets, monthlyData, annualData, dailyData }: {
   assets: AssetPerformance[]
-  sparklines?: Record<string, OhlcPoint[]>
   monthlyData: MonthlyDataPoint[]
   annualData: AnnualDataPoint[]
   dailyData?: DailyDataPoint[]
 }) {
   const [open, setOpen] = useState(false)
+  const [sparklines, setSparklines] = useState<Record<string, OhlcPoint[]>>({})
+  const sparklinesFetched = useRef(false)
+
+  useEffect(() => {
+    if (!open || sparklinesFetched.current) return
+    const liveTickers = [...new Set(
+      assets.filter((a) => a.priceType === 'live' && a.ticker).map((a) => a.ticker!)
+    )]
+    if (liveTickers.length === 0) return
+    sparklinesFetched.current = true
+    fetch(`/api/sparklines?tickers=${liveTickers.join(',')}&interval=1d&range=1y`)
+      .then((r) => r.json())
+      .then((data: Record<string, OhlcPoint[]>) => setSparklines(data))
+      .catch(() => {})
+  }, [open, assets])
 
   const assetType = assets[0]?.assetType
   const totalCost = assets.reduce((s, a) => s + a.totalCostKrw, 0)
@@ -816,7 +844,6 @@ function CollapsibleChart({ assets, sparklines, monthlyData, annualData, dailyDa
 interface AssetsPageClientProps {
   performances: AssetPerformance[]
   realizedProfitKrw?: number
-  sparklines?: Record<string, OhlcPoint[]>
   monthlyData?: MonthlyDataPoint[]
   annualData?: AnnualDataPoint[]
   monthlyByType?: Record<string, MonthlyDataPoint[]>
@@ -824,38 +851,7 @@ interface AssetsPageClientProps {
   dailyByType?: Record<string, DailyDataPoint[]>
 }
 
-export function AssetsPageClient({ performances, realizedProfitKrw = 0, sparklines: initialSparklines, monthlyData = [], annualData = [], monthlyByType = {}, annualByType = {}, dailyByType = {} }: AssetsPageClientProps) {
-  const [sparklines, setSparklines] = useState<Record<string, OhlcPoint[]>>(initialSparklines ?? {})
-  const [lineDataMap, setLineDataMap] = useState<Record<string, AssetHistoryPoint[]>>({})
-
-  useEffect(() => {
-    const liveTickers = [
-      ...new Set(
-        performances
-          .filter((p) => p.priceType === 'live' && p.ticker)
-          .map((p) => p.ticker!)
-      ),
-    ]
-    if (liveTickers.length > 0) {
-      fetch(`/api/sparklines?tickers=${liveTickers.join(',')}&interval=1d&range=1y`)
-        .then((r) => r.json())
-        .then((data: Record<string, OhlcPoint[]>) => setSparklines(data))
-        .catch(() => {})
-    }
-
-    const lineAssets = performances.filter((p) => p.assetType === 'fund' || p.assetType === 'savings' || p.assetType === 'insurance')
-    if (lineAssets.length === 0) return
-
-    const assetIds = [...new Set(lineAssets.map((p) => p.assetId))]
-    fetch(`/api/asset-history?assetIds=${assetIds.join(',')}`)
-      .then((r) => r.json())
-      .then((data: { results: Array<{ assetId: string; points: AssetHistoryPoint[] }> }) => {
-        const map: Record<string, AssetHistoryPoint[]> = {}
-        for (const r of data.results ?? []) map[r.assetId] = r.points ?? []
-        setLineDataMap(map)
-      })
-      .catch(() => {})
-  }, [performances])
+export function AssetsPageClient({ performances, realizedProfitKrw = 0, monthlyData = [], annualData = [], monthlyByType = {}, annualByType = {}, dailyByType = {} }: AssetsPageClientProps) {
 
   const [active, setActive] = useState<string>('all')
   const [activeAccount, setActiveAccount] = useState<'all' | 'personal' | 'pension' | 'direct'>('all')
@@ -926,8 +922,6 @@ export function AssetsPageClient({ performances, realizedProfitKrw = 0, sparklin
         setActiveAccount={setActiveAccount}
         activeOwner={activeOwner}
         setActiveOwner={setActiveOwner}
-        sparklines={sparklines}
-        lineDataMap={lineDataMap}
         monthlyByType={monthlyByType}
         annualByType={annualByType}
         dailyByType={dailyByType}
@@ -939,7 +933,7 @@ export function AssetsPageClient({ performances, realizedProfitKrw = 0, sparklin
 function AssetFilter({
   types, grouped, active, setActive, activeAccount, setActiveAccount,
   activeOwner, setActiveOwner,
-  sparklines, lineDataMap, monthlyByType, annualByType, dailyByType,
+  monthlyByType, annualByType, dailyByType,
 }: {
   types: string[]
   grouped: Record<string, AssetPerformance[]>
@@ -949,8 +943,6 @@ function AssetFilter({
   setActiveAccount: (v: 'all' | 'personal' | 'pension' | 'direct') => void
   activeOwner: string
   setActiveOwner: (v: string) => void
-  sparklines: Record<string, OhlcPoint[]>
-  lineDataMap: Record<string, AssetHistoryPoint[]>
   monthlyByType: Record<string, MonthlyDataPoint[]>
   annualByType: Record<string, AnnualDataPoint[]>
   dailyByType: Record<string, DailyDataPoint[]>
@@ -1085,15 +1077,12 @@ function AssetFilter({
               <div className="space-y-3">
                 <CollapsibleChart
                   assets={filteredGrouped[type]}
-                  sparklines={sparklines}
                   monthlyData={monthlyByType[type] ?? []}
                   annualData={annualByType[type] ?? []}
                   dailyData={dailyByType[type] ?? []}
                 />
                 <AssetCardList
                   assets={filteredGrouped[type]}
-                  sparklines={sparklines}
-                  lineDataMap={lineDataMap}
                 />
               </div>
             </div>

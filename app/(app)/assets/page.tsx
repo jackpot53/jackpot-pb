@@ -54,7 +54,6 @@ async function AssetsContent({ userId }: { userId: string }) {
     <AssetsPageClient
       performances={performances}
       realizedProfitKrw={realizedProfitKrw}
-      sparklines={{}}
       monthlyData={monthlyData}
       annualData={annualData}
       monthlyByType={monthlyByType}
