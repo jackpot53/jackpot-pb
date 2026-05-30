@@ -27,6 +27,13 @@ interface Props {
   height?: number
 }
 
+function fmtMacd(v: number): string {
+  const abs = Math.abs(v)
+  if (abs >= 1000) return v.toFixed(0)
+  if (abs >= 10) return v.toFixed(1)
+  return v.toFixed(2)
+}
+
 export function MacdPanel({ data, height = 180 }: Props) {
   const sync = useChartSync()
   const syncRef = useRef(sync)
@@ -74,11 +81,13 @@ export function MacdPanel({ data, height = 180 }: Props) {
         horzLines: { color: palette.grid, style: 2 },
       },
       rightPriceScale: {
-        borderVisible: false,
-        minimumWidth: CHART_RIGHT_AXIS_WIDTH,
+        visible: false,
         scaleMargins: { top: 0.1, bottom: 0.1 },
       },
       timeScale: HIDDEN_TIME_SCALE,
+      localization: {
+        priceFormatter: fmtMacd,
+      },
     })
 
     const histSeries = chart.addSeries(HistogramSeries, {

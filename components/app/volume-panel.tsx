@@ -25,7 +25,11 @@ interface Props {
 }
 
 function fmtVol(v: number): string {
-  if (v >= 100_000_000) return `${(v / 100_000_000).toFixed(1)}억`
+  if (v >= 100_000_000) {
+    const eok = v / 100_000_000
+    // 1000억 이상은 소수점 제거 — 라벨 너비 축소
+    return `${eok >= 1000 ? eok.toFixed(0) : eok.toFixed(1)}억`
+  }
   if (v >= 10_000) return `${(v / 10_000).toFixed(0)}만`
   return v.toLocaleString('ko-KR')
 }
@@ -76,8 +80,7 @@ export function VolumePanel({ data, height = 180 }: Props) {
         horzLines: { color: palette.grid, style: 2 },
       },
       rightPriceScale: {
-        borderVisible: false,
-        minimumWidth: CHART_RIGHT_AXIS_WIDTH,
+        visible: false,
       },
       timeScale: HIDDEN_TIME_SCALE,
       localization: {

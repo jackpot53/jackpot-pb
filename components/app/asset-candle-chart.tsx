@@ -172,8 +172,7 @@ setPeriod(next)
         horzLines: { color: palette.grid, style: 2 },
       },
       rightPriceScale: {
-        borderVisible: false,
-        minimumWidth: CHART_RIGHT_AXIS_WIDTH,
+        visible: false,
         scaleMargins: showVolumeRef.current ? { top: 0.05, bottom: 0.25 } : { top: 0.1, bottom: 0.1 },
       },
       timeScale: {
@@ -230,10 +229,7 @@ setPeriod(next)
 
     const unregister = syncRef.current.registerChart(chart, { master: true })
 
-    // 서브 패널이 더 넓은 레이블을 가질 때 메인 차트도 확장해 축 정렬 유지
-    const unsubAxisWidth = syncRef.current.subscribeMasterAxisWidth((w) => {
-      if (w > 0) chart.priceScale('right').applyOptions({ minimumWidth: w })
-    })
+    const unsubAxisWidth = syncRef.current.subscribeMasterAxisWidth(() => {})
 
     setContainerWidth(container.clientWidth)
     const ro = new ResizeObserver(([entry]) => {

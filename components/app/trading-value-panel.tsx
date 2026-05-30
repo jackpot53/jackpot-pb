@@ -33,7 +33,11 @@ function fmtKrw(v: number): string {
   const abs = Math.abs(v)
   const sign = v < 0 ? '-' : ''
   if (abs >= 1_000_000_000_000) return `${sign}${(abs / 1_000_000_000_000).toFixed(1)}조`
-  if (abs >= 100_000_000) return `${sign}${(abs / 100_000_000).toFixed(1)}억`
+  if (abs >= 100_000_000) {
+    const eok = abs / 100_000_000
+    // 1000억 이상은 소수점 제거 (9999억 vs 9999.9억) — 라벨 너비 축소
+    return `${sign}${eok >= 1000 ? eok.toFixed(0) : eok.toFixed(1)}억`
+  }
   if (abs >= 10_000) return `${sign}${(abs / 10_000).toFixed(0)}만`
   return v.toLocaleString('ko-KR')
 }
@@ -86,8 +90,7 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
         horzLines: { color: palette.grid, style: 2 },
       },
       rightPriceScale: {
-        borderVisible: false,
-        minimumWidth: CHART_RIGHT_AXIS_WIDTH,
+        visible: false,
       },
       timeScale: HIDDEN_TIME_SCALE,
       localization: {
