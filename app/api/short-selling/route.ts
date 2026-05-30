@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { toKisCode } from '@/lib/kis/symbol'
-import { fetchKisShortSellingDebug } from '@/lib/kis/short-selling'
+import { fetchKisShortSelling } from '@/lib/kis/short-selling'
 import type { ShortSellingPoint } from '@/lib/kis/short-selling'
 
 export { type ShortSellingPoint }
@@ -32,13 +32,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ unsupported: true })
   }
 
-  const result = await fetchKisShortSellingDebug(kisCode, range)
-  if (!result.data || result.data.length === 0) {
-    return NextResponse.json({ error: 'fetch failed', debug: result.debug }, { status: 500 })
+  const data = await fetchKisShortSelling(kisCode, range)
+  if (!data || data.length === 0) {
+    return NextResponse.json({ error: 'fetch failed' }, { status: 500 })
   }
 
   return NextResponse.json(
-    { data: result.data },
+    { data },
     { headers: { 'Cache-Control': 'public, max-age=86400' } },
   )
 }

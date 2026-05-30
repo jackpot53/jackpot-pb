@@ -3,7 +3,7 @@ import { kisGet } from './client'
 export interface ShortSellingPoint {
   date: string        // 'YYYY-MM-DD'
   shortVolume: number // 공매도 체결 수량 (주)
-  shortValue: number  // 공매도 체결 대금 (원)
+  shortValue: number  // 공매도 거래대금 (원)
   totalVolume: number // 전체 거래량 (주)  — 주봉/월봉 비중 재계산에 사용
   totalValue: number  // 전체 거래대금 (원) — 주봉/월봉 비중 재계산에 사용
   shortRatio: number  // 공매도 거래량 비중 (%) = shortVolume / totalVolume × 100
@@ -28,74 +28,18 @@ function parseKisDate(s: string): string {
 const CHUNK_DAYS = 140
 
 // KIS 공매도 일별 조회 엔드포인트.
-// tr_id FHPST04830000, output 필드:
+// endpoint: /uapi/domestic-stock/v1/quotations/daily-short-sale
+// tr_id:    FHPST04830000
+// 데이터:   output2[] (output 아님)
+// 필드:
 //   stck_bsop_date - 날짜 (YYYYMMDD)
-//   ssts_cntg_qty  - 공매도 체결 수량
-//   ssts_cntg_pbmn - 공매도 체결 대금
-//   stnd_vol       - 기준 거래량 (전체)
-//   stnd_pbmn      - 기준 거래대금 (전체)
+//   ssts_cntg_qty  - 공매도 체결 수량 (주)
+//   ssts_tr_pbmn   - 공매도 거래대금 (원)
+//   acml_vol       - 전체 거래량 (주)
+//   acml_tr_pbmn   - 전체 거래대금 (원)
 //   ssts_vol_rlim  - 공매도 거래량 비중 (%)
-const KIS_PATH = '/uapi/domestic-stock/v1/quotations/inquire-short-sale'
+const KIS_PATH = '/uapi/domestic-stock/v1/quotations/daily-short-sale'
 const TR_ID = 'FHPST04830000'
-
-interface DebugResult {
-  data: ShortSellingPoint[] | null
-  debug: {
-    rtCd?: string
-    msg1?: string
-    responseKeys?: string
-    httpStatus?: number
-    firstRow?: Record<string, string>
-  }
-}
-
-/** 로컬 테스트용: 디버그 정보 포함 반환 버전 */
-export async function fetchKisShortSellingDebug(
-  code: string,
-  range: string,
-): Promise<DebugResult> {
-  const startDate = rangeToStartDate(range)
-  const windowEnd = new Date()
-  const windowStart = new Date(
-    Math.max(startDate.getTime(), windowEnd.getTime() - CHUNK_DAYS * 24 * 60 * 60 * 1000),
-  )
-
-  const res = await kisGet(
-    KIS_PATH,
-    {
-      FID_COND_MRKT_DIV_CODE: 'J',
-      FID_INPUT_ISCD: code,
-      FID_INPUT_DATE_1: toKisDate(windowStart),
-      FID_INPUT_DATE_2: toKisDate(windowEnd),
-    },
-    TR_ID,
-  )
-
-  if (!res || !res.ok) {
-    return { data: null, debug: { httpStatus: res?.status } }
-  }
-
-  const json = await res.json()
-  const rows: Record<string, string>[] = json.output ?? []
-  const firstRow = rows[0]
-  const responseKeys = firstRow
-    ? Object.keys(firstRow).join(', ')
-    : Object.keys(json).join(', ')
-
-  if (json.rt_cd !== '0') {
-    return {
-      data: null,
-      debug: { rtCd: json.rt_cd, msg1: json.msg1, responseKeys, firstRow },
-    }
-  }
-
-  // 성공 시 첫 청크 파싱
-  const result = await fetchKisShortSelling(code, range)
-  return {
-    data: result,
-    debug: { rtCd: json.rt_cd, responseKeys, firstRow },
-  }
-}
 
 /**
  * KIS 국내주식 공매도 일별추이 조회.
@@ -137,14 +81,15 @@ export async function fetchKisShortSelling(
     const json = await res.json()
 
     if (json.rt_cd !== '0') {
-      const sampleKeys = Array.isArray(json.output) && json.output.length > 0
-        ? Object.keys(json.output[0]).join(', ')
+      const sampleKeys = Array.isArray(json.output2) && json.output2.length > 0
+        ? Object.keys(json.output2[0]).join(', ')
         : Object.keys(json).join(', ')
       console.error('[kis] short-selling API error — rt_cd:', json.rt_cd, 'msg1:', json.msg1, '| response keys:', sampleKeys)
       break
     }
 
-    const rows: Record<string, string>[] = json.output ?? []
+    // 일별 시계열은 output2에 있음 (output1은 요약 정보)
+    const rows: Record<string, string>[] = json.output2 ?? []
     if (rows.length === 0) break
 
     for (const row of rows) {
@@ -152,15 +97,12 @@ export async function fetchKisShortSelling(
       if (!dateRaw || dateRaw.length !== 8) continue
 
       const shortVolume = parseInt(row.ssts_cntg_qty ?? '0', 10)
-      const shortValue = parseInt(row.ssts_cntg_pbmn ?? '0', 10)
-      const totalVolume = parseInt(row.stnd_vol ?? '0', 10)
-      const totalValue = parseInt(row.stnd_pbmn ?? '0', 10)
-      const ratioStr = row.ssts_vol_rlim
-      const shortRatio = ratioStr
-        ? parseFloat(ratioStr)
-        : totalVolume > 0 ? (shortVolume / totalVolume) * 100 : 0
+      const shortValue = parseInt(row.ssts_tr_pbmn ?? '0', 10)
+      const totalVolume = parseInt(row.acml_vol ?? '0', 10)
+      const totalValue = parseInt(row.acml_tr_pbmn ?? '0', 10)
+      const shortRatio = parseFloat(row.ssts_vol_rlim ?? '0')
 
-      if (isNaN(shortVolume) || isNaN(shortValue) || isNaN(totalVolume)) continue
+      if (isNaN(shortVolume) || isNaN(totalVolume)) continue
 
       accumulated.push({
         date: parseKisDate(dateRaw),
