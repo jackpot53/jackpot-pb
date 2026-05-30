@@ -475,7 +475,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
         {(hasValue || hasCost) && (
           <div className="pt-2 border-t border-border flex items-center gap-2 tabular-nums flex-wrap">
             <span className="text-xs text-muted-foreground">평가금</span>
-            <span className="text-sm font-semibold text-foreground">
+            <span className="text-xs font-semibold text-foreground">
               {hasValue ? formatKrw(asset.currentValueKrw) : '—'}
               {isUsdPurchase && asset.currentPriceUsd != null && hasHolding && hasValue && (
                 <span className="text-xs text-muted-foreground ml-1">({formatUsd(asset.currentPriceUsd * asset.totalQuantity / 1e8)})</span>
@@ -484,7 +484,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
             {hasValue && hasCost && (
               <>
                 <span className="text-border/60 text-xs">·</span>
-                <span className={`text-sm font-bold ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                <span className={`text-xs font-bold ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
                   {profit >= 0 ? '+' : ''}{formatKrw(profit)}
                 </span>
                 <span className={`text-xs font-semibold ${asset.returnPct >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
