@@ -20,7 +20,7 @@ const BADGE_MAP: Record<AssetType, { label: string; icon: React.ElementType; sty
 export function AssetTypeBadge({ assetType }: { assetType: AssetType }) {
   const { label, icon: Icon, style } = BADGE_MAP[assetType]
   return (
-    <span data-component="AssetTypeBadge" className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${style}`}>
+    <span data-component="AssetTypeBadge" className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-semibold ${style}`}>
       <Icon className="h-3 w-3" />
       {label}
     </span>

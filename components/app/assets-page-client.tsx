@@ -130,17 +130,17 @@ const ASSET_TYPE_ICONS: Record<string, React.ElementType> = {
 }
 
 export const ASSET_TYPE_ACCENT: Record<string, string> = {
-  stock_kr:       'bg-blue-500/[0.04]',
-  stock_us:       'bg-sky-500/[0.04]',
-  etf_kr:         'bg-indigo-500/[0.04]',
-  etf_us:         'bg-violet-500/[0.04]',
-  crypto:         'bg-amber-500/[0.04]',
-  fund:           'bg-teal-500/[0.04]',
-  savings:        'bg-emerald-500/[0.04]',
-  real_estate:    'bg-amber-700/[0.04]',
-  insurance:      'bg-slate-500/[0.04]',
-  precious_metal: 'bg-yellow-500/[0.04]',
-  cma:            'bg-rose-500/[0.04]',
+  stock_kr:       'bg-blue-50',
+  stock_us:       'bg-sky-50',
+  etf_kr:         'bg-indigo-50',
+  etf_us:         'bg-violet-50',
+  crypto:         'bg-amber-50',
+  fund:           'bg-teal-50',
+  savings:        'bg-emerald-50',
+  real_estate:    'bg-amber-50',
+  insurance:      'bg-slate-50',
+  precious_metal: 'bg-yellow-50',
+  cma:            'bg-rose-50',
 }
 
 // 탭 버튼용 — dot 색상 / 활성 배경+텍스트
@@ -278,11 +278,11 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
     : null
 
   const accountBadge = mergedCount > 1 ? (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded-xl text-xs font-semibold bg-muted text-muted-foreground ring-1 ring-border">
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs font-semibold bg-muted text-muted-foreground ring-1 ring-border">
       {mergedCount}계좌
     </span>
   ) : asset.accountType && ACCOUNT_TYPE_LABELS[asset.accountType] ? (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded-xl text-xs font-semibold bg-muted text-muted-foreground ring-1 ring-border">
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm text-xs font-semibold bg-muted text-muted-foreground ring-1 ring-border">
       {ACCOUNT_TYPE_LABELS[asset.accountType]}
     </span>
   ) : null
@@ -320,7 +320,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
   const hasChartToggle = (showSparkline && asset.ticker) || lineData !== undefined
 
   return (
-    <div className={cn("relative rounded-none border border-black hover:shadow-md transition-all", ASSET_TYPE_ACCENT[asset.assetType] ?? 'bg-card')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div className={cn("relative rounded-sm border border-black hover:shadow-md transition-all", ASSET_TYPE_ACCENT[asset.assetType] ?? 'bg-card')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <div className="flex flex-col gap-2 px-4 py-3.5">
         {/* row1: 로고 + 종목명 + 계좌유형 배지 + 차트 토글 */}
         <div className="flex items-center gap-2 min-w-0">
@@ -341,7 +341,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
             </button>
           )}
         </div>
-        <div className="border-t-2 border-black/25" />
+        <div className="border-t-2 border-black" />
 
         {/* row2: 수량 · 매수가 · 투자금 (savings/insurance 전용 필드 치환) */}
         {hasHolding && (
@@ -539,7 +539,7 @@ function AssetGridCard({ asset, sparklineData, lineData }: {
     : asset.accountType && ACCOUNT_TYPE_LABELS[asset.accountType] ? ACCOUNT_TYPE_LABELS[asset.accountType] : null
 
   return (
-    <div className={cn("rounded-xl border border-border p-4 flex flex-col gap-2.5 hover:shadow-md transition-all", ASSET_TYPE_ACCENT[asset.assetType] ?? 'bg-card')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div className={cn("rounded-sm border border-border p-4 flex flex-col gap-2.5 hover:shadow-md transition-all", ASSET_TYPE_ACCENT[asset.assetType] ?? 'bg-card')} style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* 헤더: 로고 */}
       <div className="flex items-start">
         <AssetLogo ticker={asset.ticker} name={asset.name} assetType={asset.assetType} size={38} />
@@ -596,7 +596,7 @@ function AssetGridCard({ asset, sparklineData, lineData }: {
 
 function AssetGridCardSkeleton({ assetType }: { assetType?: string } = {}) {
   return (
-    <div className={cn("rounded-xl border border-border p-3.5 flex flex-col gap-2", assetType ? (ASSET_TYPE_ACCENT[assetType] ?? 'bg-card') : 'bg-card')}>
+    <div className={cn("rounded-sm border border-border p-3.5 flex flex-col gap-2", assetType ? (ASSET_TYPE_ACCENT[assetType] ?? 'bg-card') : 'bg-card')}>
       <div className="w-9 h-9 rounded-full bg-muted animate-pulse" />
       <div className="h-3.5 w-3/4 bg-muted animate-pulse rounded" />
       <div className="h-3 w-1/2 bg-muted animate-pulse rounded" />
