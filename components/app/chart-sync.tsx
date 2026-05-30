@@ -42,6 +42,8 @@ interface ChartSyncApi {
   setMasterAxisWidth: (width: number) => void
   /** 우측 축 너비 변경을 구독 */
   subscribeMasterAxisWidth: (cb: (width: number) => void) => () => void
+  /** 마스터 날짜 배열 변경을 구독 — 초기 호출 시 현재 날짜 배열로 즉시 콜백 */
+  subscribeMasterDates: (cb: (dates: string[]) => void) => () => void
   /**
    * 보조 차트 데이터 업데이트 시 사용 — 공유 구간을 해당 차트에만 적용하되
    * isApplyingRef 가드로 보호해 역방향 피드백 루프를 차단한다.
@@ -76,6 +78,7 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
   // 캔들 차트 우측 축 실제 너비
   const masterAxisWidthRef = useRef<number>(CHART_RIGHT_AXIS_WIDTH)
   const axisWidthSubsRef = useRef<Set<(w: number) => void>>(new Set())
+  const masterDatesSubsRef = useRef<Set<(dates: string[]) => void>>(new Set())
 
   const api = useMemo<ChartSyncApi>(() => {
     const clampIndex = (i: number) => {
@@ -157,6 +160,7 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
       } else {
         minFromRef.current = 0
       }
+      masterDatesSubsRef.current.forEach((cb) => cb(dates))
       notifyDateSubs(currentRangeRef.current)
     }
 
@@ -176,8 +180,9 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // 오른쪽 여백 바 수 (fitContent 시 캔들이 우측 끝에 딱 붙지 않도록)
+    // 좌우 여백 바 수 — 첫/마지막 캔들이 화면 끝에 딱 붙지 않도록
     const RIGHT_MARGIN = 2
+    const LEFT_MARGIN = 2
 
     // 현재 공유 range, 없으면 첫 번째 차트의 실제 보이는 range에서 읽는다
     const getActiveRange = (): LogicalRange | null => {
@@ -207,7 +212,7 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
       if (len === 0) return
       const to = (len - 1 + RIGHT_MARGIN) as Logical
       if (months == null) {
-        applyLogicalRange({ from: 0 as Logical, to })
+        applyLogicalRange({ from: -LEFT_MARGIN as Logical, to })
         return
       }
       // 데이터 마지막 날이 아닌 오늘 기준으로 역산 — 캐시된 데이터에서도 정확한 범위 보장
@@ -247,6 +252,12 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
       return () => axisWidthSubsRef.current.delete(cb)
     }
 
+    const subscribeMasterDates: ChartSyncApi['subscribeMasterDates'] = (cb) => {
+      masterDatesSubsRef.current.add(cb)
+      cb(datesRef.current)
+      return () => masterDatesSubsRef.current.delete(cb)
+    }
+
     const applyRangeToChart: ChartSyncApi['applyRangeToChart'] = (chart) => {
       const shared = currentRangeRef.current
       isApplyingRef.current = true
@@ -263,10 +274,10 @@ export function ChartSyncProvider({ children }: { children: ReactNode }) {
       if (len === 0) return
       // applyLogicalRange는 currentRangeRef를 동기 갱신 후 전 차트에 전파 —
       // 서브 패널들이 뒤이어 applyRangeToChart를 호출해도 올바른 공유 range를 즉시 읽는다.
-      applyLogicalRange({ from: 0 as Logical, to: (len - 1 + RIGHT_MARGIN) as Logical })
+      applyLogicalRange({ from: -LEFT_MARGIN as Logical, to: (len - 1 + RIGHT_MARGIN) as Logical })
     }
 
-    return { registerChart, setMasterDates, getCurrentLogicalRange, resetRange, subscribeDateRange, applyMonthsPreset, pan, setMasterAxisWidth, subscribeMasterAxisWidth, applyRangeToChart, anchorToEnd }
+    return { registerChart, setMasterDates, getCurrentLogicalRange, resetRange, subscribeDateRange, applyMonthsPreset, pan, setMasterAxisWidth, subscribeMasterAxisWidth, subscribeMasterDates, applyRangeToChart, anchorToEnd }
   }, [])
 
   return <ChartSyncContext.Provider value={api}>{children}</ChartSyncContext.Provider>
