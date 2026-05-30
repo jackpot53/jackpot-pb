@@ -50,9 +50,9 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
   useEffect(() => {
     const chart = chartRef.current
     if (!chart) return
-    chart.priceScale('tv').applyOptions({ minimumWidth: axisWidth })
+    chart.priceScale('right').applyOptions({ minimumWidth: axisWidth })
     const rafId = requestAnimationFrame(() => {
-      const w = chart.priceScale('tv').width()
+      const w = chart.priceScale('right').width()
       if (w > 0) syncRef.current.setMasterAxisWidth(w)
     })
     return () => cancelAnimationFrame(rafId)
@@ -97,13 +97,13 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
 
     // 히스토그램 + 20일 평균: 상단 65%
     const histSeries = chart.addSeries(HistogramSeries, {
-      priceScaleId: 'tv',
+      priceScaleId: 'right',
       priceLineVisible: false,
       lastValueVisible: false,
     })
 
     const avgSeries = chart.addSeries(LineSeries, {
-      priceScaleId: 'tv',
+      priceScaleId: 'right',
       color: '#f59e0b',
       lineWidth: 1,
       lineStyle: LineStyle.Dashed,
@@ -112,7 +112,7 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
       crosshairMarkerVisible: false,
     })
 
-    chart.priceScale('tv').applyOptions({
+    chart.priceScale('right').applyOptions({
       scaleMargins: { top: 0.05, bottom: 0.38 },
       borderVisible: false,
       minimumWidth: CHART_RIGHT_AXIS_WIDTH,
@@ -271,6 +271,13 @@ export function TradingValuePanel({ data, height = 180 }: Props) {
           <p className="text-xs font-medium text-foreground">거래대금</p>
           {!noData && (
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <span className="inline-flex gap-px">
+                  <span className="inline-block w-1.5 h-3 rounded-sm bg-red-400/80" />
+                  <span className="inline-block w-1.5 h-2 rounded-sm bg-blue-400/80 self-end" />
+                </span>
+                거래대금
+              </span>
               <span className="flex items-center gap-1">
                 <span className="inline-block w-4 h-[1.5px] bg-amber-500 border-dashed border-b border-amber-500" />
                 20일 평균

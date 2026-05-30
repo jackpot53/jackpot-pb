@@ -176,10 +176,23 @@ function FlowChart({
   )
 }
 
+function fillToMasterDates(
+  points: InvestorFlowPoint[],
+  masterDates: string[],
+): InvestorFlowPoint[] {
+  if (masterDates.length === 0) return points
+  const byDate = new Map(points.map((p) => [p.date, p]))
+  return masterDates.map((d) => byDate.get(d) ?? { date: d, institution: 0, foreign: 0, individual: 0 })
+}
+
 export function InvestorFlowChart({ ticker, period, range = '1y' }: Props) {
+  const sync = useChartSync()
   const [raw, setRaw] = useState<InvestorFlowPoint[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [unsupported, setUnsupported] = useState(false)
+  const [masterDates, setMasterDates] = useState<string[]>([])
+
+  useEffect(() => sync.subscribeMasterDates(setMasterDates), [sync])
 
   useEffect(() => {
     setRaw(null)
@@ -199,10 +212,10 @@ export function InvestorFlowChart({ ticker, period, range = '1y' }: Props) {
 
   const data = useMemo(() => {
     if (!raw) return []
-    if (period === '주봉') return aggregateByWeek(raw)
-    if (period === '월봉') return aggregateByMonth(raw)
-    return raw
-  }, [raw, period])
+    if (period === '주봉') return aggregateByWeek(fillToMasterDates(raw, masterDates))
+    if (period === '월봉') return aggregateByMonth(fillToMasterDates(raw, masterDates))
+    return fillToMasterDates(raw, masterDates)
+  }, [raw, period, masterDates])
 
   if (loading) {
     return (
