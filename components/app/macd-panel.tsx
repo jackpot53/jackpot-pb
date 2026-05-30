@@ -173,42 +173,40 @@ export function MacdPanel({ data, height = 180 }: Props) {
       : 'bg-blue-50 border border-blue-200 text-blue-600'
     : 'bg-muted border border-border text-muted-foreground'
 
-  if (data.length < 40) {
-    return (
-      <div className="rounded-xl border border-border bg-card p-4">
-        <p className="text-xs font-medium text-foreground mb-2">MACD (12, 26, 9)</p>
-        <div className="flex items-center justify-center py-6 text-xs text-muted-foreground">
-          MACD 계산을 위한 데이터가 부족합니다 (최소 40일 필요)
-        </div>
-      </div>
-    )
-  }
+  const noData = data.length < 40
 
   return (
     <div data-component="MacdPanel" className="rounded-xl border border-border bg-card p-3 space-y-2">
       <div className="flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <p className="text-xs font-medium text-foreground">MACD (12, 26, 9)</p>
-          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <span className="inline-block w-4 h-[1.5px] bg-blue-500" />
-              MACD
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="inline-block w-4 h-[1.5px] bg-amber-500 border-dashed border-b border-amber-500" />
-              Signal
-            </span>
-          </div>
+          {!noData && (
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-4 h-[1.5px] bg-blue-500" />
+                MACD
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-4 h-[1.5px] bg-amber-500 border-dashed border-b border-amber-500" />
+                Signal
+              </span>
+            </div>
+          )}
         </div>
-        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${badgeClass}`}>
-          {badgeText}
-        </span>
+        {!noData && (
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${badgeClass}`}>
+            {badgeText}
+          </span>
+        )}
       </div>
-      <div
-        ref={containerRef}
-        className="w-full rounded-md overflow-hidden"
-        style={{ height: `${height}px` }}
-      />
+      <div className="relative" style={{ height: `${height}px` }}>
+        <div ref={containerRef} className="w-full h-full rounded-md overflow-hidden" />
+        {noData && (
+          <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+            MACD 계산을 위한 데이터가 부족합니다 (최소 40일 필요)
+          </div>
+        )}
+      </div>
     </div>
   )
 }
