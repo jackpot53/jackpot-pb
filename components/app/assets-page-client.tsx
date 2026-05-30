@@ -325,7 +325,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
       {hasChartToggle && (
         <button
           onClick={() => setChartOpen(v => !v)}
-          className="absolute top-2.5 right-2.5 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded-lg hover:bg-muted/40"
+          className="absolute top-1/2 -translate-y-1/2 right-2.5 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded-lg hover:bg-muted/40"
         >
           {asset.returnPct >= 0
             ? <TrendingUp className="h-3 w-3 text-red-500" />
@@ -978,55 +978,61 @@ function AssetFilter({
   return (
     <div className="space-y-3">
       {/* 필터 셀렉트 행 */}
-      <div className="flex flex-wrap gap-2 justify-center">
+      <div className="flex gap-2 justify-center">
         {showOwnerFilter && (
-          <Select value={activeOwner === 'all' ? '' : activeOwner} onValueChange={(v) => setActiveOwner(v || 'all')}>
-            <SelectTrigger className="h-8 w-36 text-xs justify-center">
-              <SelectValue placeholder="전체 소유주">
-                {activeOwner === 'all' ? '전체 소유주' : `${OWNER_ICONS[activeOwner] ?? '👤'} ${activeOwner}`}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">전체 소유주</SelectItem>
-              {ownersInData.map((owner) => (
-                <SelectItem key={owner} value={owner}>
-                  {OWNER_ICONS[owner]} {owner}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex-1 min-w-0 max-w-36">
+            <Select value={activeOwner === 'all' ? '' : activeOwner} onValueChange={(v) => setActiveOwner(v || 'all')}>
+              <SelectTrigger className="h-8 w-full text-xs justify-center">
+                <SelectValue placeholder="전체 소유주">
+                  {activeOwner === 'all' ? '전체 소유주' : `${OWNER_ICONS[activeOwner] ?? '👤'} ${activeOwner}`}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">전체 소유주</SelectItem>
+                {ownersInData.map((owner) => (
+                  <SelectItem key={owner} value={owner}>
+                    {OWNER_ICONS[owner]} {owner}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         )}
         {showAccountFilter && (
-          <Select value={activeAccount === 'all' ? '' : activeAccount} onValueChange={(v) => setActiveAccount((v || 'all') as 'all' | 'personal' | 'pension' | 'direct')}>
-            <SelectTrigger className="h-8 w-36 text-xs justify-center">
-              <SelectValue placeholder="투자 방식">
-                {activeAccount === 'all' ? '투자 방식' : activeAccount === 'personal' ? '증권계좌' : activeAccount === 'pension' ? '연금계좌' : '직접보유'}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">전체</SelectItem>
-              {personalCount > 0 && <SelectItem value="personal">증권계좌</SelectItem>}
-              {pensionCount > 0  && <SelectItem value="pension">연금계좌</SelectItem>}
-              {directCount > 0   && <SelectItem value="direct">직접보유</SelectItem>}
-            </SelectContent>
-          </Select>
+          <div className="flex-1 min-w-0 max-w-36">
+            <Select value={activeAccount === 'all' ? '' : activeAccount} onValueChange={(v) => setActiveAccount((v || 'all') as 'all' | 'personal' | 'pension' | 'direct')}>
+              <SelectTrigger className="h-8 w-full text-xs justify-center">
+                <SelectValue placeholder="투자 방식">
+                  {activeAccount === 'all' ? '투자 방식' : activeAccount === 'personal' ? '증권계좌' : activeAccount === 'pension' ? '연금계좌' : '직접보유'}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">전체</SelectItem>
+                {personalCount > 0 && <SelectItem value="personal">증권계좌</SelectItem>}
+                {pensionCount > 0  && <SelectItem value="pension">연금계좌</SelectItem>}
+                {directCount > 0   && <SelectItem value="direct">직접보유</SelectItem>}
+              </SelectContent>
+            </Select>
+          </div>
         )}
         {showAll && (
-          <Select value={active === 'all' ? '' : active} onValueChange={(v) => setActive(v || 'all')}>
-            <SelectTrigger className="h-8 w-36 text-xs justify-center">
-              <SelectValue placeholder="전체 자산">
-                {active === 'all' ? '전체 자산' : (ASSET_TYPE_LABELS_SHORT[active] ?? ASSET_TYPE_LABELS[active])}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">전체 자산</SelectItem>
-              {types.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {ASSET_TYPE_LABELS_SHORT[type] ?? ASSET_TYPE_LABELS[type]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex-1 min-w-0 max-w-36">
+            <Select value={active === 'all' ? '' : active} onValueChange={(v) => setActive(v || 'all')}>
+              <SelectTrigger className="h-8 w-full text-xs justify-center">
+                <SelectValue placeholder="전체 자산">
+                  {active === 'all' ? '전체 자산' : (ASSET_TYPE_LABELS_SHORT[active] ?? ASSET_TYPE_LABELS[active])}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">전체 자산</SelectItem>
+                {types.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {ASSET_TYPE_LABELS_SHORT[type] ?? ASSET_TYPE_LABELS[type]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         )}
       </div>
 
