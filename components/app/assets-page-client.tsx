@@ -355,7 +355,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
           </button>
         )}
       </div>
-      <div className="border-t-2 border-black/20" />
+      <div className="border-t-2 border-black/[0.05]" />
 
       {/* 본문 */}
       <div className="flex flex-col gap-2 px-4 py-3">
@@ -392,7 +392,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
 
         {/* row4: 평가금 · 수익금 · 수익률 */}
         {(hasValue || hasCost) && (
-          <div className="flex items-center gap-2 tabular-nums flex-wrap text-xs pt-1.5 border-t border-black/25">
+          <div className="flex items-center gap-2 tabular-nums flex-wrap text-xs pt-1.5 border-t border-black/[0.05]">
             <span className="text-muted-foreground">평가금</span>
             <span className="font-semibold text-foreground">
               {hasValue ? formatKrwCompact(asset.currentValueKrw) : '—'}
@@ -416,7 +416,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
 
         {/* row2: 수량 · 매수가 · 투자금 (savings/insurance 전용 필드 치환) */}
         {hasHolding && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap pt-1.5 border-t border-black/25">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap pt-1.5 border-t border-black/[0.05]">
             {!hideQty && (
               <span className="tabular-nums"><span className="text-muted-foreground">수량</span> <span className="font-medium text-foreground/90">{formatQty(asset.totalQuantity, isCrypto)}</span></span>
             )}
@@ -474,7 +474,7 @@ function AssetCard({ asset, sparklineData, lineData, showSparkline }: {
 
         {/* FX 행: 미국 자산일 때만 row3 아래 조건부 */}
         {isUsAsset && (
-          <div className="flex items-center gap-1.5 text-xs flex-wrap pt-1.5 border-t border-black/25">
+          <div className="flex items-center gap-1.5 text-xs flex-wrap pt-1.5 border-t border-black/[0.05]">
             <span className={`font-semibold shrink-0 ${isKrwPurchase ? 'text-amber-400' : 'text-sky-400'}`}>
               {isKrwPurchase ? '원화매수' : '달러매수'}
             </span>
